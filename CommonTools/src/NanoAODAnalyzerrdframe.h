@@ -16,6 +16,7 @@
 #include "ROOT/RVec.hxx"
 
 #include "Math/Vector4D.h"
+#include "JetCorrectorParameters.h"
 #include "BTagCalibrationStandalone.h"
 #include "WeightCalculatorFromHistogram.h"
 
@@ -25,7 +26,6 @@
 #include "utility.h" // floats, etc are defined here
 #include "GEScaleSyst.h"
 #include "RNodeTree.h"
-#include "JetCorrectorParameters.h"
 #include "FactorizedJetCorrector.h"
 #include "JetCorrectionUncertainty.h"
 #include "JetResolution.h"
