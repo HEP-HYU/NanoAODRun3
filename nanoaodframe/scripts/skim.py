@@ -65,7 +65,10 @@ for fn in os.listdir("data/dataset/" + year):
                 continue
 
             if options.local:
-                infile = "/data2/common/NanoAOD/" + infile[len("/store/"):]
+                if "data" in infile:
+                    infile = "/data2/common/NanoAOD/data/v15/" + infile[len("/store/data/"):]
+                elif "mc" in infile:
+                    infile = "/data2/common/NanoAOD/mc/v15/" + infile[len("/store/mc/"):]
             elif options.path=="fnal":
                 infile = "root://cmsxrootd.fnal.gov/"+infile
             else: infile = "root://xrootd-cms.infn.it/"+infile
