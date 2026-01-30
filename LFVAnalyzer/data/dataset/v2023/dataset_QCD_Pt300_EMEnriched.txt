@@ -1,0 +1,9 @@
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/d97747c1-d841-4a9e-948e-a80ef45d2e06.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/d408e327-61a1-4605-b329-f2e69a930d19.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/9a481888-5315-4c5e-a43e-0babae0492e8.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/a44515d9-d380-4841-a6d9-1d62b06754a2.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/b0d0e337-1e12-41ff-a26f-1a68eefcfc1a.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/7891d094-5aef-4218-a04e-39eeb465bdca.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/bd0d400f-90cc-4411-bc04-d9c597a4439a.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/098c4e0a-b654-495d-a708-c25f67140ed0.root
+/store/mc/Run3Summer23NanoAODv12/QCD_PT-300toInf_EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v14-v2/50000/21f53075-a631-4130-859e-3279fe380e2e.root

@@ -1,0 +1,324 @@
+[
+    {
+        "DataSetName": "/EGamma0/Run2024C-PromptReco-v1/NANOAOD",
+        "name": "EGamma0-C",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma1/Run2024C-PromptReco-v1/NANOAOD",
+        "name": "EGamma1-C",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma0/Run2024D-PromptReco-v1/NANOAOD",
+        "name": "EGamma0-D",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma1/Run2024D-PromptReco-v1/NANOAOD",
+        "name": "EGamma1-D",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma0/Run2024E-PromptReco-v2/NANOAOD",
+        "name": "EGamma0-E",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma1/Run2024E-PromptReco-v2/NANOAOD",
+        "name": "EGamma1-E",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma0/Run2024F-PromptReco-v1/NANOAOD",
+        "name": "EGamma0-F",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma1/Run2024F-PromptReco-v1/NANOAOD",
+        "name": "EGamma1-F",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma0/Run2024G-PromptReco-v1/NANOAOD",
+        "name": "EGamma0-G",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma1/Run2024G-PromptReco-v1/NANOAOD",
+        "name": "EGamma1-G",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma0/Run2024H-PromptReco-v1/NANOAOD",
+        "name": "EGamma0-H",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma1/Run2024H-PromptReco-v1/NANOAOD",
+        "name": "EGamma1-H",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma0/Run2024I-PromptReco-v2/NANOAOD",
+        "name": "EGamma0-I",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/EGamma1/Run2024I-PromptReco-v2/NANOAOD",
+        "name": "EGamma1-I",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon0/Run2024C-PromptReco-v1/NANOAOD",
+        "name": "Muon0-C",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon1/Run2024C-PromptReco-v1/NANOAOD",
+        "name": "Muon1-C",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon0/Run2024D-PromptReco-v1/NANOAOD",
+        "name": "Muon0-D",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon1/Run2024D-PromptReco-v1/NANOAOD",
+        "name": "Muon1-D",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon0/Run2024E-PromptReco-v2/NANOAOD",
+        "name": "Muon0-E",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon1/Run2024E-PromptReco-v2/NANOAOD",
+        "name": "Muon1-E",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon0/Run2024F-PromptReco-v1/NANOAOD",
+        "name": "Muon0-F",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon1/Run2024F-PromptReco-v1/NANOAOD",
+        "name": "Muon1-F",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon0/Run2024G-PromptReco-v1/NANOAOD",
+        "name": "Muon0-G",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon1/Run2024G-PromptReco-v1/NANOAOD",
+        "name": "Muon1-G",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon0/Run2024H-PromptReco-v1/NANOAOD",
+        "name": "Muon0-H",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon1/Run2024H-PromptReco-v1/NANOAOD",
+        "name": "Muon1-H",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon0/Run2024I-PromptReco-v2/NANOAOD",
+        "name": "Muon0-I",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/Muon1/Run2024I-PromptReco-v2/NANOAOD",
+        "name": "Muon1-I",
+        "nevt": 0,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "TTtoLNu2Q",
+        "nevt": 0,
+        "path": "",
+        "xsec": 405.75
+    },
+    {
+        "DataSetName": "/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "TTto4Q",
+        "nevt": 0,
+        "path": "",
+        "xsec": 419.82
+    },
+    {
+        "DataSetName": "/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "TTto2L2Nu",
+        "nevt": 0,
+        "path": "",
+        "xsec": 98.04
+    },
+    {
+        "DataSetName": "/WW_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "WW",
+        "nevt": 0,
+        "path": "",
+        "xsec": 80.23
+    },
+    {
+        "DataSetName": "/WZ_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "WZ",
+        "nevt": 0,
+        "path": "",
+        "xsec": 29.1
+    },
+    {
+        "DataSetName": "/ZZ_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "ZZ",
+        "nevt": 0,
+        "path": "",
+        "xsec": 13.15
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-15to20_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt15To20_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 2982000.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-20to30_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt20To30_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 2679000.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-30to50_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt30To50_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 1497000.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-50to80_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt50To80_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 409500.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-80to120_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt80To120_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 95130.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-120to170_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt120To170_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 22980.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-170to300_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt170To300_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 7763.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-300to470_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt300To470_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 699.1
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-470to600_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt470To600_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 68.24
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-600to800_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt600To800_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 21.37
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-800to1000_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt800To1000_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 3.913
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-1000_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v2/NANOAODSIM",
+        "name": "QCD_Pt1000_MuEnriched",
+        "nevt": 0,
+        "path": "",
+        "xsec": 1.323
+    }
+]
