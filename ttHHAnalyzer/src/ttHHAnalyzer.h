@@ -17,6 +17,7 @@ public:
     void defineCuts();
     void defineMoreVars(); // define higher-level variables from
     void bookHists();
+    void defineObjectSelection(std::vector<std::string> jes_var) override;
     bool ext_syst = false;
 
 private:

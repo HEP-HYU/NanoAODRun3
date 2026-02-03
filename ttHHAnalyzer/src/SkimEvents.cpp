@@ -18,6 +18,39 @@ SkimEvents::SkimEvents(TTree *t, std::string outfilename, std::string year, std:
   }
 }
 
+void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
+    JetVetoMap();
+    if (_isMuonCh){
+        selectMuons();
+    } else {
+        selectElectrons();
+    }
+    setupJetMETCorrection(_globaltag, jes_var, jes_var_flav, "AK4PFPuppi", _isData);
+    skimJets();
+    if (!_isData){
+        calculateEvWeight();
+    //    applyBSFs(jes_var);
+    }
+}
+
+void SkimEvents::selectMuons() {
+    cout<<"selectMuons muon channel vetomuoncuts"<<endl;
+    _rlm = _rlm.Define("muoncuts", "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15");
+    _rlm = _rlm.Define("vetomuoncuts", "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25");
+
+    _rlm = _rlm.Define("nvetomuons","Sum(vetomuoncuts)")
+               .Redefine("Muon_pt", "Muon_pt[muoncuts]")
+               .Redefine("Muon_eta", "Muon_eta[muoncuts]")
+               .Redefine("Muon_phi", "Muon_phi[muoncuts]")
+               .Redefine("Muon_mass", "Muon_mass[muoncuts]")
+               .Redefine("Muon_charge", "Muon_charge[muoncuts]")
+               .Redefine("Muon_looseId", "Muon_looseId[muoncuts]")
+               .Redefine("Muon_pfRelIso04_all", "Muon_pfRelIso04_all[muoncuts]")
+               .Define("Sel_muonidx", ::good_idx, {"muoncuts"})
+               .Define("nmuonpass", "int(Muon_pt.size())")
+               .Define("lep4vecs", ::gen4vec, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+}
+
 // Define your cuts here
 void SkimEvents::defineCuts()
 {

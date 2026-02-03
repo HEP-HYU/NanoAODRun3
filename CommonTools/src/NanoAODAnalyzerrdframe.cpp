@@ -104,21 +104,18 @@ NanoAODAnalyzerrdframe::NanoAODAnalyzerrdframe(TTree *atree, std::string outfile
 }
 
 NanoAODAnalyzerrdframe::~NanoAODAnalyzerrdframe() {
-
     // TODO Auto-generated destructor stub
     // ugly...
     std::cout<<">>  Job Done  <<"<<std::endl;
 }
 
 bool NanoAODAnalyzerrdframe::isDefined(string v) {
-
 	auto result = std::find(_originalvars.begin(), _originalvars.end(), v);
 	if (result != _originalvars.end()) return true;
 	else return false;
 }
 
 void NanoAODAnalyzerrdframe::setTree(TTree *t, std::string outfilename) {
-
 	_rd = ROOT::RDataFrame(*t);
 	_rlm = RNode(_rd);
 	_outfilename = outfilename;
@@ -132,6 +129,114 @@ void NanoAODAnalyzerrdframe::setTree(TTree *t, std::string outfilename) {
 	this->setupAnalysis();
 }
 
+void NanoAODAnalyzerrdframe::applyWeights(){
+    _rlm = _rlm.Define("lhereweight","one");
+    _rlm = _rlm.Define("unitGenWeight", "one");
+
+    if(!_isData){
+        _rlm = _rlm.Redefine("isData", "false");
+
+        if (_outfilename.find("WtoLNu") != std::string::npos) {
+          _rlm = _rlm.Redefine("lhereweight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
+          _rlm = _rlm.Redefine("unitGenWeight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
+        };
+
+
+        // Store sum of weights
+        auto storePDFWeights = [this](floats weights, float gen)->floats {
+            for (unsigned int i=0; i<weights.size(); i++)
+                PDFWeights[i] += (gen / abs(gen)) * weights[i];
+            return PDFWeights;
+        };
+        auto storePSWeights = [this](floats weights, float gen)->floats {
+            for (unsigned int i=0; i<weights.size(); i++) {
+                if (i > 3) continue; //JME Nano stores all PS
+                PSWeights[i] += (gen / abs(gen)) * weights[i];
+            }
+            return PSWeights;
+        };
+        auto storeScaleWeights = [this](floats weights, float gen)->floats {
+            for (unsigned int i=0; i<weights.size(); i++)
+                ScaleWeights[i] += (gen / abs(gen)) * weights[i];
+            return ScaleWeights;
+        };
+        try {
+            _rlm.Foreach(storePDFWeights, {"LHEPdfWeight", "genWeight"});
+        } catch (exception& e) {
+            cout << e.what() << endl;
+            cout << "No PDF weight in this root file!" << endl;
+        }
+        try {
+            _rlm.Foreach(storePSWeights, {"PSWeight", "genWeight"});
+        } catch (exception& e) {
+            cout << e.what() << endl;
+            cout << "No PS weight in this root file!" << endl;
+        }
+        try {
+            _rlm.Foreach(storeScaleWeights, {"LHEScaleWeight", "genWeight"});
+        } catch (exception& e) {
+            cout << e.what() << endl;
+            cout << "No Scale weight in this root file!" << endl;
+        }
+
+        ////Check Normalisation issue for genWeight
+        _rlm = _rlm.Redefine("unitGenWeight","genWeight != 0 ? genWeight/abs(genWeight) : 0");
+        
+        std::string pileFile = "";
+        std::string map = "";
+        if (_isRun22) {
+            pileFile = "2022_Summer22";
+            map = "Collisions2022_355100_357900_eraBCD_GoldenJson";
+        } else if (_isRun22EE) {
+            pileFile = "2022_Summer22EE";
+            map = "Collisions2022_359022_362760_eraEFG_GoldenJson";
+        } else if (_isRun23) {
+            pileFile = "2023_Summer23";
+            map = "Collisions2023_366403_369802_eraBC_GoldenJson";
+        } else if (_isRun23BPix) {
+            pileFile = "2023_Summer23BPix";
+            map = "Collisions2023_369803_370790_eraD_GoldenJson";
+        } else if (_isRun24) {
+            //TODO
+            pileFile = "2023_Summer23BPix";
+            map = "Collisions2023_369803_370790_eraD_GoldenJson";
+        }
+        auto puWeightreader = correction::CorrectionSet::from_file("data/LUM/"+pileFile+"/puWeights.json.gz");
+        auto _puweight = puWeightreader->at(map);
+
+        auto PuWeight = [this, _puweight](float x) -> floats {
+            floats out;
+            out.emplace_back(_puweight->evaluate({x, "nominal"}));
+            out.emplace_back(_puweight->evaluate({x, "up"}));
+            out.emplace_back(_puweight->evaluate({x, "down"}));
+
+            return out;
+        };
+
+        if (_isRun24){
+            _rlm = _rlm.Define("puWeight", "std::vector<double>{1.0, 1.0, 1.0}");
+        }
+        else {
+            _rlm = _rlm.Define("puWeight", PuWeight, {"Pileup_nTrueInt"});
+        }
+    }
+}
+
+void NanoAODAnalyzerrdframe::defineObjectSelection(std::vector<std::string> jes_var){
+    JetVetoMap();
+    if (_isMuonCh){
+        selectMuons();
+    } else {
+        selectElectrons();
+    }
+    setupJetMETCorrection(_globaltag, jes_var, jes_var_flav, "AK4PFPuppi", _isData);
+    skimJets();
+    if (!_isData){
+        calculateEvWeight();
+    //    applyBSFs(jes_var);
+    }
+}
+
 void NanoAODAnalyzerrdframe::setupAnalysis() {
 
     if (_isData) _jsonOK = readjson();
@@ -140,131 +245,13 @@ void NanoAODAnalyzerrdframe::setupAnalysis() {
                .Define("zero", "0.0");
 
     // Event weight for data it's always one. For MC, it depends on the sign
-    if(_isSkim){
-        _rlm = _rlm.Define("isData", "true");
-        _rlm = _rlm.Define("lhereweight","one");
-        _rlm = _rlm.Define("unitGenWeight", "one");
-
-        if(!_isData){
-            _rlm = _rlm.Redefine("isData", "false");
-
-	        if (_outfilename.find("WtoLNu") != std::string::npos) {
-	          _rlm = _rlm.Redefine("lhereweight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
-	          _rlm = _rlm.Redefine("unitGenWeight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
-	        };
-
-
-            // Store sum of weights
-            auto storePDFWeights = [this](floats weights, float gen)->floats {
-                for (unsigned int i=0; i<weights.size(); i++)
-                    PDFWeights[i] += (gen / abs(gen)) * weights[i];
-                return PDFWeights;
-            };
-            auto storePSWeights = [this](floats weights, float gen)->floats {
-                for (unsigned int i=0; i<weights.size(); i++) {
-                    if (i > 3) continue; //JME Nano stores all PS
-                    PSWeights[i] += (gen / abs(gen)) * weights[i];
-                }
-                return PSWeights;
-            };
-            auto storeScaleWeights = [this](floats weights, float gen)->floats {
-                for (unsigned int i=0; i<weights.size(); i++)
-                    ScaleWeights[i] += (gen / abs(gen)) * weights[i];
-                return ScaleWeights;
-            };
-            try {
-                _rlm.Foreach(storePDFWeights, {"LHEPdfWeight", "genWeight"});
-            } catch (exception& e) {
-                cout << e.what() << endl;
-                cout << "No PDF weight in this root file!" << endl;
-            }
-            try {
-                _rlm.Foreach(storePSWeights, {"PSWeight", "genWeight"});
-            } catch (exception& e) {
-                cout << e.what() << endl;
-                cout << "No PS weight in this root file!" << endl;
-            }
-            try {
-                _rlm.Foreach(storeScaleWeights, {"LHEScaleWeight", "genWeight"});
-            } catch (exception& e) {
-                cout << e.what() << endl;
-                cout << "No Scale weight in this root file!" << endl;
-            }
-
-            ////Check Normalisation issue for genWeight
-            _rlm = _rlm.Redefine("unitGenWeight","genWeight != 0 ? genWeight/abs(genWeight) : 0");
-            
-            std::string pileFile = "";
-            std::string map = "";
-            if (_isRun22) {
-                pileFile = "2022_Summer22";
-                map = "Collisions2022_355100_357900_eraBCD_GoldenJson";
-            } else if (_isRun22EE) {
-                pileFile = "2022_Summer22EE";
-                map = "Collisions2022_359022_362760_eraEFG_GoldenJson";
-            } else if (_isRun23) {
-                pileFile = "2023_Summer23";
-                map = "Collisions2023_366403_369802_eraBC_GoldenJson";
-            } else if (_isRun23BPix) {
-                pileFile = "2023_Summer23BPix";
-                map = "Collisions2023_369803_370790_eraD_GoldenJson";
-            } else if (_isRun24) {
-                //TODO
-                pileFile = "2023_Summer23BPix";
-                map = "Collisions2023_369803_370790_eraD_GoldenJson";
-            }
-            auto puWeightreader = correction::CorrectionSet::from_file("data/LUM/"+pileFile+"/puWeights.json.gz");
-            auto _puweight = puWeightreader->at(map);
-
-            auto PuWeight = [this, _puweight](float x) -> floats {
-                floats out;
-                out.emplace_back(_puweight->evaluate({x, "nominal"}));
-                out.emplace_back(_puweight->evaluate({x, "up"}));
-                out.emplace_back(_puweight->evaluate({x, "down"}));
-
-                return out;
-            };
-
-            if (_isRun24){
-                _rlm = _rlm.Define("puWeight", "std::vector<double>{1.0, 1.0, 1.0}");
-            }
-            else {
-                _rlm = _rlm.Define("puWeight", PuWeight, {"Pileup_nTrueInt"});
-            }
-        }    
-    }
+    applyWeights();
 
     std::vector<std::string> jes_var;
 
+    defineObjectSelection(jes_var);
     // Object selection will be defined in sequence.
     // Selected objects will be stored in new vectors.
-    if (_isSkim) {
-        JetVetoMap();
-        if (_isMuonCh){
-            selectMuons();
-        } else {
-            selectElectrons();
-        }
-        setupJetMETCorrection(_globaltag, jes_var, jes_var_flav, "AK4PFPuppi", _isData);
-        skimJets();
-        if (!_isData){
-            calculateEvWeight();
-        //    applyBSFs(jes_var);
-        }
-    }
-    else {
-        calculateSF();
-        if (_isMuonCh){
-            selectElectrons();
-        } else {
-            selectMuons();
-        }
-        selectTaus();
-        selectJets(jes_var, jes_var_flav);
-        if (!_isData){
-            topPtReweight();
-        }
-    }
     if (_isRun24){
         _rlm = _rlm.Define("puWeight", "std::vector<double>{1.0, 1.0, 1.0}");
     }

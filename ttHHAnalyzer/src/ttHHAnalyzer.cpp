@@ -37,6 +37,19 @@ ttHHAnalyzer::ttHHAnalyzer(TTree *t, std::string outfilename, std::string year, 
 
 }
 
+void ttHHAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
+    calculateSF();
+    if (_isMuonCh){
+        selectElectrons();
+    } else {
+        selectMuons();
+    }
+    selectTaus();
+    selectJets(jes_var, jes_var_flav);
+    if (!_isData){
+        topPtReweight();
+    }
+}
 // Define your cuts here
 void ttHHAnalyzer::defineCuts() {
 

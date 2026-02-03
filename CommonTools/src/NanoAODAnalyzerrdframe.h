@@ -50,26 +50,27 @@ public:
   // RNode is in namespace ROOT::RDF
   bool readjson();
   void JetVetoMap();
-  void selectElectrons();
-  void selectMuons();
-  void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav);
-  void skimJets();
+  virtual void selectElectrons();
+  virtual void selectMuons();
+  virtual void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav);
+  virtual void skimJets();
   void applyBSFs(std::vector<string> jes_var);
-  void selectTaus();
-  void selectMET();
-  void selectFatJets();
+  void applyWeights();
+  virtual void selectTaus();
+  //virtual void selectMET();
+  virtual void selectFatJets();
   void matchGenReco();
   void calculateEvWeight();
   void calculateSF();
   void storeEvWeight();
   void topPtReweight();
   virtual void defineMoreVars() = 0; // define higher-level variables from basic ones, you must implement this in your subclassed analysis code
+  virtual void defineObjectSelection(std::vector<std::string> jes_var) = 0;
 
   void addVar(varinfo v);
 
   template <typename T, typename std::enable_if<!std::is_convertible<T, std::string>::value, int>::type = 0>
-  void defineVar(std::string varname, T function,  const RDFDetail::ColumnNames_t &columns = {})
-  {
+  void defineVar(std::string varname, T function,  const RDFDetail::ColumnNames_t &columns = {}) {
     _rlm = _rlm.Define(varname, function, columns);
   };
 
@@ -86,17 +87,18 @@ public:
   void setTree(TTree *t, std::string outfilename);
   void setupTree();
 
-  bool _isSkim = false;
   bool _isHTstitching = false;
   std::string _outfilename;
   std::string _ch;
   std::string _syst;
 
-private:
+
+protected:
   ROOT::RDataFrame _rd;
   bool _isData;
   bool _jsonOK;
   std::string _year;
+  bool _isSkim = false;
   bool _isMuonCh = true;
   bool _isRun22 = false;
   bool _isRun22EE = false;
@@ -159,7 +161,6 @@ private:
   bool isDefined(string v);
 
   void setupJetMETCorrection(std::string globaltag, const std::vector<std::string> var = std::vector<std::string>(), const std::vector<std::string> var2 = std::vector<std::string>(), std::string jetalgo="AK4PFchs", bool dataMc=false);
-
 };
 
 #endif /* NANOAODANALYZERRDFRAME_H_ */

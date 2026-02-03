@@ -38,6 +38,20 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
 
 }
 
+void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
+    calculateSF();
+    if (_isMuonCh){
+        selectElectrons();
+    } else {
+        selectMuons();
+    }
+    selectTaus();
+    selectJets(jes_var, jes_var_flav);
+    if (!_isData){
+        topPtReweight();
+    }
+}
+
 // Define your cuts here
 void TopLFVAnalyzer::defineCuts() {
 
