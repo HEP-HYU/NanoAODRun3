@@ -30,30 +30,30 @@ echo "haha"
 
 if [ "$#" -eq 8 ]; then
     if [[ "$indir" == *".root"* ]]; then
-        echo "python processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log"
-        python processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log
+        echo "python scripts/processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log"
+        python scripts/processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log
     else
-        echo "python processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log"
-        python processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log
+        echo "python scripts/processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log"
+        python scripts/processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log
     fi
 fi
 #FF for channel selction
 if [ "$#" -eq 9 ]; then
     if [[ "$mode" == "--ff" ]]; then #FF application
         if [[ "$indir" == *".root"* ]]; then
-            echo "python processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
-            python processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
+            echo "python scripts/processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
+            python scripts/processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
         else
-            echo "python processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
-            python processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
+            echo "python scripts/processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
+            python scripts/processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
         fi
     else
         if [[ "$indir" == *".root"* ]]; then
-            echo "python processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
-            python processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
+            echo "python scripts/processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
+            python scripts/processonefile.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
         else
-            echo "python processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
-            python processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
+            echo "python scripts/processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log"
+            python scripts/processonedataset.py -Y $year -C ${ch} -S ${syst} -I $indir -O ${outpath}/${outfile} -M ${mode} 2>&1 | tee ${logdir}/${outfile%%root}log
         fi
     fi
 fi
