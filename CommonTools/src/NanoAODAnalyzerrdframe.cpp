@@ -133,6 +133,7 @@ void NanoAODAnalyzerrdframe::applyWeights(){
     _rlm = _rlm.Define("lhereweight","one");
     _rlm = _rlm.Define("unitGenWeight", "one");
 
+    _rlm = _rlm.Define("isData", "true");
     if(!_isData){
         _rlm = _rlm.Redefine("isData", "false");
 
@@ -223,6 +224,7 @@ void NanoAODAnalyzerrdframe::applyWeights(){
 }
 
 void NanoAODAnalyzerrdframe::defineObjectSelection(std::vector<std::string> jes_var){
+    applyWeights();
     JetVetoMap();
     if (_isMuonCh){
         selectMuons();
@@ -245,16 +247,12 @@ void NanoAODAnalyzerrdframe::setupAnalysis() {
                .Define("zero", "0.0");
 
     // Event weight for data it's always one. For MC, it depends on the sign
-    applyWeights();
 
     std::vector<std::string> jes_var;
 
     defineObjectSelection(jes_var);
     // Object selection will be defined in sequence.
     // Selected objects will be stored in new vectors.
-    if (_isRun24){
-        _rlm = _rlm.Define("puWeight", "std::vector<double>{1.0, 1.0, 1.0}");
-    }
     defineMoreVars();
     defineCuts();
     bookHists();

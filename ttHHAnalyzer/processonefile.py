@@ -68,7 +68,7 @@ if __name__=='__main__':
     if len(mode) > 1:
         aproc = ROOT.TauFakeFactorAnalyzer(t, outputroot, year, ch, syst, json, "", 1, mode)
     else:
-        aproc = ROOT.TopLFVAnalyzer(t, outputroot, year, ch, syst, json, applytauFF, "", 1)
+        aproc = ROOT.ttHHAnalyzer(t, outputroot, year, ch, syst, json, applytauFF, "", 1)
     aproc.setupAnalysis()
     aproc.run(False, "Events")
 
