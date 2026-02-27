@@ -12,6 +12,9 @@
 TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads)
 :NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads), _outfilename(outfilename), _syst(syst), _year(year), _ch(ch), _applytauFF(applytauFF)
 {
+
+    cout << "<< Start Process NanoAOD >>" << endl;
+
     if(syst.find("jes") != std::string::npos or syst.find("jer") != std::string::npos or syst.find("metUnclust") != std::string::npos or
             syst.find("tes") != std::string::npos or syst.find("hdamp") != std::string::npos or syst.find("tune") != std::string::npos or
             syst.find("muonhighscale") != std::string::npos) {
@@ -35,18 +38,61 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
         cout << "electron channel" << endl;
         _isMuonCh = false;
     }
-
 }
 
 void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
-    calculateSF();
-    if (_isMuonCh){
-        selectElectrons();
-    } else {
-        selectMuons();
+    std::string cut  = "onlyveto";
+    std::string vetomuon = "Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
+    std::string vetoelec = "Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
+    std::string muonid = "NUM_TightID_DEN_TrackerMuons";
+    std::string muoniso = "NUM_TightPFIso_DEN_TightID";
+    std::string muonhlt = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight";
+    std::string jetcut = "Jet_pt>40.0 && abs(Jet_eta)<2.4 && Jet_passJetIdTightLepVeto && Jet_muEF < 0.8 && Jet_chEmEF < 0.8";
+    std::string taucut = "Tau_pt>30.0 && abs(Tau_eta)<2.5  && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6";
+
+    std::string elecFile = _year;
+    std::string elecYear = "";
+    if (_isRun22) {
+        elecFile = "2022_Summer22";
+        elecYear = "2022Re-recoBCD";
+    } else if (_isRun22EE) {
+        elecFile = "2022_Summer22EE";
+        elecYear = "2022Re-recoE+PromptFG";
+    } else if (_isRun23) {
+        elecFile = "2023_Summer23";
+        elecYear = "2023PromptC";
+    } else if (_isRun23BPix) {
+        elecFile = "2023_Summer23BPix";
+        elecYear = "2023PromptD";
+    } else if (_isRun24){
+        // TODO
+        elecFile = "2024_Summer24";
+        elecYear = "2024Prompt";
     }
-    selectTaus();
-    selectJets(jes_var, jes_var_flav);
+
+    std::string tauYear = "";
+    if (_isRun22) {
+        tauYear = "2022_preEE";
+    } else if (_isRun22EE) {
+        tauYear = "2022_postEE";
+    } else if (_isRun23) {
+        tauYear = "2023_preBPix";
+    } else if (_isRun23BPix) {
+        tauYear = "2023_postBPix";
+    } else if (_isRun24){
+        //TODO
+        tauYear = "2023_postBPix";
+    }
+
+    if (_isMuonCh){
+        calculateMuonSF(muonid, muoniso, muonhlt);
+        selectElectrons(cut, vetoelec);
+    } else {
+        calculateElectronSF(elecFile, elecYear);
+        selectMuons(cut, vetomuon);
+    }
+    selectTaus(taucut, tauYear);
+    selectJets(jes_var, jes_var_flav, jetcut);
     if (!_isData){
         topPtReweight();
     }

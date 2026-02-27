@@ -12,6 +12,7 @@ SkimEvents::SkimEvents(TTree *t, std::string outfilename, std::string year, std:
 :NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads),_year(year),_ch(ch),_syst(syst)
 {
   _isSkim = true;
+  cout << "<< Start Skim NanoAOD >>" << endl;
   _isHTstitching = false;
   if (_outfilename.find("WtoLNu-4Jets") != string::npos) {
       _isHTstitching = true;
@@ -19,36 +20,62 @@ SkimEvents::SkimEvents(TTree *t, std::string outfilename, std::string year, std:
 }
 
 void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
-    JetVetoMap();
+    std::string pileFile = "";
+    std::string pileMap = "";
+    std::string jetFile = "";
+    std::string jetMap = "";
+    std::string tauYear = "";
+    if (_isRun22) {
+        pileFile = "2022_Summer22";
+        pileMap = "Collisions2022_355100_357900_eraBCD_GoldenJson";
+        jetFile = "2022_Summer22";
+        jetMap = "Summer22_23Sep2023_RunCD_V1";
+        tauYear = "2022_preEE";
+    } else if (_isRun22EE) {
+        pileFile = "2022_Summer22EE";
+        pileMap = "Collisions2022_359022_362760_eraEFG_GoldenJson";
+        jetFile = "2022_Summer22EE";
+        jetMap = "Summer22EE_23Sep2023_RunEFG_V1";
+        tauYear = "2022_postEE";
+    } else if (_isRun23) {
+        pileFile = "2023_Summer23";
+        pileMap = "Collisions2023_366403_369802_eraBC_GoldenJson";
+        jetFile = "2023_Summer23";
+        jetMap = "Summer23Prompt23_RunC_V1";
+        tauYear = "2023_preBPix";
+    } else if (_isRun23BPix) {
+        pileFile = "2023_Summer23BPix";
+        pileMap = "Collisions2023_369803_370790_eraD_GoldenJson";
+        jetFile = "2023_Summer23BPix";
+        jetMap = "Summer23BPixPrompt23_RunD_V1";
+        tauYear = "2023_postBPix";
+    } else if (_isRun24) {
+        //TODO
+        pileFile = "2023_Summer23BPix";
+        pileMap = "Collisions2023_369803_370790_eraD_GoldenJson";
+        jetFile = "2023_Summer23BPix";
+        jetMap = "Summer23BPixPrompt23_RunD_V1";
+        tauYear = "2023_postBPix";
+    }
+
+    std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
+    std::string vetomuon = "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
+    std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && Electron_mvaIso_WP90";
+    std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
+    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.6 && Jet_passJetIdTightLepVeto && Jet_muEF<0.8 && Jet_chEmEF<0.8";
+    applyWeights(pileFile, pileMap);
+    JetVetoMap(jetFile, jetMap);
     if (_isMuonCh){
-        selectMuons();
+        selectMuons(muoncut, vetomuon);
     } else {
-        selectElectrons();
+        selectElectrons(eleccut, vetoelec);
     }
     setupJetMETCorrection(_globaltag, jes_var, jes_var_flav, "AK4PFPuppi", _isData);
-    skimJets();
+    skimJets(skimjet);
     if (!_isData){
-        calculateEvWeight();
+        calculateEvWeight(tauYear);
     //    applyBSFs(jes_var);
     }
-}
-
-void SkimEvents::selectMuons() {
-    cout<<"selectMuons muon channel vetomuoncuts"<<endl;
-    _rlm = _rlm.Define("muoncuts", "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15");
-    _rlm = _rlm.Define("vetomuoncuts", "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25");
-
-    _rlm = _rlm.Define("nvetomuons","Sum(vetomuoncuts)")
-               .Redefine("Muon_pt", "Muon_pt[muoncuts]")
-               .Redefine("Muon_eta", "Muon_eta[muoncuts]")
-               .Redefine("Muon_phi", "Muon_phi[muoncuts]")
-               .Redefine("Muon_mass", "Muon_mass[muoncuts]")
-               .Redefine("Muon_charge", "Muon_charge[muoncuts]")
-               .Redefine("Muon_looseId", "Muon_looseId[muoncuts]")
-               .Redefine("Muon_pfRelIso04_all", "Muon_pfRelIso04_all[muoncuts]")
-               .Define("Sel_muonidx", ::good_idx, {"muoncuts"})
-               .Define("nmuonpass", "int(Muon_pt.size())")
-               .Define("lep4vecs", ::gen4vec, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
 }
 
 // Define your cuts here

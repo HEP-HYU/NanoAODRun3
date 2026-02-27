@@ -49,19 +49,20 @@ public:
   // object selectors
   // RNode is in namespace ROOT::RDF
   bool readjson();
-  void JetVetoMap();
-  virtual void selectElectrons();
-  virtual void selectMuons();
-  virtual void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav);
-  virtual void skimJets();
+  void JetVetoMap(std::string jetFile, std::string map);
+  virtual void selectElectrons(std::string cut, std::string vetocut);
+  virtual void selectMuons(std::string cut, std::string vetocut);
+  virtual void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut);
+  virtual void skimJets(std::string cut);
   void applyBSFs(std::vector<string> jes_var);
-  void applyWeights();
-  virtual void selectTaus();
+  void applyWeights(std::string pileFile, std::string map);
+  virtual void selectTaus(std::string cut, std::string tauYear);
   //virtual void selectMET();
   virtual void selectFatJets();
   void matchGenReco();
-  void calculateEvWeight();
-  void calculateSF();
+  void calculateEvWeight(std::string tauYear);
+  void calculateMuonSF(std::string muonid, std::string muoniso, std::string muonhlt);
+  void calculateElectronSF(std::string elecFile, std::string elecYear);
   void storeEvWeight();
   void topPtReweight();
   virtual void defineMoreVars() = 0; // define higher-level variables from basic ones, you must implement this in your subclassed analysis code

@@ -18,7 +18,6 @@ class SkimEvents: public NanoAODAnalyzerrdframe
 		void defineCuts();
 		void defineMoreVars(); // define higher-level variables from
 		void bookHists();
-        void selectMuons() override;
         void defineObjectSelection(std::vector<std::string> jes_var) override;
         private:
                 std::string _year;
