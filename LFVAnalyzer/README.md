@@ -109,7 +109,7 @@ This script supports the following command line options:
 | Option |               | Argument     | Description                                                                                          |
 |--------|---------------|--------------|------------------------------------------------------------------------------------------------------|
 | `-V`   | `--version`   | *string*     | **Skim version.** Specify the folder name under `/data1/common/skimmed_NanoAOD/` to use for skimming. |
-| `-Y`   | `--year`      | *string*     | **Year of data.** Select one of: `v2022`, `v2023`, or `v2023_BPix`.                                   |
+| `-Y`   | `--year`      | *string*     | **Year of data.** Select one of: `v2022`, `v2023`, `v2023_BPix`, or `v15_2024`.                                   |
 | `-C`   | `--ch`        | *string*     | **Channel.** Choose the analysis channel: `muon` or `electron`. *(Default: muon)*                     |
 | `-D`   | `--dataset`   | *string(s)*  | **Dataset(s) to process.** Specify one or more dataset folder names (e.g., `TTTo2L2Nu`).              |
 | `-N`   | `--name`      | *string*     | **Output file name.** Process only a specific file (e.g., `280000_7316D0F0-4250-7D44-8244-921B41B9C092`). |
@@ -155,18 +155,18 @@ find log/*/*/* | xargs grep -l error | sed 's/.log//' | sed 's/log\/*202*\/.*\//
 find log/*/*/* | xargs grep ERROR | grep -v "SimpleJetCorrectionUncertainty" | sed 's/.log//' | sed 's/log\/*202*\/.*\///' > ~/resub
 
 #Submit for each year...
-cat ~/resub | xargs -i -l1 python scripts/skim.py -V skim_test -Y v2023_BPix -C muon -N 
+cat ~/resub | xargs -i -l1 python scripts/skim.py -V skim_test -Y v15_2024 -C muon -N 
 ```
 
 #### Processing
 `scripts/process.py` scripts can automatically run over all ROOT files in an input directory.
 ``` txt
-Usage: python scripts/process.py -V skim_test -O test -Y v2023_BPix -S theory
+Usage: python scripts/process.py -V skim_test -O test -Y v15_2024 -C muon -S nosyst
 
 Options:
-  -V, --version         Skim version: folder under /data1/common/skimmed_NanoAOD/
+  -V, --version         Skim version: folder under /data2/common/skimmed_NanoAOD/
   -O, --outdir          Output folder in your working directory
-  -Y YEAR, --year=YEAR  Select v2023_BPix
+  -Y YEAR, --year=YEAR  Select v15_2024
   -S SYST, --syst=SYST  Systematic: 'data' for Data, 'nosyst' for mc without uncertainties. Default is 'theory'. To run without theory unc for TT samples, put 'all'
   -D, --dataset         Put dataset folder name (eg. -D TTto2L2Nu,QCD_Pt1000_MuEnriched) to process specific dataset.
   -F, --dataOrMC        Flag to choose Data or MC.
