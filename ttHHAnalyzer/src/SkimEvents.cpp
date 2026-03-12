@@ -87,11 +87,7 @@ void SkimEvents::defineCuts()
 
 
   cout << "Skim cut" << endl;
-  if (_ch.find("muon") != std::string::npos) {
-      addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0","0"); 
-  } else if (_ch.find("electron") != std::string::npos) {
-      addCuts("(HLT_Ele30_WPTight_Gsf || HLT_Ele115_CaloIdVT_GsfTrkIdT || HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 || HLT_Photon200) && nelepass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0", "0");
-  }
+  addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass >= 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0","0"); 
 
   //Prescription to fill up WJets HT = 0-100
   //if (_isHTstitching)

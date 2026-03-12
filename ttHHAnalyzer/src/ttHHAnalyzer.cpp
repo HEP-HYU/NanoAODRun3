@@ -96,17 +96,13 @@ void ttHHAnalyzer::defineMoreVars() {
         addVar({"eventWeight_mu", "1"});
         addVar({"eventWeight_pumu", "1"});
         addVar({"eventWeight_elec", "1"});
-        addVar({"eventWeight_tau", "1.0"});
         addVar({"eventWeight_puelec", "1"});
-        addVar({"eventWeight_pumutau", "1"});
-        addVar({"eventWeight_puelectau", "1"});
         addVar({"eventWeight_all", "1"});
     } else {
         if (_syst == "" or _syst == "nosyst") { //TODO
             addVar({"eventWeight_genpu", "1.0"});
             addVar({"eventWeight_genpumu", "1.0"});
             addVar({"eventWeight_notau_nobtag", "1.0"}); //didn't want to duplicate entry...
-            addVar({"eventWeight_genputau", "1.0"});
             addVar({"eventWeight_nobtag", "1.0"});
             addVar({"eventWeight_nopu", "1.0"});
             addVar({"eventWeight_noprefire", "1.0"});
@@ -114,14 +110,8 @@ void ttHHAnalyzer::defineMoreVars() {
         } else {
             addVar({"eventWeight_genpu", "unitGenWeightFF * TopPtWeight[0] * puWeight[0] * L1PreFiringWeight_Nom"});
             addVar({"eventWeight_mu", "muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[0]"});
-            addVar({"eventWeight_tau", "tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight_genpumu", "eventWeight_genpu * eventWeight_mu"});
             addVar({"eventWeight_notau_nobtag", "eventWeight_genpumu"}); //didn't want to duplicate entry...
-            addVar({"eventWeight_genputau", "eventWeight_genpu * eventWeight_tau"});
-            addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_mu * eventWeight_tau"});
-            addVar({"eventWeight_nopu", "unitGenWeightFF * TopPtWeight[0] * L1PreFiringWeight_Nom * eventWeight_mu * eventWeight_tau * btagWeight_PNetB[0]"});
-            addVar({"eventWeight_noprefire", "unitGenWeightFF * TopPtWeight[0] * puWeight[0] * eventWeight_mu * eventWeight_tau * btagWeight_PNetB[0]"});
-            addVar({"eventWeight_notoppt", "unitGenWeightFF * puWeight[0] * L1PreFiringWeight_Nom * eventWeight_mu * eventWeight_tau * btagWeight_PNetB_jes[0]"});
         }
 
         if (_syst == "" or _syst == "nosyst" or ext_syst) {
@@ -131,18 +121,9 @@ void ttHHAnalyzer::defineMoreVars() {
                 addVar({"eventWeight_top", "TopPtWeight[0]"});
                 addVar({"eventWeight_notau", "eventWeight"});
                 addVar({"eventWeight_pu", "eventWeight * puWeight[0]"});
-                addVar({"eventWeight_tau", "tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-                if (_isMuonCh){
-                    addVar({"eventWeight_mu", "muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[0]"});
-                    addVar({"eventWeight_pumu", "eventWeight_pu * eventWeight_mu"});
-                    addVar({"eventWeight_pumutau", "eventWeight_pumu * eventWeight_tau"});
-                    addVar({"eventWeight_all", "eventWeight_pumu * eventWeight_tau * eventWeight_top"});
-                } else {
-                    addVar({"eventWeight_elec", "elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[0]"});
-                    addVar({"eventWeight_puelec", "eventWeight_pu * eventWeight_elec"});
-                    addVar({"eventWeight_puelectau", "eventWeight_puelec * eventWeight_tau"});
-                    addVar({"eventWeight_all", "eventWeight_puelec * eventWeight_tau * eventWeight_top"});
-                }
+                addVar({"eventWeight_mu", "muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[0]"});
+                addVar({"eventWeight_pumu", "eventWeight_pu * eventWeight_mu"});
+                addVar({"eventWeight_all", "eventWeight_pu * eventWeight_mu"});
             } else {
                 addVar({"eventWeight", "eventWeight_nobtag * btagWeight_PNetB[0]"});
                 addVar({"eventWeight_notau", "eventWeight_genpumu * btagWeight_PNetB[0]"});
@@ -183,12 +164,8 @@ void ttHHAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 
     std::vector<std::string> init_weight = {""};
-    std::vector<std::string> sf_weight = {"", "_pu", "_tau", "_all"};
-    if (_isMuonCh){
-        sf_weight = {"", "_pu", "_mu", "_pumu", "_pumutau", "_all"};
-    } else {
-        sf_weight = {"", "_pu", "_elec", "_puelec", "_puelectau", "_all"};
-    }
+    std::vector<std::string> sf_weight = {"", "_pu", "_all"};
+    sf_weight = {"", "_pu", "_mu", "_pumu", "_all"};
 
     std::vector<std::string> sf_weight_tau = {};
 
