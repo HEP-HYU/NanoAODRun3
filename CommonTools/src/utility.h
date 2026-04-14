@@ -67,6 +67,8 @@ struct cutinfo
 // generates vectors of 4 vectors given vectors of pt, eta, phi, mass
 FourVectorVec gen4vec(floats &pt, floats &eta, floats &phi, floats &mass);
 
+FourVectorVec gen4vec_withidx(floats &pt, floats &eta, floats &phi, floats &mass, int idx);
+
 FourVectorVec genmet4vec(float met_pt, float met_phi);
 
 // return a vector size equal to length of x all filled with evWeight value
@@ -108,13 +110,17 @@ ints find_element(ints vec, int a);
 
 ints find_element_binary( ints vec, int a);
 
-ints LastGenPart_idx( int target_id, ints GenPart_pdgId, ints GenPart_genPartIdxMother);
+ints LastGenPart_idx( int target_id, ints GenPart_pdgId, shorts GenPart_genPartIdxMother);
 
-int lastgenpart_idx(int target_i, ints GenPart_pdgId, ints GenPart_genPartIdxMother);
+int lastgenpart_idx(int target_i, ints GenPart_pdgId, shorts GenPart_genPartIdxMother);
 
-ints FinalGenPart_idx_elec( ints GenPart_pdgId, ints GenPart_genPartIdxMother);
+int firstgenpart_idx(int target_i, ints GenPart_pdgId, shorts GenPart_genPartIdxMother);
 
-ints FinalGenPart_idx( ints GenPart_pdgId, ints GenPart_genPartIdxMother);
+ints FinalGenPart_idx_elec( ints GenPart_pdgId, shorts GenPart_genPartIdxMother);
+
+ints FinalGenPart_idx( ints GenPart_pdgId, shorts GenPart_genPartIdxMother);
+
+int dRmatching( int origin_i,float maxdR,  floats origin_pt, floats origin_eta, floats origin_phi, floats origin_mass, floats target_pt, floats target_eta, floats target_phi, floats target_mass);
 
 ints dRmatching_binary( int origin_i,float maxdR,  floats origin_pt, floats origin_eta, floats origin_phi, floats origin_mass, floats target_pt, floats target_eta, floats target_phi, floats target_mass);
 

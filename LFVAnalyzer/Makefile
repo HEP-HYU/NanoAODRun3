@@ -30,6 +30,7 @@ OBJS := $(OBJS_SRC) $(OBJS_COMMON) \
         $(COMMONDIR)/rootdict.o
 
 LIBS_EXE = $(rootlibs) -lMathMore -lGenVector -L$(corliblib) -lcorrectionlib
+#LIBS_EXE = $(rootlibs) -lMathMore -lGenVector $(corlibflag)
 LIBS = $(rootlibs)
 
 TARGET =	nanoaodrdataframe
@@ -47,7 +48,7 @@ $(COMMONDIR)/rootdict.C: $(COMMONDIR)/NanoAODAnalyzerrdframe.h $(SRCDIR)/TopLFVA
 
 	
 libnanoadrdframe.so: $(OBJS)
-	$(LD) $(SOFLAGS) $(LIBS_EXE) -D_GLIBCXX_USE_CXX11_ABI=0 -o $@ $^
+	$(LD) $(SOFLAGS) $(LIBS_EXE) -D_GLIBCXX_USE_CXX11_ABI=1 -o $@ $^
 
 
 $(COMMONDIR)/JetMETObjects_dict.C: $(COMMONDIR)/JetCorrectorParameters.h $(COMMONDIR)/SimpleJetCorrector.h $(COMMONDIR)/FactorizedJetCorrector.h $(COMMONDIR)/JetResolutionObject.h $(COMMONDIR)/LinkdefJetmet.h

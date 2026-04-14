@@ -54,13 +54,13 @@ public:
   virtual void selectMuons(std::string cut, std::string vetocut);
   virtual void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut);
   virtual void skimJets(std::string cut);
-  void applyBSFs(std::vector<string> jes_var);
+  void applyBSFs(std::vector<string> jes_var, std::string btagYear, std::string btagMap);
   void applyWeights(std::string pileFile, std::string map);
   virtual void selectTaus(std::string cut, std::string tauYear);
   //virtual void selectMET();
   virtual void selectFatJets();
   void matchGenReco();
-  void calculateEvWeight(std::string tauYear);
+  void calculateTauES(std::string tauYear, std::string tauid_vsjet, std::string tauid_vsmu, std::string tauid_vse);
   void calculateMuonSF(std::string muonid, std::string muoniso, std::string muonhlt);
   void calculateElectronSF(std::string elecFile, std::string elecYear);
   void storeEvWeight();
@@ -106,6 +106,7 @@ protected:
   bool _isRun23 = false;
   bool _isRun23BPix = false;
   bool _isRun24 = false;
+  bool _isSignal = false;
   // you MUST copy syst names from the output of 'python skimcsv.py'
   inline static std::vector<std::string> btag_var = {"central",
                 "hfup", "hfdown", "lfup", "lfdown", "hfstats1up", "hfstats1down",
@@ -161,7 +162,7 @@ protected:
   RNodeTree *currentnode;
   bool isDefined(string v);
 
-  void setupJetMETCorrection(std::string globaltag, const std::vector<std::string> var = std::vector<std::string>(), const std::vector<std::string> var2 = std::vector<std::string>(), std::string jetalgo="AK4PFchs", bool dataMc=false);
+  void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, bool dataMc=false);
 };
 
 #endif /* NANOAODANALYZERRDFRAME_H_ */

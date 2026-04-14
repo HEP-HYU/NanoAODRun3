@@ -11,7 +11,7 @@ This script applies nanoaod processing to one file
 import sys
 import cppyy
 import ROOT
-from ROOT import *
+#from ROOT import *
 
 if __name__=='__main__':
     from optparse import OptionParser
@@ -27,13 +27,6 @@ if __name__=='__main__':
     (options, args) = parser.parse_args()
 
 
-    #if "Run2016" in options.infile:
-    #    options.json = "data/GoldenJSON/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"
-    #elif "Run2017" in options.infile:
-    #    options.json = "data/GoldenJSON/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"
-    #elif "Run2018" in options.infile:
-    #    options.json = "data/GoldenJSON/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"
-
     if any(i in options.infile for i in ["Run2016B", "Run2016C", "Run2016D"]):
         options.globaltag = "Summer19UL16APV_RunBCD_V7"
     elif any(i in options.infile for i in ["Run2016E", "Run2016F"]) and options.year == "2016pre":
@@ -44,19 +37,33 @@ if __name__=='__main__':
         era = options.infile[options.infile.find("Run" + options.year)+7]
         options.globaltag = "Summer19UL" + options.year[2:] + "_Run" + era + "_V5"
     elif any(i in options.infile for i in ["Run2022C","Run2022D"]):
-        options.globaltag = "Summer22_22Sep2023_RunCD_V2"
+        options.globaltag = "Summer22_22Sep2023_RunCD"
     elif any(i in options.infile for i in ["Run2022E"]):
-        options.globaltag = "Summer22EE_22Sep2023_RunE_V2"
+        options.globaltag = "Summer22EE_22Sep2023_RunE"
     elif any(i in options.infile for i in ["Run2022F"]):
-        options.globaltag = "Summer22EE_22Sep2023_RunF_V2"
+        options.globaltag = "Summer22EE_22Sep2023_RunF"
     elif any(i in options.infile for i in ["Run2022G"]):
-        options.globaltag = "Summer22EE_22Sep2023_RunG_V2"
+        options.globaltag = "Summer22EE_22Sep2023_RunG"
     elif any(i in options.infile for i in ["Run2023C"]):
-        options.globaltag = "Summer23Prompt23_RunCv4_V1"
+        options.globaltag = "Summer23Prompt23_RunCv4"
     elif any(i in options.infile for i in ["Run2023D"]):
-        options.globaltag = "Summer23BPixPrompt23_RunD_V1"
-    elif any(i in options.infile for i in ["Run2024"]):
-        options.globaltag = "Summer23BPixPrompt23_RunD_V1"
+        options.globaltag = "Summer23BPixPrompt23_RunD"
+    elif any(i in options.infile for i in ["Run2024C", "Run2024D", "Run2024E", "Run2024F", "Run2024G", "Run2024H", "Run2024I"]):
+        options.globaltag = "Summer24Prompt24"
+    #elif any(i in options.infile for i in ["Run2024C"]):
+    #    options.globaltag = "Summer24Prompt24_RunCnib1"
+    #elif any(i in options.infile for i in ["Run2024D"]):
+    #    options.globaltag = "Summer24Prompt24_RunDnib1"
+    #elif any(i in options.infile for i in ["Run2024E"]):
+    #    options.globaltag = "Summer24Prompt24_RunEnib1"
+    #elif any(i in options.infile for i in ["Run2024F"]):
+    #    options.globaltag = "Summer24Prompt24_RunFnib1"
+    #elif any(i in options.infile for i in ["Run2024G"]):
+    #    options.globaltag = "Summer24Prompt24_RunGnib1"
+    #elif any(i in options.infile for i in ["Run2024H"]):
+    #    options.globaltag = "Summer24Prompt24_RunHnib1"
+    #elif any(i in options.infile for i in ["Run2024I"]):
+    #    options.globaltag = "Summer24Prompt24_RunInib1"
 
     elif "UL16NanoAODAPVv" in options.infile:
         options.globaltag = "Summer19UL16APV_V7"
@@ -73,7 +80,7 @@ if __name__=='__main__':
     elif "Run3Summer23NanoAODv" in options.infile:
         options.globaltag = "Summer23Prompt23_V1"
     elif "Run3Summer23BPixNanoAODv" in options.infile:
-        options.globaltag = "Summer23Prompt23_V1"
+        options.globaltag = "Summer23BPixPrompt23_V1"
     elif "Run3Summer24NanoAODv" in options.infile:
         options.globaltag = "Summer23BPixPrompt23_V1"
 

@@ -27,6 +27,19 @@ FourVectorVec gen4vec(floats &pt, floats &eta, floats &phi, floats &mass)
 	return fourvecs;
 }
 
+FourVectorVec gen4vec_withidx(floats &pt, floats &eta, floats &phi, floats &mass, int idx)
+{
+    FourVectorVec fourvecs;
+    fourvecs.reserve(1);
+    if (idx == -1){
+        //std::cout << "gen4vec with idx -1" << std::endl;
+        fourvecs.emplace_back(-9999, -9999, -9999, -9999);
+        return fourvecs;
+    }
+    fourvecs.emplace_back(pt[idx], eta[idx], phi[idx], fabs(mass[idx]));
+    return fourvecs;
+}
+
 FourVectorVec genmet4vec(float met_pt, float met_phi)
 {
         FourVectorVec vecs;
@@ -357,7 +370,7 @@ ints find_element_binary( ints vec, int a){
 }
 
 /////Find last genparticle using pdgid/////(i : idx, id : pdgId, t : target, d: daughter)
-ints LastGenPart_idx( int target_id, ints GenPart_pdgId, ints GenPart_genPartIdxMother){
+ints LastGenPart_idx( int target_id, ints GenPart_pdgId, shorts GenPart_genPartIdxMother){
     ints out;
     for( int idx = 0 ; idx < int(GenPart_pdgId.size()); idx++){
         int p_id = GenPart_pdgId[idx];
@@ -376,7 +389,7 @@ ints LastGenPart_idx( int target_id, ints GenPart_pdgId, ints GenPart_genPartIdx
 
 
 /////Find last genparticle using idx/////
-int lastgenpart_idx(int target_i, ints GenPart_pdgId, ints GenPart_genPartIdxMother){
+int lastgenpart_idx(int target_i, ints GenPart_pdgId, shorts GenPart_genPartIdxMother){
     int out;
     int target_id = GenPart_pdgId[target_i];
 
@@ -401,12 +414,33 @@ int lastgenpart_idx(int target_i, ints GenPart_pdgId, ints GenPart_genPartIdxMot
     return out;
 }
 
-ints FinalGenPart_idx_elec( ints GenPart_pdgId, ints GenPart_genPartIdxMother ){
+/////Find first genparticle using idx/////
+int firstgenpart_idx(int target_i, ints GenPart_pdgId, shorts GenPart_genPartIdxMother){
+    int target_id = GenPart_pdgId[target_i];
+
+    int ttemp_i = target_i;
+    bool isFirst = false;
+    while(!isFirst && ttemp_i != -1){
+        int mtemp_i = GenPart_genPartIdxMother[ttemp_i];
+        if ( (mtemp_i != -1) && (GenPart_pdgId[mtemp_i] == target_id) ){
+            //std::cout << " firstgenpart idx target idx " << target_i << " id " << target_id << " mtemp_idx " << mtemp_i << " mtemp_id " << GenPart_pdgId[mtemp_i] << std::endl;
+            ttemp_i = mtemp_i;
+        } else {
+            return ttemp_i;
+        }
+    }
+    return ttemp_i;
+}
+
+
+ints FinalGenPart_idx_elec( ints GenPart_pdgId, shorts GenPart_genPartIdxMother ){
     ints out;
-    int LFVtop_idx = -1, SMtop_idx=-1;
+    int LFVtop_idx = -1, SMtop_idx=-1, d_top=-1;
     int up_idx = -1, muon_idx = -1, tau_idx = -1;
     int b_idx = -1, W_idx = -1;
+    int d_b_idx = -1, d_W_idx = -1;
     int Wq1_idx=-1, Wq2_idx=-1;
+    int d_Wq1_idx=-1, d_Wq2_idx=-1;
     ints Wds_i;
     ints LastTop_idx = LastGenPart_idx(6, GenPart_pdgId, GenPart_genPartIdxMother);
     for( int i : LastTop_idx ){
@@ -424,13 +458,24 @@ ints FinalGenPart_idx_elec( ints GenPart_pdgId, ints GenPart_genPartIdxMother ){
                 tau_idx = lastgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
             }
             if(abs(d_id)==5){
+                d_b_idx = firstgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 b_idx = lastgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 SMtop_idx=i;
+                d_top = firstgenpart_idx(SMtop_idx, GenPart_pdgId, GenPart_genPartIdxMother);
             }
             if(abs(d_id)==24){
+                d_W_idx = firstgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 W_idx = lastgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 Wds_i = find_element(GenPart_genPartIdxMother, W_idx);
                 if( Wds_i.size() !=2 ) break;
+                if (abs(GenPart_pdgId[Wds_i[0]])>8) {
+                    std::cout << "GenPart_pdgId[Wds_i[0]] " << GenPart_pdgId[Wds_i[0]] << std::endl;
+                    std::cout << "GenPart_pdgId[Wds_i[1]] " << GenPart_pdgId[Wds_i[1]] << std::endl;
+                    std::cout << "Wds_i size " << Wds_i.size() << std::endl;
+                    break;
+                }
+                d_Wq1_idx = firstgenpart_idx(Wds_i[0], GenPart_pdgId, GenPart_genPartIdxMother);
+                d_Wq2_idx = firstgenpart_idx(Wds_i[1], GenPart_pdgId, GenPart_genPartIdxMother);
                 Wq1_idx = lastgenpart_idx(Wds_i[0], GenPart_pdgId, GenPart_genPartIdxMother);
                 Wq2_idx = lastgenpart_idx(Wds_i[1], GenPart_pdgId, GenPart_genPartIdxMother);
             }
@@ -444,16 +489,23 @@ ints FinalGenPart_idx_elec( ints GenPart_pdgId, ints GenPart_genPartIdxMother ){
     out.emplace_back(Wq2_idx);
     out.emplace_back(LFVtop_idx);
     out.emplace_back(SMtop_idx);
+    out.emplace_back(d_b_idx);
+    out.emplace_back(d_W_idx);
+    out.emplace_back(d_Wq1_idx);
+    out.emplace_back(d_Wq2_idx);
+    out.emplace_back(d_top);
 
     return out;
 }
 
-ints FinalGenPart_idx( ints GenPart_pdgId, ints GenPart_genPartIdxMother ){
+ints FinalGenPart_idx( ints GenPart_pdgId, shorts GenPart_genPartIdxMother ){
     ints out;
-    int LFVtop_idx = -1, SMtop_idx=-1;
+    int LFVtop_idx = -1, SMtop_idx=-1, d_top=-1;
     int up_idx = -1, muon_idx = -1, tau_idx = -1;
     int b_idx = -1, W_idx = -1;
+    int d_b_idx = -1, d_W_idx = -1;
     int Wq1_idx=-1, Wq2_idx=-1;
+    int d_Wq1_idx=-1, d_Wq2_idx=-1;
     ints Wds_i;
     ints LastTop_idx = LastGenPart_idx(6, GenPart_pdgId, GenPart_genPartIdxMother);
     for( int i : LastTop_idx ){
@@ -471,13 +523,24 @@ ints FinalGenPart_idx( ints GenPart_pdgId, ints GenPart_genPartIdxMother ){
                 tau_idx = lastgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
             }
             if(abs(d_id)==5){
+                d_b_idx = firstgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 b_idx = lastgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 SMtop_idx=i;
+                d_top = firstgenpart_idx(SMtop_idx, GenPart_pdgId, GenPart_genPartIdxMother);
             }
             if(abs(d_id)==24){
+                d_W_idx = firstgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 W_idx = lastgenpart_idx(d_idx, GenPart_pdgId, GenPart_genPartIdxMother);
                 Wds_i = find_element(GenPart_genPartIdxMother, W_idx);
                 if( Wds_i.size() !=2 ) break;
+                if (abs(GenPart_pdgId[Wds_i[0]])>8) {
+                    std::cout << "GenPart_pdgId[Wds_i[0]] " << GenPart_pdgId[Wds_i[0]] << std::endl;
+                    std::cout << "GenPart_pdgId[Wds_i[1]] " << GenPart_pdgId[Wds_i[1]] << std::endl;
+                    std::cout << "Wds_i size " << Wds_i.size() << std::endl;
+                    break;
+                }
+                d_Wq1_idx = firstgenpart_idx(Wds_i[0], GenPart_pdgId, GenPart_genPartIdxMother);
+                d_Wq2_idx = firstgenpart_idx(Wds_i[1], GenPart_pdgId, GenPart_genPartIdxMother);
                 Wq1_idx = lastgenpart_idx(Wds_i[0], GenPart_pdgId, GenPart_genPartIdxMother);
                 Wq2_idx = lastgenpart_idx(Wds_i[1], GenPart_pdgId, GenPart_genPartIdxMother);
             }
@@ -491,8 +554,31 @@ ints FinalGenPart_idx( ints GenPart_pdgId, ints GenPart_genPartIdxMother ){
     out.emplace_back(Wq2_idx);
     out.emplace_back(LFVtop_idx);
     out.emplace_back(SMtop_idx);
+    out.emplace_back(d_b_idx);
+    out.emplace_back(d_W_idx);
+    out.emplace_back(d_Wq1_idx);
+    out.emplace_back(d_Wq2_idx);
+    out.emplace_back(d_top);
 
     return out;
+}
+
+int dRmatching( int origin_i,float maxdR,  floats origin_pt, floats origin_eta, floats origin_phi, floats origin_mass, floats target_pt, floats target_eta, floats target_phi, floats target_mass){
+    FourVectorVec origin, target;
+    int target_i = -1;
+    float tempdR = 1, dR = maxdR;
+
+    origin = gen4vec(origin_pt, origin_eta, origin_phi, origin_mass);
+    target = gen4vec(target_pt, target_eta, target_phi, target_mass);
+
+    for(int i=0; i<int(target.size()) && origin_i != -1; i++){
+        tempdR = ROOT::Math::VectorUtil::DeltaR(origin[origin_i],target[i]);
+        if( tempdR < dR ){
+            target_i = i;
+            dR = tempdR;
+        }
+    }
+    return target_i;
 }
 
 
