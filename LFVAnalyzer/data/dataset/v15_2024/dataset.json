@@ -602,9 +602,30 @@
         "xsec": 0.5742
     },
     {
+        "DataSetName": "/WtoLNu-2Jets_Bin-PTLNu-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM",
+        "name": "WtoLNu-2Jets-PTLNu100",
+        "nevt": 194059630,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/WtoLNu-2Jets_Bin-PTLNu-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v1/NANOAODSIM",
+        "name": "WtoLNu-2Jets-PTLNu200",
+        "nevt": 324115048,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/WtoLNu-2Jets_Bin-PTLNu-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "WtoLNu-2Jets-PTLNu400",
+        "nevt": 171972818,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
         "DataSetName": "/WtoLNu-2Jets_Bin-PTLNu-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v1/NANOAODSIM",
-        "name": "WtoLNu-2Jets",
-        "nevt": 0,
+        "name": "WtoLNu-2Jets-PTLNu600",
+        "nevt": 107529966,
         "path": "",
         "xsec": 0.0
     },
@@ -840,51 +861,86 @@
         "xsec": 1.323
     },
     {
-        "DataSetName": "",
-        "name": "QCD_Pt10To30_EMEnriched",
-        "nevt": 0,
+        "DataSetName": "/QCD_Bin-PT-15to20_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "QCD_Pt15To20_EMEnriched",
+        "nevt": 31078562,
         "path": "",
         "xsec": 0.0
     },
     {
-        "DataSetName": "",
+        "DataSetName": "/QCD_Bin-PT-20to30_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "QCD_Pt20To30_EMEnriched",
+        "nevt": 27305022,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-30to50_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
         "name": "QCD_Pt30To50_EMEnriched",
-        "nevt": 0,
+        "nevt": 29008060,
         "path": "",
         "xsec": 0.0
     },
     {
-        "DataSetName": "",
+        "DataSetName": "/QCD_Bin-PT-50to80_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
         "name": "QCD_Pt50To80_EMEnriched",
-        "nevt": 0,
+        "nevt": 29059468,
         "path": "",
         "xsec": 0.0
     },
     {
-        "DataSetName": "",
+        "DataSetName": "/QCD_Bin-PT-80to120_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
         "name": "QCD_Pt80To120_EMEnriched",
-        "nevt": 0,
+        "nevt": 29437751,
         "path": "",
         "xsec": 0.0
     },
     {
-        "DataSetName": "",
+        "DataSetName": "/QCD_Bin-PT-120to170_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
         "name": "QCD_Pt120To170_EMEnriched",
-        "nevt": 0,
+        "nevt": 27584498,
         "path": "",
         "xsec": 0.0
     },
     {
-        "DataSetName": "",
+        "DataSetName": "/QCD_Bin-PT-170to300_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
         "name": "QCD_Pt170To300_EMEnriched",
-        "nevt": 0,
+        "nevt": 29515968,
         "path": "",
         "xsec": 0.0
     },
     {
-        "DataSetName": "",
-        "name": "QCD_Pt300_EMEnriched",
-        "nevt": 0,
+        "DataSetName": "/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "QCD_Pt300To470_EMEnriched",
+        "nevt": 30174212,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-470to600_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "QCD_Pt470To600_EMEnriched",
+        "nevt": 34732273,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-600to800_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "QCD_Pt600To800_EMEnriched",
+        "nevt": 32404726,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-800to1000_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "QCD_Pt470To600_EMEnriched",
+        "nevt": 32040195,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/QCD_Bin-PT-1000_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
+        "name": "QCD_Pt470To600_EMEnriched",
+        "nevt": 22920551,
         "path": "",
         "xsec": 0.0
     }
