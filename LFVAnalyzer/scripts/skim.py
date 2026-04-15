@@ -30,8 +30,10 @@ for fn in os.listdir("data/dataset/" + year):
     fname = fn.replace('dataset_', '').replace('.txt', '')
     if "muon" in fname.lower() and "mu" not in ch: continue
     if "egamma" in fname.lower() and "ele" not in ch: continue
-    if "QCD" in fname and "EM" in fname and "ele" not in ch: continue
     if "QCD" in fname and "Mu" in fname and "mu" not in ch: continue
+    if "QCD" in fname and "EM" in fname and "ele" not in ch: continue
+    if "MuTau-LFV" in fname and "mu" not in ch: continue
+    if "ETau-LFV" in fname and "ele" not in ch: continue
     test_list = options.dataset
     if len(test_list) > 0:
         if not any(i in fname for i in test_list): continue

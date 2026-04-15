@@ -20,7 +20,7 @@ workdir = os.getcwd()
 indir = os.path.join('/data2/common/skimmed_NanoAOD/', options.version, ch)
 tgdir = os.path.join(workdir, options.outdir, ch, year)
 logdir = os.path.join(workdir, options.outdir, ch, year, 'log')
-splitList = ["TTto4Q",
+splitList = [#"TTto4Q",
 #splitList = ["TTto2L2Nu", "TTtoLNu2Q", "TTto4Q",
              #"ST_LFV_TCMuTau_Scalar", "ST_LFV_TCMuTau_Vector", "ST_LFV_TCMuTau_Tensor",
              #"ST_LFV_TUMuTau_Scalar", "ST_LFV_TUMuTau_Vector", "ST_LFV_TUMuTau_Tensor",
