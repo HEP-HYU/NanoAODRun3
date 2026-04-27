@@ -9,6 +9,7 @@ parser.add_argument("-C", "--ch",  dest="ch", type=str, default="", help="Select
 parser.add_argument("-S", "--syst", dest="syst", type=str, default="theory", help="Systematic: 'data' for Data, 'nosyst' for mc without uncertainties. Default is 'theory'. To run without theory unc for TT samples, put 'all'.")
 parser.add_argument("-D", "--dataset", dest="dataset", action="store", nargs="+", default=[], help="Put dataset folder name (eg. TTTo2L2Nu) to process specific one.")
 parser.add_argument("-F", "--dataOrMC", dest="dataOrMC", type=str, default="", help="data or mc flag, if you want to process data-only or mc-only")
+parser.add_argument("--split", dest="split", action="store_true", default=False, help="split run")
 parser.add_argument("--dry", dest="dry", action="store_true", default=False, help="dryrun: not submitting jobs to slurm")
 parser.add_argument("-M", "--mode", dest="mode", type=str, default="", help="Only for fake rate: lss, los, tss, tos")
 parser.add_argument("--ff", dest="ff", action="store_true", default=False, help="Apply tau fake factor for final selection")
@@ -20,12 +21,10 @@ workdir = os.getcwd()
 indir = os.path.join('/data2/common/skimmed_NanoAOD/', options.version, ch)
 tgdir = os.path.join(workdir, options.outdir, ch, year)
 logdir = os.path.join(workdir, options.outdir, ch, year, 'log')
-splitList = [#"TTto4Q",
-#splitList = ["TTto2L2Nu", "TTtoLNu2Q", "TTto4Q",
-             #"ST_LFV_TCMuTau_Scalar", "ST_LFV_TCMuTau_Vector", "ST_LFV_TCMuTau_Tensor",
-             #"ST_LFV_TUMuTau_Scalar", "ST_LFV_TUMuTau_Vector", "ST_LFV_TUMuTau_Tensor",
-             #"TT_LFV_TCMuTau_Scalar", "TT_LFV_TCMuTau_Vector", "TT_LFV_TCMuTau_Tensor",
-             #"TT_LFV_TUMuTau_Scalar", "TT_LFV_TUMuTau_Vector", "TT_LFV_TUMuTau_Tensor",
+splitList = [#"Muon0-G",
+        "TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor",
+        "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Vector",
+        "TTto2L2Nu", "TTtoLNu2Q"
             ]
 
 os.makedirs(tgdir, exist_ok=True)
@@ -68,20 +67,21 @@ for ds in dataset_list:
     #if any(n in ds for n in ['QCD_']):
     #    continue
 
-    if len(options.mode) > 0 and any(n in ds for n in ['_LFV_']):
+    if len(options.mode) > 0 and any(n in ds for n in ['Tau-LFV-']):
         continue
 
     # will use data/signal in genuine folder
-    if 'fakeTau' in options.outdir and any(n in ds for n in ['_LFV_', 'SingleMuon', 'QCD_']):
+    if 'fakeTau' in options.outdir and any(n in ds for n in ['Tau-LFV-', 'SingleMuon', 'QCD_']):
         continue
     elif 'genuineTau' in options.outdir and any(n in ds for n in ['QCD_']):
         continue
 
     #Split TT2L2Nu and TTToSemilep into files
-    toSplit = False
-    if any(name_ in ds for name_ in splitList) and '__' not in ds and "2024" in year and "muon" in ch: toSplit = True
     rootfilestoprocess = []
     fullnamelist =[]
+    toSplit = False
+    if any(name_ in ds for name_ in splitList): toSplit = True
+    if options.split: toSplit = True
     if toSplit:
         #if '__' in ds: continue
         print("collecting root files in "+ds)
@@ -90,7 +90,7 @@ for ds in dataset_list:
             fullname = os.path.join(ds, fname)
             fullnamelist.append(fullname)
         for fname in fullnamelist:
-            if re.match('.*\.root', fname) and os.path.isfile(fname): # if it has .root file extension
+            if re.match(r'.*\.root', fname) and os.path.isfile(fname): # if it has .root file extension
                 rootfilestoprocess.append(fname)
 
     if len(options.dataset) > 0 and not any(i in ds for i in options.dataset): continue
@@ -111,7 +111,11 @@ for ds in dataset_list:
 
         if 'data' in ds[5:]:
             if src == "":
-                parameters.append([year, ch, ds, outdir, outfname, "data"])
+                if toSplit:
+                    os.makedirs(tgdir.replace(year, year + '/' + "split"), exist_ok=True)
+                    parameters.append((year, ch, rootfilestoprocess, outdir.replace(year, year + '/' + "split"), outfname, "data"))
+                else:
+                    parameters.append([year, ch, ds, outdir, outfname, "data"])
             else: continue
 
         else:
@@ -123,7 +127,7 @@ for ds in dataset_list:
                     else:
                         parameters.append((year, ch, ds, outdir, outfname, "all"))
                 elif options.syst == "theory":
-                    if any(i in dataset_name for i in ["TTto", "ST_t", "TT_LFV", "ST_LFV"]):
+                    if any(i in dataset_name for i in ["TTto", "ST_t", "Tau-LFV"]):
                         if toSplit:
                             os.makedirs(tgdir.replace(year, year + '/' + "split"), exist_ok=True)
                             parameters.append([year, ch, rootfilestoprocess, outdir.replace(year, year + '/' + "split"), outfname, "theory"])

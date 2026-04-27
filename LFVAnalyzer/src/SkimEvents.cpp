@@ -105,7 +105,7 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     applyWeights(pileFile, pileMap);
     JetVetoMap(jetFile, jetMap);
     if (_isSignal) matchGenReco();
-    if (_isMuonCh){
+    if (_ch.find("muon") != std::string::npos){
         selectMuons(muoncut, vetomuon);
     } else {
         selectElectrons(eleccut, vetoelec);
@@ -114,7 +114,7 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     setupJetMETCorrection(jecFile, jecYear, jerMap, _isData);
     skimJets(skimjet);
     if (!_isData){
-        if (_isMuonCh){
+        if (_ch.find("muon") != std::string::npos){
             calculateTauES(tauYear, "VTight", "Tight", "VVLoose");
         } else{
             calculateTauES(tauYear, "VTight", "VLoose", "Tight");

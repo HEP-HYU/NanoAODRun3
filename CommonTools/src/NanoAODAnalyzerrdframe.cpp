@@ -682,9 +682,9 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
         return corrfactors;
     };
     if (!_isData) {
-        //_rlm = _rlm.Redefine("Jet_pt_corr", applyJer, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "Rho_fixedGridRhoFastjetAll", "event", "Jet_pt"})
-        //           .Redefine("Jet_mass", applyJer, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "Rho_fixedGridRhoFastjetAll", "event", "Jet_mass"})
-        //           .Redefine("Jet_pt", "Jet_pt_corr");
+        _rlm = _rlm.Redefine("Jet_pt_corr", applyJer, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "Rho_fixedGridRhoFastjetAll", "event", "Jet_pt"})
+                   .Redefine("Jet_mass", applyJer, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "Rho_fixedGridRhoFastjetAll", "event", "Jet_mass"})
+                   .Redefine("Jet_pt", "Jet_pt_corr");
     }
     //_rlm = _rlm.Define("Jet_pt_unc", jesUnc, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_area", "Jet_rawFactor", "Rho_fixedGridRhoFastjetAll", "Jet_partonFlavour"});
 }
@@ -712,8 +712,7 @@ void NanoAODAnalyzerrdframe::skimJets(string cut) {
                .Redefine("Jet_JetId", "Jet_JetId[jetcuts]")
                .Redefine("Jet_area", "Jet_area[jetcuts]")
                .Redefine("Jet_rawFactor", "Jet_rawFactor[jetcuts]")
-               //.Redefine("Jet_pt_uncorr", "Jet_pt_uncorr[jetcuts]")
-               //.Redefine("Jet_rawFactor", "Jet_rawFactor[jetcuts]")
+               .Redefine("Jet_pt_uncorr", "Jet_pt_uncorr[jetcuts]")
                .Redefine("Jet_btagPNetB", "Jet_btagPNetB[jetcuts]")
                .Redefine("nJet", "int(Jet_pt.size())");
     if (_isRun24){
@@ -741,6 +740,8 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     auto btagSF_shape = [this, _btagSF](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floatsVec{
         floats wVec;
         wVec.reserve(17);
+        floatsVec out;
+        out.reserve(pts.size());
 
         std::vector<std::string> systs = {"central",
             "up_hf", "down_hf", "up_lf", "down_lf",
@@ -748,19 +749,34 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
             "up_lfstats1", "down_lfstats1", "up_lfstats2", "down_lfstats2",
             "up_cferr1", "down_cferr1", "up_cferr2", "down_cferr2"};
         
-        for (auto &syst: systs){
-            float w = 1.0;
-            for (auto i=0; i<int(pts.size()); i++){
+        for (auto i=0; i<int(pts.size()); i++){
+            for (auto &syst: systs){
                 float sf = 1.0;
-                if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) sf = 1.0;
+                if (pts[i] <= 40) sf = 1.0;
+                else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) sf = 1.0;
                 else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) sf = 1.0;
                 else sf = _btagSF->evaluate({syst, int(hadflav[i]), abs(etas[i]), pts[i], btags[i]}); 
-                w = w*sf;
+                std::cout << i << " " << syst << " " << sf << std::endl;
+                wVec.emplace_back(sf);
             }
-            wVec.emplace_back(w);
+            out.emplace_back(wVec);
+            wVec.clear();
         }
-        return wVec;
+        return out;
     };
+    auto btag_evWeight = [this](floatsVec &btagWeights) ->floatsVec{
+        const int vars = 17;
+        floats out(vars, 1.0);
+
+        for (auto &jet: btagWeights){
+            for (int i=0; i<vars; i++){
+                out[i] *= jet[i];
+            }
+        }
+        return out;
+    }
+    _rlm = _rlm.Define("Jet_btagSF", btagSF_shape, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"})
+               .Define("btagWeight", btag_evWeight, {"Jet_btagSF"});
 
     //auto btagSF24_fixWP = [this, _btagSF](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floats{
     //    cout << " btag fix wp" << endl;
@@ -796,7 +812,6 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
 
     //if (false){
     //    _rlm = _rlm.Define("btagWeight", btagSF24_fixWP, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagUParTAK4B"});
-    _rlm = _rlm.Define("btagWeight", btagSF_shape, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"});
     
     //TODO: apply b-tagging SF
     //cout<<"Generate case3 b-tagging weight"<<endl;
@@ -813,30 +828,30 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
 
 void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut) {
     //// input vector: vec[pt][vars], for bSF
-    //auto skimCol = [this](doublesVec toSkim, ints cut)->doublesVec {
+    auto skimCol = [this](doublesVec toSkim, ints cut)->doublesVec {
 
-    //    doublesVec out;
-    //    for (size_t i=0; i<toSkim.size(); i++) {
-    //        if (cut[i] > 0) out.emplace_back(toSkim[i]);
-    //    }
-    //    return out;
-    //};
+        doublesVec out;
+        for (size_t i=0; i<toSkim.size(); i++) {
+            if (cut[i] > 0) out.emplace_back(toSkim[i]);
+        }
+        return out;
+    };
 
     //// input vector: vec[pt][vars]
-    //auto calcBSF = [this](doublesVec perJetSF, int nvar)->doubles {
+    auto calcBSF = [this](doublesVec perJetSF, int nvar)->doubles {
 
-    //    doubles out;
-    //    out.reserve(nvar);
-    //    for (size_t i=0; i<nvar; i++) {
-    //        double bSF = 1.0;
-    //        for (size_t j=0; j<perJetSF.size(); j++) {
-    //            if (perJetSF[j].empty()) continue;
-    //            bSF *= perJetSF[j][i];
-    //        }
-    //        out.emplace_back(bSF);
-    //    }
-    //    return out;
-    //};
+        doubles out;
+        out.reserve(nvar);
+        for (size_t i=0; i<nvar; i++) {
+            double bSF = 1.0;
+            for (size_t j=0; j<perJetSF.size(); j++) {
+                if (perJetSF[j].empty()) continue;
+                bSF *= perJetSF[j][i];
+            }
+            out.emplace_back(bSF);
+        }
+        return out;
+    };
 
     //if (!_isData) {
 
@@ -966,18 +981,18 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
         _rlm = _rlm.Redefine("Jet_btagUParTAK4B", "Jet_btagUParTAK4B[jetoverlap]");
     }
 
-    //if (!_isData) {
-    //    int nbsf_var = btag_var.size();
-    //    int njes_var = jes_var.size();
-    //    _rlm = _rlm.Define("nbsf_var", [nbsf_var](){return int(nbsf_var);})
-    //               .Define("njes_var", [njes_var](){return int(njes_var);})
-    //               .Define("btagWeight_PNetB_perJet_loose", skimCol, {"btagWeight_PNetB_perJet", "jetoverlaploose"})
-    //               .Define("btagWeight_PNetB_loose", calcBSF, {"btagWeight_PNetB_perJet_loose", "nbsf_var"})
-    //               .Redefine("btagWeight_PNetB_perJet", skimCol, {"btagWeight_PNetB_perJet", "jetoverlap"})
-    //               .Redefine("btagWeight_PNetB_jes_perJet", skimCol, {"btagWeight_PNetB_jes_perJet", "jetoverlap"})
-    //               .Define("btagWeight_PNetB", calcBSF, {"btagWeight_PNetB_perJet", "nbsf_var"})
-    //               .Define("btagWeight_PNetB_jes", calcBSF, {"btagWeight_PNetB_jes_perJet", "njes_var"});
-    //}
+    if (!_isData) {
+        int nbsf_var = btag_var.size();
+        int njes_var = jes_var.size();
+        _rlm = _rlm.Define("nbsf_var", [nbsf_var](){return int(nbsf_var);})
+                   .Define("njes_var", [njes_var](){return int(njes_var);})
+                   //.Define("btagWeight_PNetB_perJet_loose", skimCol, {"btagWeight_PNetB_perJet", "jetoverlaploose"})
+                   //.Define("btagWeight_PNetB_loose", calcBSF, {"btagWeight_PNetB_perJet_loose", "nbsf_var"})
+                   //.Redefine("btagWeight_PNetB_perJet", skimCol, {"btagWeight_PNetB_perJet", "jetoverlap"})
+                   //.Redefine("btagWeight_PNetB_jes_perJet", skimCol, {"btagWeight_PNetB_jes_perJet", "jetoverlap"})
+                   .Define("btagWeight", calcBSF, {"btagWeight", "nbsf_var"})
+                   //.Define("btagWeight_PNetB_jes", calcBSF, {"btagWeight_PNetB_jes_perJet", "njes_var"});
+    }
 
 
     // b-tagging

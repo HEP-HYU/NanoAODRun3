@@ -35,6 +35,8 @@ if __name__=='__main__':
     mode = options.mode
     applytauFF = options.ff
 
+    workdir = os.getcwd()
+
     json = ""
     if 'data' in infile[5:]:
         if syst == "data":

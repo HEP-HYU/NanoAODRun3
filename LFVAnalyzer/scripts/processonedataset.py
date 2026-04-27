@@ -52,7 +52,7 @@ if __name__=='__main__':
 
     print("Input: " + indir + ", " + "Output: " + outputroot + ", Syst: " + syst + ", Json: " + json + "\n")
 
-    if not re.match('.*\.root', outputroot):
+    if not re.match(r'.*\.root', outputroot):
         print("Output file should be a root file! Quitting")
         exit(-1)
 
@@ -68,7 +68,7 @@ if __name__=='__main__':
         fullnamelist.append(fullname)
 
     for fname in fullnamelist:
-        if re.match('.*\.root', fname) and os.path.isfile(fname): # if it has .root file extension
+        if re.match(r'.*\.root', fname) and os.path.isfile(fname): # if it has .root file extension
             rootfilestoprocess.append(fname)
     print("files to process")
     print(rootfilestoprocess)

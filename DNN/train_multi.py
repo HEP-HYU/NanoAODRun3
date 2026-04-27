@@ -37,7 +37,6 @@ root_dir = os.getcwd().replace("DNN","") # Upper directory
 syst = "nom"
 label = "top_lfv_multiClass"
 class_names = ["bkg", "sigTT", "sigST"]
-class_names = ["bkg", "sigST"]
 
 print("Start multi LFV Training")
 epochs = 1000
@@ -68,17 +67,17 @@ print ("output dir: ", train_outdir)
 #siglist_st = ["ST_LFV_TCMuTau_Scalar","ST_LFV_TCMuTau_Vector","ST_LFV_TCMuTau_Tensor","ST_LFV_TUMuTau_Vector","ST_LFV_TUMuTau_Scalar","ST_LFV_TUMuTau_Tensor"]
 #siglist_tt = ['TT_LFV_TCMuTau_Scalar', 'TT_LFV_TCMuTau_Tensor', 'TT_LFV_TCMuTau_Vector', 'TT_LFV_TUMuTau_Scalar', 'TT_LFV_TUMuTau_Tensor', 'TT_LFV_TUMuTau_Vector']
 siglist_st = []
-if ch == "muon": siglist_st = ["ST_TUMuTau_Scalar"]
-else: siglist_st = ["ST_TUElTau_Scalar"]
 siglist_tt = []
-#years = ["2017","2018","2016pre","2016post"]
-#years = ["v2022", "v2022EE", "v2023", "v2023_BPix", "v2024"]
-years = ["v2023_BPix"]
-#project_dir = "/data1/users/itseyes/LFV/processed_LFV/v9test2_theory/"
-#project_dir = "/data1/users/minerva1993/work/lfv_production/LFVRun2/nanoaodframe/old/v9_06xx/v9_0608_fixtau/"
-#project_dir = "/data1/users/minerva1993/work/lfv_production/LFVRun2/nanoaodframe/v9_0714_FF/"
-#project_dir = "/data1/users/minerva1993/work/lfv_production/LFVRun2/nanoaodframe/v9_0714_1010_FF/"
-project_dir = "/home/itseyes/github/LFVRun3/nanoaodframe/process_0807_11/"
+if ch == "muon":
+    #siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
+    siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
+    siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"]
+else:
+    siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
+    siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
+years = ["v2022", "v2022EE", "v2023", "v2023_BPix", "v15_2024"]
+years = ["v15_2024"]
+project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0323_btag_v5/"
 
 df_sig_st_list = []
 df_sig_tt_list = []
@@ -92,7 +91,7 @@ for year in years:
       sig_tree_ = uproot.open(project_dir_y+"hist_"+sig_tree+".root")["Events"]
       df_sig_ = sig_tree_.arrays(inputvars_st,library="pd")
       df_sig_st_list.append(df_sig_)
-   
+
    #Concatinate TT signals
    for sig_tree in siglist_tt:
       sig_tree_ = uproot.open(project_dir_y+"hist_"+sig_tree+".root")["Events"]
@@ -109,23 +108,23 @@ for year in years:
    df_bkg_tt_list.append(df_bkg2_tt)
 
 df_sig_st = pd.concat(df_sig_st_list)
-#df_sig_tt = pd.concat(df_sig_tt_list)
+df_sig_tt = pd.concat(df_sig_tt_list)
 df_bkg = pd.concat(df_bkg_tt_list)
 
 ntotsig_st = len(df_sig_st)
-#ntotsig_tt = len(df_sig_tt)
+ntotsig_tt = len(df_sig_tt)
 ntotbkg = len(df_bkg)
 print(df_bkg.replace(np.nan, 0))
 print(df_sig_st.replace(np.nan, 0))
-#print(df_sig_tt.replace(np.nan, 0))
-#print("sig tt:", ntotsig_tt)
+print(df_sig_tt.replace(np.nan, 0))
+print("sig tt:", ntotsig_tt)
 print("sig st:",ntotsig_st)
 print("tot bkg:",ntotbkg)
 nsig_st = ntotsig_st
-#nsig_tt = ntotsig_tt
+nsig_tt = ntotsig_tt
 nbkg = ntotbkg
-#nsig = min(nsig_st,nsig_tt)
-#print(nsig)
+nsig = min(nsig_st,nsig_tt)
+print(nsig)
 nsig = nsig_st
 
 if nsig >= nbkg:
@@ -144,12 +143,11 @@ print("Take TT  : "+str(nbkg)+" events")
 df_sig_st = df_sig_st.sample(n=nsig)
 #df_sig_tt = df_sig_tt.sample(n=nsig)
 df_bkg = df_bkg.sample(n=nbkg)
-df_sig_st["category"] = 1
-#df_sig_tt["category"] = 1
+df_sig_st["category"] = 2
+df_sig_tt["category"] = 1
 df_bkg["category"] = 0
 
-#pd_data = pd.concat([df_sig_tt,df_sig_st,df_bkg])
-pd_data = pd.concat([df_sig_st,df_bkg])
+pd_data = pd.concat([df_sig_tt,df_sig_st,df_bkg])
 pd_data = abs(pd_data)
 colnames = pd_data.columns
 print(pd_data.head())
@@ -162,20 +160,20 @@ print("Col names:",colnames)
 #print(pd_data.head())
 
 
-pd_sig_st = pd_data[pd_data['category'] == 1]
-#pd_sig_tt = pd_data[pd_data['category'] == 1]
+pd_sig_st = pd_data[pd_data['category'] == 2]
+pd_sig_tt = pd_data[pd_data['category'] == 1]
 pd_bkg = pd_data[pd_data['category'] == 0]
 
-#print("Plotting corr_matrix total")
-#plot_corrMatrix(pd_data,train_outdir,"total")
-#print("Plotting corr_matrix ST")
-#plot_corrMatrix(pd_sig_st,train_outdir,"sig_st")
-#print("Plotting corr_matrix TT")
-#plot_corrMatrix(pd_sig_tt,train_outdir,"sig_tt")
-#print("Plotting corr_matrix bkg")
-#plot_corrMatrix(pd_bkg,train_outdir,"bkg")
-#plot_corrMatrix(abs(pd_sig_st.subtract(pd_bkg)),train_outdir,"st-bkg")
-#pd_data = pd_data.sample(frac=1).reset_index(drop=True)
+print("Plotting corr_matrix total")
+plot_corrMatrix(pd_data,train_outdir,"total")
+print("Plotting corr_matrix ST")
+plot_corrMatrix(pd_sig_st,train_outdir,"sig_st")
+print("Plotting corr_matrix TT")
+plot_corrMatrix(pd_sig_tt,train_outdir,"sig_tt")
+print("Plotting corr_matrix bkg")
+plot_corrMatrix(pd_bkg,train_outdir,"bkg")
+plot_corrMatrix(abs(pd_sig_st.subtract(pd_bkg)),train_outdir,"st-bkg")
+pd_data = pd_data.sample(frac=1).reset_index(drop=True)
 
 print(pd_data.head())
 
@@ -222,15 +220,15 @@ model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_regul
 model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_initializer=weight_initializer))
 #model.add(tf.keras.layers.Dropout(drop))
 
-    
+
 ###############    Output Layer     ###############
 #model.add(tf.keras.layers.Dense(3, activation="softmax"))
-model.add(tf.keras.layers.Dense(2, activation="sigmoid"))
+model.add(tf.keras.layers.Dense(3, activation="sigmoid"))
 batch_size = 1024
 model.compile(optimizer=tf.keras.optimizers.Adam(clipvalue=0.5), loss="categorical_crossentropy", metrics = ["accuracy"])
 
 model.summary()
-hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, 
+hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
 				validation_data=(x_val,y_val), callbacks=[es, mc])
 
 #tf.keras.models.save_model(model,'model_{epoch:%d}.h5', overwrite=True, include_optimizer=True)
@@ -248,7 +246,7 @@ accuracy_validation = hist.history['val_accuracy']
 
 plt.plot(accuracy_training, 'g', label='Training loss')
 plt.plot(accuracy_validation, 'b', label='Validation loss')
-plt.savefig(train_outdir+'/acc_vs_epochs.png')   
+plt.savefig(train_outdir+'/acc_vs_epochs.png')
 plt.close()
 
 y_pred = model.predict(x_train)
@@ -270,13 +268,13 @@ print("conf matrix on val set ")
 print(confusion_matrix(y_val, pred_val))
 #val_result = pd.DataFrame(np.array([y_val.T[0], pred_val.T[1]]).T, columns=["True", "Pred"])
 plot_confusion_matrix(y_val, pred_val, classes=class_names,
-		    title='Confusion matrix, without normalization', savename=train_outdir+"/confusion_matrix_val.pdf")
+        title='Confusion matrix, without normalization', savename=train_outdir+"/confusion_matrix_val.pdf")
 plot_confusion_matrix(y_val, pred_val, classes=class_names, normalize=True,
-		    title='Normalized confusion matrix', savename=train_outdir+"/norm_confusion_matrix_val.pdf")
+        title='Normalized confusion matrix', savename=train_outdir+"/norm_confusion_matrix_val.pdf")
 plot_confusion_matrix(y_train, pred_train, classes=class_names,
-		    title='Confusion matrix, without normalization', savename=train_outdir+"/confusion_matrix_train.pdf")
+        title='Confusion matrix, without normalization', savename=train_outdir+"/confusion_matrix_train.pdf")
 plot_confusion_matrix(y_train, pred_train, classes=class_names, normalize=True,
-		    title='Normalized confusion matrix', savename=train_outdir+"/norm_confusion_matrix_train.pdf")
+        title='Normalized confusion matrix', savename=train_outdir+"/norm_confusion_matrix_train.pdf")
 pred_val = model.predict(x_val)
 pred_train = model.predict(x_train)
 print(pred_val)
@@ -285,7 +283,7 @@ print(y_val)
 print(y_val.T)
 val_result = pd.DataFrame(np.array([y_val.T, pred_val.T[1]]).T, columns=["True", "Pred"])
 train_result = pd.DataFrame(np.array([y_train.T, pred_train.T[1]]).T, columns=["True", "Pred"])
+plot_output_dist(train_result, val_result, sig="tt",savedir=train_outdir)
+val_result = pd.DataFrame(np.array([y_val.T, pred_val.T[2]]).T, columns=["True", "Pred"])
+train_result = pd.DataFrame(np.array([y_train.T, pred_train.T[2]]).T, columns=["True", "Pred"])
 plot_output_dist(train_result, val_result, sig="st",savedir=train_outdir)
-#val_result = pd.DataFrame(np.array([y_val.T, pred_val.T[2]]).T, columns=["True", "Pred"])
-#train_result = pd.DataFrame(np.array([y_train.T, pred_train.T[2]]).T, columns=["True", "Pred"])
-#plot_output_dist(train_result, val_result, sig="st",savedir=train_outdir)

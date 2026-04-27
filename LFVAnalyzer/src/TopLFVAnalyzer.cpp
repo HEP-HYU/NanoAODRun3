@@ -262,6 +262,7 @@ void TopLFVAnalyzer::defineMoreVars() {
     //addVar({"tauSFAddUncDn", "Tau_pt_gen.size()==0 ? 1.0 - (0.0005 * Tau1_pt): 1.0", ""});
 
 
+    addVar({"eventWeight_no", "1.0"});
     if (_syst == "data") {
         addVar({"eventWeight", "1.0"});
         addVar({"eventWeight_notau", "1.0"});
@@ -598,7 +599,7 @@ void TopLFVAnalyzer::defineMoreVars() {
 void TopLFVAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 
-    std::vector<std::string> init_weight = {""};
+    std::vector<std::string> init_weight = {"", "_no"};
     //std::vector<std::string> init_weight = {"", "_pu", "_mu", "_pumu"};
     
     std::vector<std::string> sf_weight = {"", "_nobtag", "_nopu", "_notau", "_notoppt",

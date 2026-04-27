@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J LFV
-#SBATCH -p high_cpu,gpu
+#SBATCH -p high_cpu,cpu
 #SBATCH -N 1
 #SBATCH --output=/dev/null
 #SBATCH --error=/dev/null

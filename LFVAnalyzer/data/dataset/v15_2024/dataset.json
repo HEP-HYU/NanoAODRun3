@@ -606,31 +606,31 @@
         "name": "WtoLNu-2Jets-PTLNu100",
         "nevt": 194059630,
         "path": "",
-        "xsec": 0.0
+        "xsec": 863.6
     },
     {
         "DataSetName": "/WtoLNu-2Jets_Bin-PTLNu-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v1/NANOAODSIM",
         "name": "WtoLNu-2Jets-PTLNu200",
         "nevt": 324115048,
         "path": "",
-        "xsec": 0.0
+        "xsec": 81.81
     },
     {
         "DataSetName": "/WtoLNu-2Jets_Bin-PTLNu-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM",
         "name": "WtoLNu-2Jets-PTLNu400",
         "nevt": 171972818,
         "path": "",
-        "xsec": 0.0
+        "xsec": 4.453
     },
     {
         "DataSetName": "/WtoLNu-2Jets_Bin-PTLNu-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v1/NANOAODSIM",
         "name": "WtoLNu-2Jets-PTLNu600",
         "nevt": 107529966,
         "path": "",
-        "xsec": 0.0
+        "xsec": 0.6027
     },
     {
-        "DataSetName": "",
+        "DataSetName": "/WtoLNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23BPixNanoAODv15-150X_mcRun3_2023_realistic_postBPix_v1-v2/NANOAODSIM",
         "name": "WtoLNu-2Jets_0J",
         "nevt": 0,
         "path": "",

@@ -36,16 +36,18 @@ class_names = ["bkg","sigTT", "sigST"]
 print("Start multi LFV Training")
 #epochs = 1000
 epochs = 100
-inputvars_st = [ "Muon1_pt","Muon1_eta",
-        "Tau1_pt","Tau1_mass","Tau1_eta", 
-        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagDeepFlavB",
-        "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagDeepFlavB",
-        "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagDeepFlavB",
+inputvars_st = [ # "Muon1_pt","Muon1_eta",
+        "Tau1_pt","Tau1_mass","Tau1_eta",
+        "Jet1_mass","Jet1_eta","Jet1_btagPNetB",
+        "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
+        "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
         "chi2","chi2_SMW_mass","chi2_SMTop_mass",
         "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-        "mutau_mass","mutau_dEta","mutau_dPhi","mutau_dR",
-	"MET_pt"
+        "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
+        "PuppiMET_pt"
         ]
+if ch == "muon": inputvars_st = ["Muon1_pt", "Muon1_eta"] + inputvars_st
+else: inputvars_st = ["Electron1_pt", "Electron1_eta"] + inputvars_st
 
 #"MET_pt" : helps to the expected limits, do not remove from the input vars.
 sbratio = 1 # sig:bkg = 1:1
@@ -55,12 +57,17 @@ sbratio = 1 # sig:bkg = 1:1
 train_outdir = label+"_"+processed+"/"+syst
 os.makedirs(train_outdir, exist_ok=True)
 
-siglist_st = ["ST_LFV_TCMuTau_Scalar","ST_LFV_TCMuTau_Vector","ST_LFV_TCMuTau_Tensor","ST_LFV_TUMuTau_Vector","ST_LFV_TUMuTau_Scalar","ST_LFV_TUMuTau_Tensor"]
-siglist_tt = ['TT_LFV_TCMuTau_Scalar', 'TT_LFV_TCMuTau_Tensor', 'TT_LFV_TCMuTau_Vector', 'TT_LFV_TUMuTau_Scalar', 'TT_LFV_TUMuTau_Tensor', 'TT_LFV_TUMuTau_Vector']
-years = ["2017","2018","2016pre","2016post"]
-#project_dir = "/data1/users/itseyes/LFV/processed_LFV/v9test2_theory/"
-#project_dir = "/data1/users/minerva1993/work/lfv_production/LFVRun2/nanoaodframe/v9_0608_fixtau/"  #Preapprouval presentation 
-project_dir = "/data1/users/minerva1993/work/lfv_production/LFVRun2/nanoaodframe/old/v9_06xx/v9_0608_fixtau/"
+siglist_st = []
+siglist_tt = []
+if ch == "muon":
+    siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
+    siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"]
+else:
+    siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
+    siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
+years = ["v2022", "v2022EE", "v2023", "v2023_BPix", "v15_2024"]
+years = ["v15_2024"]
+project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0323_btag_v3/"
 
 df_sig_st_list = []
 df_sig_tt_list = []
@@ -74,15 +81,15 @@ for year in years:
       sig_tree_ = uproot.open(project_dir_y+"hist_"+sig_tree+".root")["Events"]
       df_sig_ = sig_tree_.arrays(inputvars_st,library="pd")
       df_sig_st_list.append(df_sig_)
-   
+
    #Concatinate TT signals
    for sig_tree in siglist_tt:
       sig_tree_ = uproot.open(project_dir_y+"hist_"+sig_tree+".root")["Events"]
       df_sig_ = sig_tree_.arrays(inputvars_st,library="pd")
       df_sig_tt_list.append(df_sig_)
 
-   bkg1_filedir_tt = project_dir_y+"hist_TTTo2L2Nu.root"
-   bkg2_filedir_tt = project_dir_y+"hist_TTToSemiLeptonic.root"
+   bkg1_filedir_tt = project_dir_y+"hist_TTto2L2Nu.root"
+   bkg2_filedir_tt = project_dir_y+"hist_TTtoLNu2Q.root"
    bkg1_tree_tt = uproot.open(bkg1_filedir_tt)["Events"]
    bkg2_tree_tt = uproot.open(bkg2_filedir_tt)["Events"]
    df_bkg1_tt = bkg1_tree_tt.arrays(inputvars_st,library="pd")

@@ -469,9 +469,9 @@ ints FinalGenPart_idx_elec( ints GenPart_pdgId, shorts GenPart_genPartIdxMother 
                 Wds_i = find_element(GenPart_genPartIdxMother, W_idx);
                 if( Wds_i.size() !=2 ) break;
                 if (abs(GenPart_pdgId[Wds_i[0]])>8) {
-                    std::cout << "GenPart_pdgId[Wds_i[0]] " << GenPart_pdgId[Wds_i[0]] << std::endl;
-                    std::cout << "GenPart_pdgId[Wds_i[1]] " << GenPart_pdgId[Wds_i[1]] << std::endl;
-                    std::cout << "Wds_i size " << Wds_i.size() << std::endl;
+                    //std::cout << "GenPart_pdgId[Wds_i[0]] " << GenPart_pdgId[Wds_i[0]] << std::endl;
+                    //std::cout << "GenPart_pdgId[Wds_i[1]] " << GenPart_pdgId[Wds_i[1]] << std::endl;
+                    //std::cout << "Wds_i size " << Wds_i.size() << std::endl;
                     break;
                 }
                 d_Wq1_idx = firstgenpart_idx(Wds_i[0], GenPart_pdgId, GenPart_genPartIdxMother);
@@ -534,9 +534,9 @@ ints FinalGenPart_idx( ints GenPart_pdgId, shorts GenPart_genPartIdxMother ){
                 Wds_i = find_element(GenPart_genPartIdxMother, W_idx);
                 if( Wds_i.size() !=2 ) break;
                 if (abs(GenPart_pdgId[Wds_i[0]])>8) {
-                    std::cout << "GenPart_pdgId[Wds_i[0]] " << GenPart_pdgId[Wds_i[0]] << std::endl;
-                    std::cout << "GenPart_pdgId[Wds_i[1]] " << GenPart_pdgId[Wds_i[1]] << std::endl;
-                    std::cout << "Wds_i size " << Wds_i.size() << std::endl;
+                    //std::cout << "GenPart_pdgId[Wds_i[0]] " << GenPart_pdgId[Wds_i[0]] << std::endl;
+                    //std::cout << "GenPart_pdgId[Wds_i[1]] " << GenPart_pdgId[Wds_i[1]] << std::endl;
+                    //std::cout << "Wds_i size " << Wds_i.size() << std::endl;
                     break;
                 }
                 d_Wq1_idx = firstgenpart_idx(Wds_i[0], GenPart_pdgId, GenPart_genPartIdxMother);

@@ -74,6 +74,8 @@
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/3b0bc584-3cd2-4ddd-9a6c-bcac8ccb99e8.root
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/0a61c524-cf69-4060-ae80-e5a945352667.root
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/95825102-b297-4b1c-8787-5f09640fd56e.root
+/store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/3c9f3089-8db0-46ee-a5ce-5032c0c972df.root
+/store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/31ea1ab8-7f30-40a2-8e5b-38533b990a44.root
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/0776f5a7-f82b-4989-8e66-aebc99deddd3.root
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/248a48aa-0b4d-448c-aa29-b81e412eb28c.root
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/be6d0956-60e6-42f4-a294-5ae4fcce2cfa.root
@@ -177,5 +179,3 @@
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/088df6bb-6371-4431-895f-fc07f81838e4.root
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/770857b3-c566-4283-a072-90682062e847.root
 /store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/b25936a2-a1a0-42fe-84fa-42041a7da6b0.root
-/store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/31ea1ab8-7f30-40a2-8e5b-38533b990a44.root
-/store/mc/RunIII2024Summer24NanoAODv15/QCD_Bin-PT-300to470_Fil-EMEnriched_TuneCP5_13p6TeV_pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/3c9f3089-8db0-46ee-a5ce-5032c0c972df.root

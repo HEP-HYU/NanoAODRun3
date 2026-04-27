@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J LFV
-#SBATCH -p high_cpu,gpu,cpu -x gpu-0-2
+#SBATCH -p gpu,cpu,high_cpu -x gpu-0-2
 #SBATCH -N 1
 #SBATCH --output=/dev/null
 #SBATCH --error=/dev/null
@@ -27,7 +27,6 @@ cd $workdir
 #source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc12-opt/setup.sh
 #source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc12-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/views/LCG_108/x86_64-el9-gcc15-opt/setup.sh
-echo "haha"
 
 if [ "$#" -eq 8 ]; then
     if [[ "$indir" == *".root"* ]]; then

@@ -68,12 +68,12 @@ def run(inputs):
         os.makedirs(hists_path, exist_ok=True)
 
     eventWeight = "eventWeight"
-    weights = [eventWeight] 
+    weights = [eventWeight]
 
     outf_dir = os.path.join(hists_path, input_file.split("/")[-1:][0])
 
     #print("IN PATH : ", input_file) 
-    print("OUT PATH : ", outf_dir) 
+    print("OUT PATH : ", outf_dir)
 
     infile = uproot.open(input_file)
     tree = infile["Events"]
@@ -87,14 +87,16 @@ def run(inputs):
     hist_nevents_S5_dict = {}
     syst_extend = []
 
-    if not "SingleMuon" in input_file :
+    if not "Muon" in input_file :
         infile_forS = uproot.open(input_file.replace("_FF", ""))
-        h_nevents_S4_nobtag = infile_forS["h_nevents_S4"]  ### get it from removed FF 
-        h_nevents_S4 = infile_forS["h_nevents_S4_all"]
-        #if any(string in input_file for string in ["_LFV", "TTt", "_ST_t"]) and "__" not in input_file:
-        #    ScaleWeightSum = infile['ScaleWeightSum']
-        #    PSWeightSum = infile['PSWeightSum']
-        #    LHEPdfWeightSum = infile['LHEPdfWeightSum']
+        h_nevents_S4_nobtag = infile_forS["h_nevents_S4_nobtag"]  ### get it from removed FF 
+        h_nevents_S4 = infile_forS["h_nevents_S4"]
+        h_nevents_S2_nobtag = infile_forS["h_nevents_S2_nobtag"]
+        h_nevents_S2 = infile_forS["h_nevents_S2"]
+        if any(string in input_file for string in ["Tau-LFV", "TTt", "_ST_t"]) and "__" not in input_file:
+            ScaleWeightSum = infile['ScaleWeightSum']
+            PSWeightSum = infile['PSWeightSum']
+            LHEPdfWeightSum = infile['LHEPdfWeightSum']
 
     if nEvents == 0:
         #print("No events : "+input_file)
@@ -229,10 +231,10 @@ def run(inputs):
             outf["h_nevents_S4_nobtag"] = h_nevents_S4_nobtag
             outf["h_nevents_S4"] = h_nevents_S4
 
-            #if any(string in input_file for string in ["_LFV","TTT","_ST_t"]) and "__" not in input_file:
-            #    outf["ScaleWeightSum"] = ScaleWeightSum
-            #    outf["PSWeightSum"] = PSWeightSum
-            #    outf["LHEPdfWeightSum"] = LHEPdfWeightSum
+            if any(string in input_file for string in ["Tau-LFV","TTt","_ST_t"]) and "__" not in input_file:
+                outf["ScaleWeightSum"] = ScaleWeightSum
+                outf["PSWeightSum"] = PSWeightSum
+                outf["LHEPdfWeightSum"] = LHEPdfWeightSum
 
         if len(syst_extend) > 1:
             syst_list.extend(syst_extend)
@@ -264,10 +266,10 @@ if __name__ == '__main__':
     #discriminator = "p_st_tt_ob"
     alpha=0.1
     parameters = []
-    #for year in ["v2022", "v2022EE", "v2023", "v2023_BPix", "v2024"]:
-    for year in ["v2023_BPix"]:
+    #for year in ["v2022", "v2022EE", "v2023", "v2023_BPix", "v15_2024"]:
+    for year in ["v15_2024"]:
         print(year)
-        project_dir = "/home/itseyes/github/LFVRun3/nanoaodframe/process_0807_11/" + ch + "/" + year + "/"
+        project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0323_btag_v3/" + ch + "/" + year + "/"
         flist = os.listdir(project_dir)
         flist = [i for i in flist if (".root" in i)]
         for curfile in flist:
