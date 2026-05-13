@@ -24,6 +24,7 @@ if __name__=='__main__':
     parser.add_argument("--ff", dest="ff", action="store_true", default=False, help="Apply tau fake factor for final selection")
     options = parser.parse_args()
 
+    print("processonedataset.py")
     outputroot = options.outputroot
     indir = options.indir
     year = options.year

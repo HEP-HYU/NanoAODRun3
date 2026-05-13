@@ -133,12 +133,11 @@ ints good_idx(ints good)
 
 
 floats top_reconstruction_STLFV(FourVectorVec &jets, FourVectorVec &bjets, FourVectorVec &muons, FourVectorVec &taus){
-        
         floats out;
         float SMW_mass, SMtop_mass, SMtop_pt;
         float X_SMW, X_SMtop;
-        float X_min=9999999999, X_min_SMW_mass=-1, X_min_SMtop_mass=-1, X_min_SMtop_pt = -1;;
-        float X_min_SMW=999999999, X_min_SMtop=999999999;
+        float X_min=-1, X_min_SMW_mass=-1, X_min_SMtop_mass=-1, X_min_SMtop_pt = -1;;
+        float X_min_SMW=999999999999, X_min_SMtop=999999999999;
         float wj1_idx=-1, wj2_idx=-1;
         const float MT = 173.95;
         const float MW = 84.19;
@@ -146,17 +145,17 @@ floats top_reconstruction_STLFV(FourVectorVec &jets, FourVectorVec &bjets, FourV
         const float WW = 9.91;	
         
         // Jets from W-1
-        for(int j1 = 0; j1<int(jets.size()-1); j1++){
-            if(jets[j1].Pt() == bjets[0].Pt()) continue;
+        for(int j1 = 0; j1<int(jets.size()); j1++){
+            if(ROOT::Math::VectorUtil::DeltaR(jets[j1], bjets[0])<1e-6 && jets[j1].Pt()==bjets[0].Pt()) continue;
             // Jets from W-2
             for(int j2 = j1+1; j2<int(jets.size()); j2++){
-                if(jets[j2].Pt() == jets[j1].Pt() || jets[j2].Pt() == bjets[0].Pt()) continue;
+                if(ROOT::Math::VectorUtil::DeltaR(jets[j2], bjets[0])<1e-6 && jets[j2].Pt()==bjets[0].Pt()) continue;
                 SMW_mass = (jets[j1]+jets[j2]).M();
                 X_SMW = std::pow((MW-SMW_mass)/WW,2);
                 SMtop_mass = (bjets[0]+jets[j1]+jets[j2]).M();
                 SMtop_pt = (bjets[0]+jets[j1]+jets[j2]).Pt();
                 X_SMtop = std::pow((MT-SMtop_mass)/WT,2);
-                if (X_SMW + X_SMtop < X_min){
+                if ((X_SMW + X_SMtop < X_min) || X_min < 0){
                     X_min = X_SMW + X_SMtop;
                     X_min_SMW = X_SMW;
                     X_min_SMtop = X_SMtop;
@@ -167,6 +166,54 @@ floats top_reconstruction_STLFV(FourVectorVec &jets, FourVectorVec &bjets, FourV
                     wj2_idx = float(j2);
                 }
             }
+        }
+        if (wj1_idx < 0 || wj2_idx < 0){
+            std::cout << "jojim: " << wj1_idx << " " << wj2_idx <<std::endl;
+            std::cout << "jet size: " << jets.size() << std::endl;
+            for(int j1 = 0; j1<int(jets.size()); j1++){
+                std::cout << "j1: " << j1 << std::endl;
+                if(jets[j1].Pt() == bjets[0].Pt()) {
+                    std::cout << "j1 " << j1 << " is btagged" << std::endl;
+                    std::cout << "j1 " << jets[j1].Pt() << " btag " << bjets[0].Pt() << std::endl;
+                    std::cout << "j1 " << jets[j1].Eta() << " btag " << bjets[0].Eta() << std::endl;
+                    std::cout << "j1 " << jets[j1].Phi() << " btag " << bjets[0].Phi() << std::endl;
+                    std::cout << "j1 " << jets[j1].M() << " btag " << bjets[0].M() << std::endl;
+                    continue;
+                }
+                // Jets from W-2
+                for(int j2 = j1+1; j2<int(jets.size()); j2++){
+                    std::cout << "j2: " << j2 << std::endl;
+                    if(jets[j2].Pt() == jets[j1].Pt() || jets[j2].Pt() == bjets[0].Pt()) {
+                        std::cout << "j2 " << j2 << " is btagged" << std::endl;
+                        std::cout << "j1 " << jets[j1].Pt() << " j2 " << jets[j2].Pt() << std::endl;
+                        continue;
+                    }
+                    SMW_mass = (jets[j1]+jets[j2]).M();
+                    X_SMW = std::pow((MW-SMW_mass)/WW,2);
+                    SMtop_mass = (bjets[0]+jets[j1]+jets[j2]).M();
+                    SMtop_pt = (bjets[0]+jets[j1]+jets[j2]).Pt();
+                    X_SMtop = std::pow((MT-SMtop_mass)/WT,2);
+                    if ((X_SMW + X_SMtop < X_min) || X_min < 0){
+                        X_min = X_SMW + X_SMtop;
+                        X_min_SMW = X_SMW;
+                        X_min_SMtop = X_SMtop;
+                        X_min_SMW_mass = SMW_mass;
+                        X_min_SMtop_mass = SMtop_mass;
+                        X_min_SMtop_pt = SMtop_pt;
+                        wj1_idx = float(j1);
+                        wj2_idx = float(j2);
+                        std::cout << "X_min: " << X_min << std::endl;
+                        std::cout << "j1: " << j1 << " j2: " << j2 << std::endl;
+                        std::cout << "wj1: " << wj1_idx << " wj2: " << wj2_idx << std::endl;
+                    } else{
+                        std::cout << "X_min: " << X_min << std::endl;
+                        std::cout << "wj1: " << wj1_idx << " wj2: " << wj2_idx << std::endl;
+                    }
+                }
+            }
+            std::cout << "wj1: " << wj1_idx << " wj2: " << wj2_idx << std::endl;
+            wj1_idx = 0;
+            wj2_idx = 0;
         }
         out.push_back(X_min);               // 0
         out.push_back(X_min_SMW_mass);      // 1

@@ -25,7 +25,7 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
 
     tauYear = "UL" + _year;
 
-    if (_outfilename.find("ST_LFV") != std::string::npos || _outfilename.find("TT_LFV") != std::string::npos) {
+    if (_outfilename.find("Tau-LFV-") != std::string::npos) {
         _isSignal = true;
         cout << "Input file is LFV signal" <<endl;
     } else {
@@ -267,6 +267,8 @@ void TopLFVAnalyzer::defineMoreVars() {
         addVar({"eventWeight", "1.0"});
         addVar({"eventWeight_notau", "1.0"});
         addVar({"eventWeight_notoppt", "1.0"});
+        addVar({"eventWeight_notau_nobtag", "1.0"}); //didn't want to duplicate entry...
+        addVar({"eventWeight_nobtag", "1.0"});
     } else {
         addVar({"eventWeight_genpu", "unitGenWeight * TopPtWeight[0] * puWeight[0]"});
         if (_isMuonCh){
@@ -599,10 +601,10 @@ void TopLFVAnalyzer::defineMoreVars() {
 void TopLFVAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 
-    std::vector<std::string> init_weight = {"", "_no"};
+    std::vector<std::string> init_weight = {""};
     //std::vector<std::string> init_weight = {"", "_pu", "_mu", "_pumu"};
-    
-    std::vector<std::string> sf_weight = {"", "_nobtag", "_nopu", "_notau", "_notoppt",
+
+    std::vector<std::string> sf_weight = {"", "_no", "_nobtag", "_nopu", "_notau", "_notoppt",
     //               "__puup", "__pudown", "__topptup", "__topptdown", "__prefireup", "__prefiredown",
     //               "__muidup", "__muiddown", "__muisoup", "__muisodown", "__mutrgup", "__mutrgdown",
     //               "__muhighptup", "__muhighptdown",
@@ -611,6 +613,8 @@ void TopLFVAnalyzer::bookHists() {
                    "__btaglfstats1up", "__btaglfstats1down", "__btaglfstats2up", "__btaglfstats2down",
                    "__btagcferr1up", "__btagcferr1down", "__btagcferr2up", "__btagcferr2down",
                    };
+
+    //std::vector<std::string> sf_weight = {};
 
     //std::vector<std::string> sf_weight_tau = {"__tauidjetUncert0up", "__tauidjetUncert0down",
     //                                          "__tauidjetUncert1up", "__tauidjetUncert1down",
@@ -727,6 +731,8 @@ void TopLFVAnalyzer::bookHists() {
     //TODO: This part is just for test
     if (_syst!="data"){
         syst_weight.insert(syst_weight.end(), sf_weight.begin(), sf_weight.end());
+    } else{
+        syst_weight = {"", "_nobtag"};
     }
     for (std::string weightstr : syst_weight) {
         if (weightstr.find("notoppt") != std::string::npos) continue;

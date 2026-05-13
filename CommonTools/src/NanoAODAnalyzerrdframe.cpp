@@ -123,11 +123,6 @@ void NanoAODAnalyzerrdframe::applyWeights(string pileFile, string map){
     if(!_isData){
         _rlm = _rlm.Redefine("isData", "false");
 
-        if (_outfilename.find("WtoLNu") != std::string::npos) {
-          _rlm = _rlm.Redefine("lhereweight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
-          _rlm = _rlm.Redefine("unitGenWeight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
-        };
-
 
         // Store sum of weights
         auto storePDFWeights = [this](floats weights, float gen)->floats {
@@ -168,6 +163,12 @@ void NanoAODAnalyzerrdframe::applyWeights(string pileFile, string map){
 
         ////Check Normalisation issue for genWeight
         _rlm = _rlm.Redefine("unitGenWeight","genWeight != 0 ? genWeight/abs(genWeight) : 0");
+        if (_outfilename.find("WtoLNu") != std::string::npos) {
+            std::cout << "WtoLNu" << std::endl;
+            _rlm = _rlm.Redefine("lhereweight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
+            _rlm = _rlm.Redefine("unitGenWeight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
+        };
+
         
         auto puWeightreader = correction::CorrectionSet::from_file("data/LUM/"+pileFile+"/puWeights.json.gz");
         auto _puweight = puWeightreader->at(map);
@@ -693,7 +694,6 @@ void NanoAODAnalyzerrdframe::skimJets(string cut) {
     // input vector: vec[pt][vars]
     // Note: do not skim with exact value of pt!
     auto skimCol = [this](floatsVec toSkim, ints cut)->floatsVec {
-
         floatsVec out;
         for (size_t i=0; i<toSkim.size(); i++) {
             if (cut[i] > 0) out.emplace_back(toSkim[i]);
@@ -738,25 +738,27 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     auto bSFreader = correction::CorrectionSet::from_file("data/BTV/" + btagYear + "/btagging.json.gz");
     auto _btagSF = bSFreader->at(btagMap);
     auto btagSF_shape = [this, _btagSF](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floatsVec{
-        floats wVec;
-        wVec.reserve(17);
-        floatsVec out;
-        out.reserve(pts.size());
-
         std::vector<std::string> systs = {"central",
             "up_hf", "down_hf", "up_lf", "down_lf",
             "up_hfstats1", "down_hfstats1", "up_hfstats2", "down_hfstats2",
             "up_lfstats1", "down_lfstats1", "up_lfstats2", "down_lfstats2",
             "up_cferr1", "down_cferr1", "up_cferr2", "down_cferr2"};
         
+        floats wVec;
+        wVec.reserve(systs.size());
+        floatsVec out;
+        out.reserve(pts.size());
+
         for (auto i=0; i<int(pts.size()); i++){
             for (auto &syst: systs){
                 float sf = 1.0;
-                if (pts[i] <= 40) sf = 1.0;
-                else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) sf = 1.0;
+                if (pts[i] < 30 || etas[i] > 2.5) {
+                    std::cout << "hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm" << std::endl;
+                    sf = 1.0;
+                }else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) sf = 1.0;
                 else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) sf = 1.0;
                 else sf = _btagSF->evaluate({syst, int(hadflav[i]), abs(etas[i]), pts[i], btags[i]}); 
-                std::cout << i << " " << syst << " " << sf << std::endl;
+                //std::cout << i << " " << syst << " " << sf << std::endl;
                 wVec.emplace_back(sf);
             }
             out.emplace_back(wVec);
@@ -764,7 +766,7 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
         }
         return out;
     };
-    auto btag_evWeight = [this](floatsVec &btagWeights) ->floatsVec{
+    auto btag_evWeight = [this](floatsVec &btagWeights)->floats{
         const int vars = 17;
         floats out(vars, 1.0);
 
@@ -774,7 +776,8 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
             }
         }
         return out;
-    }
+    };
+
     _rlm = _rlm.Define("Jet_btagSF", btagSF_shape, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"})
                .Define("btagWeight", btag_evWeight, {"Jet_btagSF"});
 
@@ -984,13 +987,13 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
     if (!_isData) {
         int nbsf_var = btag_var.size();
         int njes_var = jes_var.size();
-        _rlm = _rlm.Define("nbsf_var", [nbsf_var](){return int(nbsf_var);})
-                   .Define("njes_var", [njes_var](){return int(njes_var);})
+        //_rlm = _rlm.Define("nbsf_var", [nbsf_var](){return int(nbsf_var);})
+        //           .Define("njes_var", [njes_var](){return int(njes_var);})
                    //.Define("btagWeight_PNetB_perJet_loose", skimCol, {"btagWeight_PNetB_perJet", "jetoverlaploose"})
                    //.Define("btagWeight_PNetB_loose", calcBSF, {"btagWeight_PNetB_perJet_loose", "nbsf_var"})
                    //.Redefine("btagWeight_PNetB_perJet", skimCol, {"btagWeight_PNetB_perJet", "jetoverlap"})
                    //.Redefine("btagWeight_PNetB_jes_perJet", skimCol, {"btagWeight_PNetB_jes_perJet", "jetoverlap"})
-                   .Define("btagWeight", calcBSF, {"btagWeight", "nbsf_var"})
+                   //.Define("btagWeight", calcBSF, {"btagWeight", "nbsf_var"});
                    //.Define("btagWeight_PNetB_jes", calcBSF, {"btagWeight_PNetB_jes_perJet", "njes_var"});
     }
 

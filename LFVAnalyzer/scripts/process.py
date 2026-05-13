@@ -22,9 +22,9 @@ indir = os.path.join('/data2/common/skimmed_NanoAOD/', options.version, ch)
 tgdir = os.path.join(workdir, options.outdir, ch, year)
 logdir = os.path.join(workdir, options.outdir, ch, year, 'log')
 splitList = [#"Muon0-G",
-        "TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor",
-        "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Vector",
-        "TTto2L2Nu", "TTtoLNu2Q"
+        #"TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor",
+        #"TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Vector",
+        #"TTto2L2Nu", "TTtoLNu2Q"
             ]
 
 os.makedirs(tgdir, exist_ok=True)

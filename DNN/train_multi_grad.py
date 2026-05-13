@@ -2,25 +2,31 @@ import os
 import sys
 
 #os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import uproot
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.eager import backprop
+#from tensorflow.python.eager import backprop
 #tf.enable_eager_execution()
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import pickle
+#import pickle
 #from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.utils.np_utils import to_categorical
+from keras.utils import to_categorical
 from utils.plots import *
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import roc_curve, roc_auc_score
-from sklearn.model_selection import KFold
-from keras.wrappers.scikit_learn import KerasClassifier
-from sklearn.model_selection import cross_val_score, GridSearchCV
+#from sklearn.preprocessing import MinMaxScaler
+#from sklearn.metrics import roc_curve, roc_auc_score
+#from sklearn.model_selection import KFold
+#from sklearn.model_selection import cross_val_score, GridSearchCV
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon")
+args = parser.parse_args()
+ch = args.ch
 
 def min_max_scaling(series):
     return (series - series.min()) / (series.max() - series.min())
@@ -28,17 +34,17 @@ def min_max_scaling(series):
 
 root_dir = os.getcwd().replace("DNN","") # Upper directory
 # MODIFY !!!
-processed = "June2023_GoingtoPrep_normalised_"
+processed = "0430_1607"
 syst = "nom"
 label = "top_lfv_multiClass"
 class_names = ["bkg","sigTT", "sigST"]
 
 print("Start multi LFV Training")
 #epochs = 1000
-epochs = 100
+epochs = 150
 inputvars_st = [ # "Muon1_pt","Muon1_eta",
         "Tau1_pt","Tau1_mass","Tau1_eta",
-        "Jet1_mass","Jet1_eta","Jet1_btagPNetB",
+        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
         "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
         "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
         "chi2","chi2_SMW_mass","chi2_SMTop_mass",
@@ -54,7 +60,8 @@ sbratio = 1 # sig:bkg = 1:1
 
 #kfold = KFold(n_splits=10, shuffle=True)
 
-train_outdir = label+"_"+processed+"/"+syst
+train_outdir = label+"_"+processed+"/"+ch+"_"+syst
+print ("train_out: ", train_outdir)
 os.makedirs(train_outdir, exist_ok=True)
 
 siglist_st = []
@@ -67,14 +74,14 @@ else:
     siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
 years = ["v2022", "v2022EE", "v2023", "v2023_BPix", "v15_2024"]
 years = ["v15_2024"]
-project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0323_btag_v3/"
+project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer_tmp/process_0323_nobtag/"
 
 df_sig_st_list = []
 df_sig_tt_list = []
 df_bkg_tt_list = []
 #We use all the years together
 for year in years:
-   project_dir_y = project_dir+"/"+year+"/"
+   project_dir_y = project_dir+"/"+ch+"/"+year+"/"
 
    #Concatinate ST signals
    for sig_tree in siglist_st:
@@ -101,8 +108,8 @@ df_sig_st = pd.concat(df_sig_st_list)
 df_sig_tt = pd.concat(df_sig_tt_list)
 df_bkg = pd.concat(df_bkg_tt_list)
 
-ntotsig_tt = len(df_sig_st)
-ntotsig_st = len(df_sig_tt)
+ntotsig_st = len(df_sig_st)
+ntotsig_tt = len(df_sig_tt)
 ntotbkg = len(df_bkg)
 print(df_bkg.replace(np.nan, 0))
 print(df_sig_st.replace(np.nan, 0))
@@ -228,7 +235,7 @@ y_val = y_total[trainlen:]
 #mc = ModelCheckpoint(train_outdir+'/best_model.h5', monitor='val_loss', mode='min', save_best_only=True)
 print("xtrain shape:",x_train.shape)
 
-model_dir = train_outdir+'/best_model.h5'
+model_dir = train_outdir+'/best_model.keras'
 print("model dir", model_dir)
 model = tf.keras.models.load_model(model_dir)
 model.summary()
@@ -274,6 +281,46 @@ print(mean_grads)
 df = pd.DataFrame(all_grads)
 print(df)
 df.to_csv('data.csv', index=False)
+
+# =========================
+# Feature importance summary
+# =========================
+
+importance_df = pd.DataFrame({
+    "feature": name_inputvar,
+    "importance": mean_grads
+})
+
+# 정렬
+importance_df = importance_df.sort_values(by="importance", ascending=False)
+
+print("=== Feature Importance (sorted) ===")
+print(importance_df)
+
+# CSV 저장
+importance_df.to_csv(outputDir + "/feature_importance.csv", index=False)
+
+
+# =========================
+# Plot
+# =========================
+plt.figure(figsize=(10, 8))
+
+plt.barh(
+    importance_df["feature"],
+    importance_df["importance"]
+)
+
+plt.gca().invert_yaxis()
+
+plt.xlabel("Mean |Gradient|")
+plt.title("Feature Importance (Gradient-based)")
+
+plt.tight_layout()
+
+plt.savefig(outputDir + "/feature_importance.png")
+plt.savefig(outputDir + "/feature_importance.pdf")
+plt.close()
 
 #order_gradiants = tape2.gradient(first_order_gradients, input_data)
 #print(first_order_gradients)

@@ -35,7 +35,7 @@ training_path = options.indir
 
 inputvars = [#"Muon1_pt", "Muon1_eta",
             "Tau1_pt","Tau1_mass","Tau1_eta",
-            "Jet1_mass","Jet1_eta","Jet1_btagPNetB",
+            "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
             "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
             "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
             "chi2","chi2_SMW_mass","chi2_SMTop_mass",
@@ -57,13 +57,13 @@ def run(inputs):
     alpha = inputs[2]
     #print(year, discriminator_key , alpha)
 
-    #binedges = [0,1,2,3,5,10,30,60]
-    binedges = [i for i in frange(0.0, 100.01, 0.01)]
+    binedges = [0,0.01,1,3,5,10,30,100]
+    #binedges = [i for i in frange(0.0, 100.01, 0.01)]
 
-    model_dir = os.path.join(training_path, ch+"/nom/best_model.keras")
+    model_dir = os.path.join(training_path, ch+"_nom/best_model.keras")
     model = tf.keras.models.load_model(model_dir)
 
-    hists_path = os.path.join(options.outdir, year)
+    hists_path = os.path.join(options.outdir+"/"+ch, year)
     if not os.path.isdir(hists_path):
         os.makedirs(hists_path, exist_ok=True)
 
@@ -93,13 +93,16 @@ def run(inputs):
         h_nevents_S4 = infile_forS["h_nevents_S4"]
         h_nevents_S2_nobtag = infile_forS["h_nevents_S2_nobtag"]
         h_nevents_S2 = infile_forS["h_nevents_S2"]
-        if any(string in input_file for string in ["Tau-LFV", "TTt", "_ST_t"]) and "__" not in input_file:
-            ScaleWeightSum = infile['ScaleWeightSum']
-            PSWeightSum = infile['PSWeightSum']
-            LHEPdfWeightSum = infile['LHEPdfWeightSum']
+        #if any(string in input_file for string in ["Tau-LFV", "TTt", "_ST_t"]) and "__" not in input_file:
+        #    ScaleWeightSum = infile['ScaleWeightSum']
+        #    PSWeightSum = infile['PSWeightSum']
+        #    LHEPdfWeightSum = infile['LHEPdfWeightSum']
 
-    if nEvents == 0:
-        #print("No events : "+input_file)
+    pd_data = tree.arrays(inputvars, library="pd")
+    if nEvents == 0 or pd_data is None or len(pd_data) == 0:
+        print("No events : "+input_file)
+        print ("pd_data: ", pd_data)
+        print ("len(pd_data)", len(pd_data))
         #Need to add empth histograms for technical reasons ....
         muon_pt = []
         tau_pt = []
@@ -119,11 +122,11 @@ def run(inputs):
         if ch == "muon": muon_pt = tree["Muon1_pt"].array()
         else: muon_pt = tree["Electron1_pt"].array()
         tau_pt = tree["Tau1_pt"].array()
-        pd_data = tree.arrays(inputvars, library="pd")
         pd_weight = tree.arrays(weights, library="np")
         pred_data = np.array(pd_data.filter(items = inputvars))
 
         pred = model.predict(pred_data, batch_size=128)
+        #print ("pred0: ", pred)
         #pred_df = pd.DataFrame(pred, columns=['Prediction1', 'Prediction2', 'Prediction3'])
         #print("PRED SHAPE : ", pred.shape)
         #result_df = pd.concat([pd_data, pred_df], axis=1)
@@ -137,6 +140,7 @@ def run(inputs):
         pred = ( ((1 - alpha) * pred[:,2] + alpha * pred[:,1]) / pred[:,0])
         pred[pred >= 100.0] = 99.999
         pred = pred.tolist()
+        #print ("pred: ", pred)
         pd_weight = pd_weight[eventWeight].tolist()
         nom_weight = pd_weight.copy()
         dnnhist_nom = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
@@ -227,14 +231,14 @@ def run(inputs):
         outf["h_dnn_entries_S5"] = dnnhist_entries_nom
         outf["hcounter"] = hcounter
 
-        if not "SingleMuon" in input_file:
+        if not "Muon" in input_file:
             outf["h_nevents_S4_nobtag"] = h_nevents_S4_nobtag
             outf["h_nevents_S4"] = h_nevents_S4
 
-            if any(string in input_file for string in ["Tau-LFV","TTt","_ST_t"]) and "__" not in input_file:
-                outf["ScaleWeightSum"] = ScaleWeightSum
-                outf["PSWeightSum"] = PSWeightSum
-                outf["LHEPdfWeightSum"] = LHEPdfWeightSum
+            #if any(string in input_file for string in ["Tau-LFV","TTt","_ST_t"]) and "__" not in input_file:
+            #    outf["ScaleWeightSum"] = ScaleWeightSum
+            #    outf["PSWeightSum"] = PSWeightSum
+            #    outf["LHEPdfWeightSum"] = LHEPdfWeightSum
 
         if len(syst_extend) > 1:
             syst_list.extend(syst_extend)
@@ -269,7 +273,7 @@ if __name__ == '__main__':
     #for year in ["v2022", "v2022EE", "v2023", "v2023_BPix", "v15_2024"]:
     for year in ["v15_2024"]:
         print(year)
-        project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0323_btag_v3/" + ch + "/" + year + "/"
+        project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0429_btag_v2/" + ch + "/" + year + "/"
         flist = os.listdir(project_dir)
         flist = [i for i in flist if (".root" in i)]
         for curfile in flist:
@@ -279,7 +283,7 @@ if __name__ == '__main__':
     parameters_sorted = [tup for tup in parameters if '__' not in tup[1]]
     parameters_sorted.extend([tup for tup in parameters if '__' in tup[1]])
     print ("params: ", parameters_sorted)
-    pool = multiprocessing.get_context("spawn").Pool(12)
+    pool = multiprocessing.get_context("spawn").Pool(4)
     pool.map(run, parameters_sorted)
     pool.close()
     pool.join()

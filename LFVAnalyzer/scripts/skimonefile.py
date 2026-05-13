@@ -27,6 +27,7 @@ if __name__=='__main__':
     (options, args) = parser.parse_args()
 
 
+    print ("skimonefile.py infile: ", options.infile)
     if any(i in options.infile for i in ["Run2016B", "Run2016C", "Run2016D"]):
         options.globaltag = "Summer19UL16APV_RunBCD_V7"
     elif any(i in options.infile for i in ["Run2016E", "Run2016F"]) and options.year == "2016pre":

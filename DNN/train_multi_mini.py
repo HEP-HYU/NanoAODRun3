@@ -15,8 +15,7 @@ import pickle
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.utils import to_categorical
 from utils.plots import *
-#from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import KFold
 #from keras.wrappers.scikit_learn import KerasClassifier
@@ -36,23 +35,26 @@ def min_max_scaling(series):
 root_dir = os.getcwd().replace("DNN","") # Upper directory
 # MODIFY !!!
 syst = "nom"
-label = "top_lfv"
+label = "top_lfv_mini"
 class_names = ["bkg", "sigTT", "sigST"]
 
 print("Start multi LFV Training")
 epochs = 1000
 inputvars_st = [ # "Muon1_pt","Muon1_eta",
-        "Tau1_pt","Tau1_mass","Tau1_eta",
-        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
-        "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
-        "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-        "chi2","chi2_SMW_mass","chi2_SMTop_mass",
-        "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-        "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
+        "Tau1_pt",#"Tau1_mass",
+        "Tau1_eta",
+        #"Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
+        #"Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
+        #"Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
+        #"chi2","chi2_SMW_mass",
+        "chi2_SMTop_mass",
+        #"chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
+        "leptau_mass",#"leptau_dEta","leptau_dPhi",
+        #"leptau_dR",
         "PuppiMET_pt"
         ]
-if ch == "muon": inputvars_st = ["Muon1_pt", "Muon1_eta"] + inputvars_st
-else: inputvars_st = ["Electron1_pt", "Electron1_eta"] + inputvars_st
+if ch == "muon": inputvars_st = ["Muon1_pt"]+inputvars_st #, "Muon1_eta"] + inputvars_st
+#else: inputvars_st = ["Electron1_pt", "Electron1_eta"] + inputvars_st
 
 #"Jet1_pt"
 processed = datetime.now().strftime("%m%d_%H%M")
@@ -181,15 +183,6 @@ print(pd_data.head())
 
 x_total = np.array(pd_data.filter(items = inputvars_st))
 y_total = np.array(pd_data.filter(items = ['category']))
-
-# Standard Scaling
-scaler = StandardScaler()
-x_total = scaler.fit_transform(x_total)
-
-with open(train_outdir + "/scaler.pkl", "wb") as f:
-    pickle.dump(scaler, f)
-
-print("Saved scaler:", train_outdir + "/scaler.pkl")
 
 y_cat = to_categorical(y_total)
 print("Y cat: ", y_cat)

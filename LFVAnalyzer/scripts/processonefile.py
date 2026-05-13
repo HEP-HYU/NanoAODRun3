@@ -26,6 +26,7 @@ if __name__=='__main__':
     parser.add_argument("--ff", dest="ff", action="store_true", default=False, help="Apply tau fake factor for final selection")
     options = parser.parse_args()
 
+    print("processonefile.py")
     print("Input: " + options.infile + ", " + "Output: " + options.outputroot)
     outputroot = options.outputroot
     infile = options.infile

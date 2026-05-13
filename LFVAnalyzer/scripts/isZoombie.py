@@ -17,10 +17,12 @@ def has_required_keys(tfile, is_skim):
     """필수 key 존재 여부 체크"""
     keys = [key.GetName() for key in tfile.GetListOfKeys()]
 
-    if not is_skim:
-        REQUIRED_KEYS = ["Events", "h_tau1_pt_S5"]
+    if is_skim:
+        required_keys = REQUIRED_KEYS
+    else:
+        required_keys = ["Events", "h_tau1_pt_S5"]
 
-    for req in REQUIRED_KEYS:
+    for req in required_keys:
         if req not in keys:
             return False
     return True
@@ -70,6 +72,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     output_file = "zombie.txt"
+    if args.isSkim:
+        print ("skim")
+    else:
+        print ("process")
 
     bad_files = find_problematic_root_files(args.input_path, args.isSkim)
 

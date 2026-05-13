@@ -69,7 +69,7 @@ def plot_performance(hist, savedir="./"):
 
 def plot_output_dist(train, test,sig="st", savedir="./"):
     #sig can be "tt" or "st"
-    sig_class = {"st":1,"tt":2}
+    sig_class = {"st":2,"tt":1}
     sigtrain = np.array(train[train["True"]==sig_class[sig]]["Pred"])
     bkgtrain = np.array(train[train["True"]==0]["Pred"])
     sigtest = np.array(test[test["True"]==sig_class[sig]]["Pred"])

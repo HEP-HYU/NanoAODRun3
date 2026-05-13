@@ -28,6 +28,8 @@ SkimEvents::SkimEvents(TTree *t, std::string outfilename, std::string year, std:
   if (_outfilename.find("Tau-LFV-") != std::string::npos){
       cout << "Signal" << endl;
       _isSignal = true;
+  } else{
+      _isSignal = false;
   }
 }
 
@@ -102,8 +104,10 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && Electron_mvaIso_WP90";
     std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
     std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.4 && (Jet_JetId==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
-    applyWeights(pileFile, pileMap);
+
+    setupJetMETCorrection(jecFile, jecYear, jerMap, _isData);
     JetVetoMap(jetFile, jetMap);
+    applyWeights(pileFile, pileMap);
     if (_isSignal) matchGenReco();
     if (_ch.find("muon") != std::string::npos){
         selectMuons(muoncut, vetomuon);
@@ -111,7 +115,6 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         selectElectrons(eleccut, vetoelec);
     }
     std::cout << "setupJetMET" << std::endl;
-    setupJetMETCorrection(jecFile, jecYear, jerMap, _isData);
     skimJets(skimjet);
     if (!_isData){
         if (_ch.find("muon") != std::string::npos){
@@ -155,9 +158,6 @@ void SkimEvents::defineCuts()
 
 void SkimEvents::defineMoreVars()
 {
-        if (_year.find("23") != std::string::npos) {
-            addVar({"Flag_filter", "Flag_goodVertices"});
-        }
         // define variables that you want to store
         addVartoStore("run");
         addVartoStore("luminosityBlock");
