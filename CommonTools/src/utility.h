@@ -12,6 +12,10 @@
 #include "ROOT/RVec.hxx"
 #include "Math/Vector4D.h"
 #include <string>
+#include <map>
+
+extern std::map<int,float> btagNormFactors;
+float getBTagNormFactor(int njet);
 
 using floats =  ROOT::VecOps::RVec<float>;
 using floatsVec =  ROOT::VecOps::RVec<ROOT::VecOps::RVec<float>>;

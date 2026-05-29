@@ -30,6 +30,7 @@ private:
     bool _applytauFF;
     bool _isSignal;
     bool _isMuonCh;
+    void defineBTagNormalization();
     static double tauFF(std::string year_, std::string unc_, int direction_, floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_);
 
     struct tauFFfunctor {

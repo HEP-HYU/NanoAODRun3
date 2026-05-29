@@ -54,7 +54,7 @@ public:
   virtual void selectMuons(std::string cut, std::string vetocut);
   virtual void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut);
   virtual void skimJets(std::string cut);
-  void applyBSFs(std::vector<string> jes_var, std::string btagYear, std::string btagMap);
+  void applyBSFs(std::vector<string> jes_var, std::string btagYear, std::string btagMap, std::string btagMapLight, int btagcut);
   void applyWeights(std::string pileFile, std::string map);
   virtual void selectTaus(std::string cut, std::string tauYear);
   //virtual void selectMET();

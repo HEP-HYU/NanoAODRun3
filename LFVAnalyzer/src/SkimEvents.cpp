@@ -42,61 +42,64 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     std::string jecFile = "";
     std::string jecYear = "";
     std::string jerMap = "";
-    std::string btagYear = "";
-    std::string btagMap = "particleNet_shape";
+    std::string elecFile = "";
+    std::string elecYear = "";
     if (_isRun22) {
         pileFile = "2022_Summer22";
         pileMap = "Collisions2022_355100_357900_eraBCD_GoldenJson";
         jetFile = "2022_Summer22";
         jetMap = "Summer22_23Sep2023_RunCD_V1";
+        elecFile = "2022_Summer22";
+        elecYear = "2022Re-recoBCD";
         tauYear = "2022_preEE";
         jecFile = "2022_Summer22";
         jecYear = "Summer22_22Sep2023";
         jerMap = "Summer22_22Sep2023";
-        btagYear = "2022_Summer22";
     } else if (_isRun22EE) {
         pileFile = "2022_Summer22EE";
         pileMap = "Collisions2022_359022_362760_eraEFG_GoldenJson";
         jetFile = "2022_Summer22EE";
         jetMap = "Summer22EE_23Sep2023_RunEFG_V1";
+        elecFile = "2022_Summer22EE";
+        elecYear = "2022Re-recoE+PromptFG";
         tauYear = "2022_postEE";
         jecFile = "2022_Summer22EE";
         jecYear = "Summer22EE_22Sep2023";
         jerMap = "Summer22EE_22Sep2023";
-        btagYear = "2022_Summer22EE";
     } else if (_isRun23) {
         pileFile = "2023_Summer23";
         pileMap = "Collisions2023_366403_369802_eraBC_GoldenJson";
         jetFile = "2023_Summer23";
         jetMap = "Summer23Prompt23_RunC_V1";
+        elecFile = "2023_Summer23";
+        elecYear = "2023PromptC";
         tauYear = "2023_preBPix";
         jecFile = "2023_Summer23";
         jecYear = "Summer23Prompt23";
         jerMap = "Summer23Prompt23_RunCv1234";
-        btagYear = "2023_Summer23";
     } else if (_isRun23BPix) {
         pileFile = "2023_Summer23BPix";
         pileMap = "Collisions2023_369803_370790_eraD_GoldenJson";
         jetFile = "2023_Summer23BPix";
         jetMap = "Summer23BPixPrompt23_RunD_V1";
+        elecFile = "2023_Summer23BPix";
+        elecYear = "2023PromptD";
         tauYear = "2023_postBPix";
         jecFile = "2023_Summer23BPix";
         jecYear = "Summer23BPixPrompt23";
         jerMap = "Summer23BPixPrompt23_RunD";
-        btagYear = "2023_Summer23BPix";
     } else if (_isRun24) {
         //TODO
         pileFile = "2024_Summer24";
         pileMap = "Collisions24_BCDEFGHI_goldenJSON";
         jetFile = "2024_Summer24";
         jetMap = "Summer24Prompt24_RunBCDEFGHI_V1";
+        elecFile = "2024_Summer24";
+        elecYear = "2024Prompt";
         tauYear = "2024";
         jecFile = "2024_Summer24";
         jecYear = "Summer24Prompt24";
         jerMap = "Summer23BPixPrompt23_RunD";
-        btagYear = "2023_Summer23BPix";
-        //btagYear = "2024_Summer24";
-        //btagMap = "UParTAK4_comb";
     }
 
     std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
@@ -105,25 +108,28 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
     std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.4 && (Jet_JetId==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
 
+    std::string muonid = "NUM_TightID_DEN_TrackerMuons";
+    std::string muoniso = "NUM_TightPFIso_DEN_TightID";
+    std::string muonhlt = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight";
+
     setupJetMETCorrection(jecFile, jecYear, jerMap, _isData);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
-    if (_isSignal) matchGenReco();
     if (_ch.find("muon") != std::string::npos){
+        if (!_isData){
+            calculateTauES(tauYear, "VTight", "Tight", "VVLoose");
+            calculateMuonSF(muonid, muoniso, muonhlt);
+        }
         selectMuons(muoncut, vetomuon);
     } else {
+        if (!_isData){
+            calculateTauES(tauYear, "VTight", "VLoose", "Tight");
+            calculateElectronSF(elecFile, elecYear);
+        }
         selectElectrons(eleccut, vetoelec);
     }
-    std::cout << "setupJetMET" << std::endl;
     skimJets(skimjet);
-    if (!_isData){
-        if (_ch.find("muon") != std::string::npos){
-            calculateTauES(tauYear, "VTight", "Tight", "VVLoose");
-        } else{
-            calculateTauES(tauYear, "VTight", "VLoose", "Tight");
-        }
-        applyBSFs(jes_var, btagYear, btagMap);
-    }
+    if (_isSignal) matchGenReco();
 }
 
 // Define your cuts here
@@ -136,18 +142,14 @@ void SkimEvents::defineCuts()
   cout << "Skim cut" << endl;
 
   if (_ch.find("muon") != std::string::npos) {
+      addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0","0");
       if (_isSignal){
-          addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "0");
-          addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0","00");
-      } else{
-          addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0","0");
+          addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "00");
       }
   } else if (_ch.find("electron") != std::string::npos) {
+      addCuts("(HLT_Ele30_WPTight_Gsf || HLT_Ele115_CaloIdVT_GsfTrkIdT || HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 || HLT_Photon200) && nelepass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0", "0");
       if (_isSignal){
-          addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "0");
-          addCuts("(HLT_Ele30_WPTight_Gsf || HLT_Ele115_CaloIdVT_GsfTrkIdT || HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 || HLT_Photon200) && nelepass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0", "00");
-      } else {
-          addCuts("(HLT_Ele30_WPTight_Gsf || HLT_Ele115_CaloIdVT_GsfTrkIdT || HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 || HLT_Photon200) && nelepass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0", "0");
+          addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "00");
       }
   }
 

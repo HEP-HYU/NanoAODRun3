@@ -12,6 +12,18 @@
 #include "Math/GenVector/Rotation3D.h"
 #include "Math/Math.h"
 
+std::map<int,float> btagNormFactors;
+
+float getBTagNormFactor(int njet)
+{
+    auto it = btagNormFactors.find(njet);
+
+    if(it == btagNormFactors.end())
+        return 1.0;
+
+    return it->second;
+}
+
 // Utility function to generate fourvector objects for thigs that pass selections
 
 FourVectorVec gen4vec(floats &pt, floats &eta, floats &phi, floats &mass)
