@@ -14,7 +14,8 @@ SkimEvents::SkimEvents(TTree *t, std::string outfilename, std::string year, std:
   _isSkim = true;
   cout << "<< Start Skim NanoAOD >>" << endl;
   _isHTstitching = false;
-  if (_outfilename.find("WtoLNu-4Jets") != string::npos) {
+  if (_outfilename.find("WtoENu-4Jets")!= string::npos || _outfilename.find("WtoMuNu-4Jets")!= string::npos || _outfilename.find("WtoTauNu-4Jets")!= string::npos) {
+      cout << "WJet stitching" << endl;
       _isHTstitching = true;
   }
   if (_ch.find("muon") != std::string::npos){
@@ -153,9 +154,10 @@ void SkimEvents::defineCuts()
       }
   }
 
-  //Prescription to fill up WJets HT = 0-100
-  //if (_isHTstitching)
-  //    addCuts("LHE_HT < 40","00");
+  //Prescription to fill up WJets 0J
+  if (_isHTstitching) {
+      addCuts("LHE_Njets == 0","00");
+  }
 }
 
 void SkimEvents::defineMoreVars()
@@ -196,8 +198,8 @@ void SkimEvents::defineMoreVars()
         addVartoStore("Jet_jetId");
         addVartoStore("Jet_JetId");
         addVartoStore("Jet_rawFactor");
-        addVartoStore("Jet_btagPNetB");
-        addVartoStore("Jet_btagUParTAK4B");
+        addVartoStore("Jet_btagPNet.*");
+        addVartoStore("Jet_btagUParTAK4.*");
         addVartoStore("Jet_muEF");
         addVartoStore("Jet_ch.*");
         addVartoStore("Jet_ne.*");
