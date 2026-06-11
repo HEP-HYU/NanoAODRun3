@@ -45,6 +45,7 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     std::string jerMap = "";
     std::string elecFile = "";
     std::string elecYear = "";
+    std::string jecVersion = "_V2_";
     if (_isRun22) {
         pileFile = "2022_Summer22";
         pileMap = "Collisions2022_355100_357900_eraBCD_GoldenJson";
@@ -100,20 +101,21 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         tauYear = "2024";
         jecFile = "2024_Summer24";
         jecYear = "Summer24Prompt24";
-        jerMap = "Summer23BPixPrompt23_RunD";
+        jerMap = "Summer24Prompt24";
+        jecVersion = "_V3_";
     }
 
     std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
     std::string vetomuon = "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
     std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && Electron_mvaIso_WP90";
     std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
-    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.4 && (Jet_JetId==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
+    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.5 && (Jet_JetId==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
 
     std::string muonid = "NUM_TightID_DEN_TrackerMuons";
     std::string muoniso = "NUM_TightPFIso_DEN_TightID";
     std::string muonhlt = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight";
 
-    setupJetMETCorrection(jecFile, jecYear, jerMap, _isData);
+    setupJetMETCorrection(jecFile, jecYear, jerMap, jecVersion, _isData);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
     if (_ch.find("muon") != std::string::npos){

@@ -54,7 +54,7 @@ public:
   virtual void selectMuons(std::string cut, std::string vetocut);
   virtual void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut);
   virtual void skimJets(std::string cut);
-  void applyBSFs(std::vector<string> jes_var, std::string btagYear, std::string btagMap, std::string btagMapLight, int btagcut);
+  void applyBSFs(std::vector<string> jes_var, std::string btagYear, std::string btagMap, std::string btagMapLight, float btagcut);
   void applyWeights(std::string pileFile, std::string map);
   virtual void selectTaus(std::string cut, std::string tauYear);
   //virtual void selectMET();
@@ -162,7 +162,7 @@ protected:
   RNodeTree *currentnode;
   bool isDefined(string v);
 
-  void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, bool dataMc=false);
+  void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, std::string jecVersion="_V2_", bool dataMc=false);
 };
 
 #endif /* NANOAODANALYZERRDFRAME_H_ */

@@ -8,10 +8,19 @@
 #include "TauFakeFactorAnalyzer.h"
 #include "utility.h"
 
-TauFakeFactorAnalyzer::TauFakeFactorAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, string globaltag, int nthreads, std::string mode)
-:NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads), _syst(syst), _year(year), _ch(ch), _mode(mode)
+TauFakeFactorAnalyzer::TauFakeFactorAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads, std::string mode)
+:TopLFVAnalyzer(t, outfilename, year, ch, syst, jsonfname, applytauFF, globaltag, nthreads), _syst(syst), _year(year), _ch(ch), _mode(mode)
 {
     _syst = syst;
+
+    if (_ch.find("muon") != std::string::npos){
+        cout << "muon channel" << endl;
+        _isMuonCh = true;
+    } else{
+        cout << "electron channel" << endl;
+        _isMuonCh = false;
+    }
+
 }
 
 // Define your cuts here
@@ -66,17 +75,17 @@ void TauFakeFactorAnalyzer::defineMoreVars() {
     if (_syst == "data") {
         addVar({"eventWeight", "1.0"});
     } else {
-        addVar({"eventWeight_genpu", "unitGenWeight * TopPtWeight[0] * puWeight[0] * L1PreFiringWeight_Nom"});
+        addVar({"eventWeight_genpu", "unitGenWeight * TopPtWeight[0] * puWeight[0]"});// * L1PreFiringWeight_Nom"});
         addVar({"eventWeight_mu", "muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[0]"});
         if (_mode == "lss" or _mode == "los") {
             addVar({"eventWeight_tau", "tauWeightIdVsJet_loose[0][0] * tauWeightIdVsEl_loose[0][0] * tauWeightIdVsMu_loose[0][0]"});
             addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_mu * eventWeight_tau"});
-            addVar({"eventWeight", "eventWeight_nobtag * btagWeight_PNetB_loose[0]"});
-            //addVar({"eventWeight", "eventWeight_nobtag * btagWeight_PNetB[0]"});
+            addVar({"eventWeight", "eventWeight_nobtag * btagWeightNorm[0]"});
+            //addVar({"eventWeight", "eventWeight_nobtag * btagWeightNorm[0]"});
         } else {
             addVar({"eventWeight_tau", "tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_mu * eventWeight_tau"});
-            addVar({"eventWeight", "eventWeight_nobtag * btagWeight_PNetB[0]"});
+            addVar({"eventWeight", "eventWeight_nobtag * btagWeightNorm[0]"});
         }
     }
 

@@ -183,7 +183,7 @@ void NanoAODAnalyzerrdframe::defineObjectSelection(std::vector<std::string> jes_
     skimJets(skimjet);
 }
 
-void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, bool dataMc){
+void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc){
     auto jercReader = correction::CorrectionSet::from_file("data/JME/"+jecFile+"/jet_jerc.json.gz");
     string datamcflag = "";
     if (dataMc) datamcflag = "DATA";
@@ -191,9 +191,9 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
 
     string tmp = jecYear + "_V2_" + datamcflag + "_L1FastJet_AK4PFPuppi";
     std::cout << tmp << std::endl;
-    auto _L1FastJet = jercReader->at(jecYear + "_V2_" + datamcflag + "_L1FastJet_AK4PFPuppi");
-    auto _L2Relative = jercReader->at(jecYear + "_V2_" + datamcflag + "_L2Relative_AK4PFPuppi");
-    auto _L2L3Residual = jercReader->at(jecYear + "_V2_DATA_L2L3Residual_AK4PFPuppi");
+    auto _L1FastJet = jercReader->at(jecYear + jecVersion + datamcflag + "_L1FastJet_AK4PFPuppi");
+    auto _L2Relative = jercReader->at(jecYear + jecVersion + datamcflag + "_L2Relative_AK4PFPuppi");
+    auto _L2L3Residual = jercReader->at(jecYear + jecVersion + datamcflag + "_L2L3Residual_AK4PFPuppi");
 
     auto applyJes = [this, _L1FastJet, _L2Relative, _L2L3Residual, dataMc](floats jetpts, floats jetetas, floats jetphis, floats jetAreas, floats jetrawf, float rho, unsigned int run, floats toCorr)->floats {
         floats corrfactors;
@@ -325,31 +325,23 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     
     auto _vetomap = vetoMapreader->at(map);
  
-    auto vetomap = [this, _vetomap](floats &eta, floats &phi)->floats {
-        floats xout;
-        for (unsigned int i=0; i<eta.size(); i++) {
-            float es = 0.0;
-            es = _vetomap->evaluate({std::string("jetvetomap"),eta[i],phi[i]});
-            xout.emplace_back(es);
-        }
-        return xout;
+    auto vetomap = [_vetomap](const std::string &key) {
+        return [_vetomap, key](floats &eta, floats &phi)->floats {
+            floats xout;
+            xout.reserve(eta.size());
+            for (size_t i=0; i<eta.size(); i++) {
+                //xout.emplace_back(_vetomap->evaluate({key, eta[i], phi[i]}));
+                xout.emplace_back(0.0);
+            }
+            return xout;
+        };
     };
     
-    auto vetomap_fpix = [this, _vetomap](floats &eta, floats &phi)->floats {
-        floats xout;
-        for (unsigned int i=0; i<eta.size(); i++) {
-            float es = 0.0;
-            es = _vetomap->evaluate({std::string("jetvetomap_fpix"),eta[i],phi[i]});
-            xout.emplace_back(es);
-        }
-        return xout;
-    };
-    
-    _rlm = _rlm.Define("Jet_isVeto_loose", vetomap, {"Jet_eta_loosejet","Jet_phi_loosejet"})
+    _rlm = _rlm.Define("Jet_isVeto_loose", vetomap("jetvetomap"), {"Jet_eta_loosejet","Jet_phi_loosejet"})
                .Define("events_isVeto","Sum(Jet_isVeto_loose)");
 
     if (_isRun24){
-        _rlm = _rlm.Define("Jet_isVeto_fpix", vetomap_fpix, {"Jet_eta_loosejet", "Jet_phi_loosejet"})
+        _rlm = _rlm.Define("Jet_isVeto_fpix", vetomap("jetvetomap_fpix"), {"Jet_eta_loosejet", "Jet_phi_loosejet"})
                    .Redefine("events_isVeto", "Sum(Jet_isVeto_loose)+Sum(Jet_isVeto_fpix)");
     }
 }
@@ -733,6 +725,7 @@ void NanoAODAnalyzerrdframe::skimJets(string cut) {
                .Redefine("Jet_JetId", "Jet_JetId[jetcuts]")
                .Redefine("Jet_area", "Jet_area[jetcuts]")
                .Redefine("Jet_rawFactor", "Jet_rawFactor[jetcuts]")
+               .Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetcuts]")
                .Redefine("Jet_pt_uncorr", "Jet_pt_uncorr[jetcuts]")
                .Redefine("Jet_btagPNetB", "Jet_btagPNetB[jetcuts]")
                .Redefine("Jet_btagPNetCvB", "Jet_btagPNetCvB[jetcuts]")
@@ -845,7 +838,7 @@ void NanoAODAnalyzerrdframe::selectMuons(string cut, string vetocut) {
     }
 }
 
-void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagYear, string btagMap, string btagMapLight, int btagcut) {
+void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagYear, string btagMap, string btagMapLight, float btagcut) {
     cout << "Loading Btag SF: " << btagYear << endl;
 
     _rlm = _rlm.Define("btag_var", [](){return strings(btag_var);})
@@ -856,97 +849,100 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     auto _btagSFlight = bSFreader->at(btagMapLight);
 
     //case1 - Fixed Working Point correction
-    auto btagSF24_fixWP = [this, _btagSF, _btagSFlight, btagcut](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floats{
-        cout << " btag fix wp" << endl;
-        floats wVec;
-        wVec.reserve(3);
+    //auto btagSF24_fixWP = [this, _btagSF, _btagSFlight, btagcut](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floats{
+    //    cout << " btag fix wp" << endl;
+    //    floats wVec;
+    //    wVec.reserve(3);
 
-        std::vector<std::string> systs = {"central", "up", "down",
-            //"up_bfragmentation", "down_bfragmentation", "up_correlated", "down_correlated",
-            //"up_fsrdef", "down_fsrdef", "up_hdamp", "down_hdamp",
-            //"up_isrdef", "down_isrdef", "up_jer", "down_jer",
-            //"up_jes", "down_jes", "up_muf", "down_muf", 
-            //"up_mur", "down_mur", "up_pdfas", "down_pdfas",
-            //"up_pileup", "down_pileup", "up_statistic", "down_statistic",
-            //"up_topmass", "down_topmass", "up_type3", "down_type3", 
-            //"up_uncorrelated", "down_uncorrelated"
-        };
-        
-        if (int(pts.size()) != int(etas.size())) cout << "eta size hmmmmmmmmmmmm" << endl;
-        if (int(pts.size()) != int(hadflav.size())) cout << "hadflav size hmmmmmmmmmmmm" << endl;
-        if (int(pts.size()) != int(btags.size())) cout << "btag size hmmmmmmmmmmmm" << endl;
-        if (std::min({etas.size(), hadflav.size(), btags.size()}) != pts.size()) return wVec;
-        for (auto &syst: systs){
-            float w = 1.0;
-            for (auto i=0; i<int(pts.size()); i++){
-                if (hadflav[i] != 0 && btags[i] > 0.1272) { // WP M: 0.1272
-                    float sf = _btagSF->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
-                    w = w*sf;
-                } else if (hadflav[i] != 0 && btags[i] <= 0.1272){
-                    float sf = _btagSF->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
-                    w = w * (1-sf*85.4) / (1-85.4);
-                } else if (hadflav[i] == 0 && btags[i] > 0.1272){
-                    float sf = _btagSFlight->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
-                    w = w*sf;
-                } else {
-                    float sf = _btagSFlight->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
-                    w = w * (1-sf*0.1) / (1-0.1);
-                }
-            }
-            wVec.emplace_back(w);
-        }
-        return wVec;
-    };
+    //    std::vector<std::string> systs = {"central", "up", "down",
+    //        //"up_bfragmentation", "down_bfragmentation", "up_correlated", "down_correlated",
+    //        //"up_fsrdef", "down_fsrdef", "up_hdamp", "down_hdamp",
+    //        //"up_isrdef", "down_isrdef", "up_jer", "down_jer",
+    //        //"up_jes", "down_jes", "up_muf", "down_muf", 
+    //        //"up_mur", "down_mur", "up_pdfas", "down_pdfas",
+    //        //"up_pileup", "down_pileup", "up_statistic", "down_statistic",
+    //        //"up_topmass", "down_topmass", "up_type3", "down_type3", 
+    //        //"up_uncorrelated", "down_uncorrelated"
+    //    };
+    //    
+    //    if (int(pts.size()) != int(etas.size())) cout << "eta size hmmmmmmmmmmmm" << endl;
+    //    if (int(pts.size()) != int(hadflav.size())) cout << "hadflav size hmmmmmmmmmmmm" << endl;
+    //    if (int(pts.size()) != int(btags.size())) cout << "btag size hmmmmmmmmmmmm" << endl;
+    //    if (std::min({etas.size(), hadflav.size(), btags.size()}) != pts.size()) return wVec;
+    //    for (auto &syst: systs){
+    //        float w = 1.0;
+    //        for (auto i=0; i<int(pts.size()); i++){
+    //            if (hadflav[i] != 0 && btags[i] > 0.1272) { // WP M: 0.1272
+    //                float sf = _btagSF->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
+    //                w = w*sf;
+    //            } else if (hadflav[i] != 0 && btags[i] <= 0.1272){
+    //                float sf = _btagSF->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
+    //                w = w * (1-sf*85.4) / (1-85.4);
+    //            } else if (hadflav[i] == 0 && btags[i] > 0.1272){
+    //                float sf = _btagSFlight->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
+    //                w = w*sf;
+    //            } else {
+    //                float sf = _btagSFlight->evaluate({syst, "M", int(hadflav[i]), abs(etas[i]), pts[i]});
+    //                w = w * (1-sf*0.1) / (1-0.1);
+    //            }
+    //        }
+    //        wVec.emplace_back(w);
+    //    }
+    //    return wVec;
+    //};
 
-    _rlm = _rlm.Define("btagWeightNorm", btagSF24_fixWP, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagUParTAK4B"});
+    //_rlm = _rlm.Define("btagWeightNorm", btagSF24_fixWP, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagUParTAK4B"});
     
 
     //case3 - Shape correction
     //If you are interested in using the whole b-tagging discriminant distribution in your analysis,
     //e.g. using b-tagging variables to separate signal and background, then this method is for you
-    //auto btagSF_shape = [this, _btagSF](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floatsVec{
-    //    std::vector<std::string> systs = {"central",
-    //        "up_hf", "down_hf", "up_lf", "down_lf",
-    //        "up_hfstats1", "down_hfstats1", "up_hfstats2", "down_hfstats2",
-    //        "up_lfstats1", "down_lfstats1", "up_lfstats2", "down_lfstats2",
-    //        "up_cferr1", "down_cferr1", "up_cferr2", "down_cferr2"};
-    //    
-    //    floats wVec;
-    //    wVec.reserve(systs.size());
-    //    floatsVec out;
-    //    out.reserve(pts.size());
+    auto btagSF_shape = [this, _btagSF](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floatsVec{
+        std::vector<std::string> systs = {"central",
+            "up_hf", "down_hf", "up_lf", "down_lf",
+            "up_hfstats1", "down_hfstats1", "up_hfstats2", "down_hfstats2",
+            "up_lfstats1", "down_lfstats1", "up_lfstats2", "down_lfstats2",
+            "up_cferr1", "down_cferr1", "up_cferr2", "down_cferr2"};
+        
+        floats wVec;
+        wVec.reserve(systs.size());
+        floatsVec out;
+        out.reserve(pts.size());
 
-    //    for (auto i=0; i<int(pts.size()); i++){
-    //        for (auto &syst: systs){
-    //            float sf = 1.0;
-    //            if (pts[i] < 30 || etas[i] > 2.5) {
-    //                std::cout << "hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm" << std::endl;
-    //                sf = 1.0;
-    //            }else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) sf = 1.0;
-    //            else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) sf = 1.0;
-    //            else sf = _btagSF->evaluate({syst, int(hadflav[i]), abs(etas[i]), pts[i], btags[i]}); 
-    //            //std::cout << i << " " << syst << " " << sf << std::endl;
-    //            wVec.emplace_back(sf);
-    //        }
-    //        out.emplace_back(wVec);
-    //        wVec.clear();
-    //    }
-    //    return out;
-    //};
-    //auto btag_evWeight = [this](floatsVec &btagWeights)->floats{
-    //    const int vars = 17;
-    //    floats out(vars, 1.0);
+        if (int(pts.size()) != int(etas.size())) cout << "eta size hmmmmmmmmmmmm" << endl;
+        if (int(pts.size()) != int(hadflav.size())) cout << "hadflav size hmmmmmmmmmmmm" << endl;
+        if (int(pts.size()) != int(btags.size())) cout << "btag size hmmmmmmmmmmmm" << endl;
+        for (auto i=0; i<int(pts.size()); i++){
+            for (auto &syst: systs){
+                float sf = 1.0;
+                if (pts[i] < 30 || etas[i] > 2.5) {
+                    std::cout << "hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm" << std::endl;
+                    sf = 1.0;
+                }else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) sf = 1.0;
+                else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) sf = 1.0;
+                else sf = _btagSF->evaluate({syst, int(hadflav[i]), abs(etas[i]), pts[i], btags[i]}); 
+                //std::cout << i << " " << syst << " " << sf << std::endl;
+                wVec.emplace_back(sf);
+            }
+            out.emplace_back(wVec);
+            wVec.clear();
+        }
+        return out;
+    };
+    auto btag_evWeight = [this](floatsVec &btagWeights)->floats{
+        const int vars = 17;
+        floats out(vars, 1.0);
 
-    //    for (auto &jet: btagWeights){
-    //        for (int i=0; i<vars; i++){
-    //            out[i] *= jet[i];
-    //        }
-    //    }
-    //    return out;
-    //};
+        for (auto &jet: btagWeights){
+            for (int i=0; i<vars; i++){
+                out[i] *= jet[i];
+            }
+        }
+        return out;
+    };
 
-    //_rlm = _rlm.Define("Jet_btagSF", btagSF_shape, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"})
-    //           .Define("btagWeight", btag_evWeight, {"Jet_btagSF"});
+    _rlm = _rlm.Define("Jet_btagSF", btagSF_shape, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"})
+               .Define("btagWeight", btag_evWeight, {"Jet_btagSF"});
 
 
 }
@@ -1234,6 +1230,7 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
                .Redefine("Jet_eta", "Jet_eta[jetcuts]")
                .Redefine("Jet_phi", "Jet_phi[jetcuts]")
                .Redefine("Jet_mass", "Jet_mass[jetcuts]")
+               .Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetcuts]")
                .Redefine("Jet_btagPNetB", "Jet_btagPNetB[jetcuts]")
                .Redefine("Jet_btagPNetCvB", "Jet_btagPNetCvB[jetcuts]")
                .Redefine("Jet_btagPNetCvL", "Jet_btagPNetCvL[jetcuts]")
@@ -1292,6 +1289,7 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
                .Redefine("Jet_eta", "Jet_eta[jetoverlap]")
                .Redefine("Jet_phi", "Jet_phi[jetoverlap]")
                .Redefine("Jet_mass", "Jet_mass[jetoverlap]")
+               .Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetoverlap]")
                .Redefine("Jet_btagPNetB", "Jet_btagPNetB[jetoverlap]")
                .Redefine("Jet_btagPNetCvB", "Jet_btagPNetCvB[jetoverlap]")
                .Redefine("Jet_btagPNetCvL", "Jet_btagPNetCvL[jetoverlap]")

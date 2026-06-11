@@ -138,14 +138,14 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
     std::string cut  = "onlyveto";
     std::string vetomuon = "Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
     std::string vetoelec = "Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
-    std::string jetcut = "Jet_pt>40.0 && abs(Jet_eta)<2.4 && Jet_JetId==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8";
+    std::string jetcut = "Jet_pt>40.0 && abs(Jet_eta)<2.5 && Jet_JetId==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8";
     std::string taucut = "Tau_pt>40.0 && abs(Tau_eta)<2.5  && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6";
 
     std::string tauYear = "";
     std::string btagYear = "";
     std::string btagMap = "particleNet_shape";
     std::string btagMapLight = "UParTAK4_light";
-    int btagcut = 0.1272;
+    float btagcut = 0.1272;
     if (_isRun22) {
         tauYear = "2022_preEE";
         btagYear = "2022_Summer22";
@@ -160,7 +160,7 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
         btagYear = "2023_Summer23BPix";
     } else if (_isRun24){
         //TODO
-        tauYear = "2023_postBPix";
+        tauYear = "2024";
         //btagYear = "2023_Summer23BPix";
         btagYear = "2024_Summer24";
         btagMap = "UParTAK4_comb";
@@ -281,22 +281,28 @@ void TopLFVAnalyzer::defineMoreVars() {
     addVar({"Jet1_pt", "(Jet_pt.size()>0) ? Jet_pt[0] : -1", ""});
     addVar({"Jet1_eta", "Jet_eta[0]", ""});
     addVar({"Jet1_mass", "Jet_mass[0]", ""});
-    //addVar({"Jet1_btagPNetB","Jet_btagPNetB[0]",""});
-    addVar({"Jet1_btagPNetB","Jet_btagUParTAK4B[0]",""});
+    addVar({"Jet1_btagPNetB","Jet_btagPNetB[0]",""});
+    addVar({"Jet1_btagUParTAK4B","Jet_btagUParTAK4B[0]",""});
+    addVar({"Jet1_btagUParTAK4CvB","Jet_btagUParTAK4CvB[0]",""});
+    addVar({"Jet1_btagUParTAK4CvL","Jet_btagUParTAK4CvL[0]",""});
     addVar({"Jet1_btag", "Jet_btagUParTAK4B[0] > 0.1272", ""});
 
     addVar({"Jet2_pt", "Jet_pt[1]", ""});
     addVar({"Jet2_eta", "Jet_eta[1]", ""});
     addVar({"Jet2_mass", "Jet_mass[1]", ""});
-    //addVar({"Jet2_btagPNetB","Jet_btagPNetB[1]",""});
-    addVar({"Jet2_btagPNetB","Jet_btagUParTAK4B[1]",""});
+    addVar({"Jet2_btagPNetB","Jet_btagPNetB[1]",""});
+    addVar({"Jet2_btagUParTAK4B","Jet_btagUParTAK4B[1]",""});
+    addVar({"Jet2_btagUParTAK4CvB","Jet_btagUParTAK4CvB[1]",""});
+    addVar({"Jet2_btagUParTAK4CvL","Jet_btagUParTAK4CvL[1]",""});
     addVar({"Jet2_btag", "Jet_btagUParTAK4B[1] > 0.1272", ""});
 
     addVar({"Jet3_pt", "Jet_pt[2]", ""});
     addVar({"Jet3_eta", "Jet_eta[2]", ""});
     addVar({"Jet3_mass", "Jet_mass[2]", ""});
-    //addVar({"Jet3_btagPNetB","Jet_btagPNetB[2]",""});
-    addVar({"Jet3_btagPNetB","Jet_btagUParTAK4B[2]",""});
+    addVar({"Jet3_btagPNetB","Jet_btagPNetB[2]",""});
+    addVar({"Jet3_btagUParTAK4B","Jet_btagUParTAK4B[2]",""});
+    addVar({"Jet3_btagUParTAK4CvB","Jet_btagUParTAK4CvB[2]",""});
+    addVar({"Jet3_btagUParTAK4CvL","Jet_btagUParTAK4CvL[2]",""});
     addVar({"Jet3_btag", "Jet_btagUParTAK4B[2] > 0.1272", ""});
 
 
@@ -355,7 +361,7 @@ void TopLFVAnalyzer::defineMoreVars() {
         addVar({"eventWeight_notau_nobtag", "1.0"}); //didn't want to duplicate entry...
         addVar({"eventWeight_nobtag", "1.0"});
     } else {
-        //defineBTagNormalization();
+        defineBTagNormalization();
         addVar({"eventWeight_genpu", "unitGenWeight * TopPtWeight[0] * puWeight[0]"});
         if (_isMuonCh){
             addVar({"eventWeight_lep", "muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[0]"});
