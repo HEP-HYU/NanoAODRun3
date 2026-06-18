@@ -75,7 +75,7 @@ void TauFakeFactorAnalyzer::defineMoreVars() {
     if (_syst == "data") {
         addVar({"eventWeight", "1.0"});
     } else {
-        addVar({"eventWeight_genpu", "unitGenWeight * TopPtWeight[0] * puWeight[0]"});// * L1PreFiringWeight_Nom"});
+        addVar({"eventWeight_genpu", "unitGenWeight * TopPtWeight[0] * puWeight[0]"});
         addVar({"eventWeight_mu", "muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[0]"});
         if (_mode == "lss" or _mode == "los") {
             addVar({"eventWeight_tau", "tauWeightIdVsJet_loose[0][0] * tauWeightIdVsEl_loose[0][0] * tauWeightIdVsMu_loose[0][0]"});

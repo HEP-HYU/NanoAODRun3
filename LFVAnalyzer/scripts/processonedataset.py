@@ -85,7 +85,7 @@ if __name__=='__main__':
         sys.exit()
     aproc = None
     if len(mode) > 1:
-        aproc = ROOT.TauFakeFactorAnalyzer(t, outputroot, year, ch, syst, json, "", 1, mode)
+        aproc = ROOT.TauFakeFactorAnalyzer(t, outputroot, year, ch, syst, json, False, "", 1, mode)
     else:
         aproc = ROOT.TopLFVAnalyzer(t, outputroot, year, ch, syst, json, applytauFF, "", 1)
     aproc.setupAnalysis()

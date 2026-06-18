@@ -59,7 +59,7 @@ NanoAODAnalyzerrdframe::NanoAODAnalyzerrdframe(TTree *atree, std::string outfile
     }
 
     // Data/mc switch
-    if (_outfilename.find("TTto") == std::string::npos && atree->GetBranch("genWeight") == nullptr || _outfilename.find("TT_LFV") != std::string::npos || _outfilename.find("ST_LFV") != std::string::npos) {
+    if (_outfilename.find("TTto") == std::string::npos && atree->GetBranch("genWeight") == nullptr) {
         _isData = true;
         cout << "Input file is data " <<endl;
     } else {
@@ -142,7 +142,7 @@ bool NanoAODAnalyzerrdframe::readjson() {
 
         if (jsonroot.isMember(key)) {
             Json::Value runlumiblocks = jsonroot[key];
-            for (unsigned int i=0; i<runlumiblocks.size() && !goodeventflag; i++) {
+            for (size_t i=0; i<runlumiblocks.size() && !goodeventflag; i++) {
                 auto lumirange = runlumiblocks[i];
                 if (lumisection >= lumirange[0].asUInt() && lumisection <= lumirange[1].asUInt()) goodeventflag = true;
             }
@@ -177,10 +177,30 @@ void NanoAODAnalyzerrdframe::defineObjectSelection(std::vector<std::string> jes_
     //Override at SkimEvents.cpp and analysisAnalyzer.cpp
     std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
     std::string vetomuon = "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
-    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.6 && (Jet_JetId>=0.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
+    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.6 && (Jet_passJetIdTightLepVeto>=0.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
     //std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.6 && Jet_muEF<0.8 && Jet_chEmEF<0.8";
     selectMuons(muoncut, vetomuon);
     skimJets(skimjet);
+}
+
+void NanoAODAnalyzerrdframe::noiseFilter(){
+    auto rerun_ecalBadCalibFilter = [this] (unsigned int run, float metpt, float metphi, floats jetpts, floats jetetas, floats jetphis, floats neEmEF, floats chEmEF)->bool{
+        if (run < 362433u || run > 367144u) return true;
+        if (metpt < 100.) return true;
+        for (size_t i=0; i<jetpts.size(); i++){
+            if (jetpts[i] <= 50.) continue;
+            if (jetetas[i] <= -0.5 || jetetas[i] >= -0.1) continue;
+            if (jetphis[i] <= -2.1 || jetphis[i] >= -1.8) continue;
+            if (neEmEF[i] + chEmEF[i] <= 0.9) continue;
+            float dphi_tmp = metphi-jetphis[i];
+            float dphi = std::atan2(std::sin(dphi_tmp), std::cos(dphi_tmp));
+            if(std::abs(dphi) < 2.9) continue;
+            return false;
+        }
+        return true;
+    };
+    _rlm = _rlm.Define("rerun_ecalBadCalibFilter", rerun_ecalBadCalibFilter, {"run", "PuppiMET_pt", "PuppiMET_phi", "Jet_pt", "Jet_eta", "Jet_phi", "Jet_neEmEF", "Jet_chEmEF"})
+               .Redefine("Flag_ecalBadCalibFilter", "Flag_ecalBadCalibFilter && rerun_ecalBadCalibFilter");
 }
 
 void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc){
@@ -199,7 +219,7 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
         floats corrfactors;
         corrfactors.reserve(jetpts.size());
 
-        for (unsigned int i=0; i<jetpts.size(); i++) {
+        for (size_t i=0; i<jetpts.size(); i++) {
             float rawFact = (1.0-jetrawf[i]);
             float rawjetpt = jetpts[i] * rawFact;
             float L1corr = _L1FastJet->evaluate({jetAreas[i], jetetas[i], rawjetpt, rho});
@@ -232,7 +252,7 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
         floats corrfactors;
         corrfactors.reserve(jetpts.size());
 
-        for (unsigned int i=0; i<jetpts.size(); i++){
+        for (size_t i=0; i<jetpts.size(); i++){
             float reso = _jerReso->evaluate({jetetas[i], jetpts[i], rho});
             float sf = _jerSF->evaluate({jetetas[i], jetpts[i], "nom"});
             float genPtForSmear = -1.0;
@@ -264,19 +284,19 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
 void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     cout << "apply JetVetoMap" << endl;
     
-    auto checkoverlap = [](FourVectorVec &seljets, FourVectorVec &sellep) {
-        ints mindrlepton;
-        for (auto ajet: seljets) {
-            auto mindr = 6.0;
-            for ( auto alepton : sellep ) {
-                auto dr = ROOT::Math::VectorUtil::DeltaR(ajet, alepton);
-                if (dr < mindr) mindr = dr;
-            }
-            int out = mindr >= 0.2 ? 1 : 0;
-            mindrlepton.emplace_back(out);
-        }
-        return mindrlepton;
-    };
+    //auto checkoverlap = [](FourVectorVec &seljets, FourVectorVec &sellep) {
+    //    ints mindrlepton;
+    //    for (auto ajet: seljets) {
+    //        auto mindr = 6.0;
+    //        for ( auto alepton : sellep ) {
+    //            auto dr = ROOT::Math::VectorUtil::DeltaR(ajet, alepton);
+    //            if (dr < mindr) mindr = dr;
+    //        }
+    //        int out = mindr >= 0.2 ? 1 : 0;
+    //        mindrlepton.emplace_back(out);
+    //    }
+    //    return mindrlepton;
+    //};
 
     //TODO: _isRun24 is implementation for NanoAODv15
     if (_isRun24){
@@ -285,13 +305,13 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
         auto getJetId1 = [this, _jetid](floats &etas, floats &chHEF, floats &neHEF, floats &chEmEF, floats &neEmEF, floats &muEF, uchars &Nch, uchars &Nne)->floats{
             floats jetIds;
             jetIds.reserve(etas.size());
-            for (int i=0; i<etas.size(); i++){
+            for (size_t i=0; i<etas.size(); i++){
                 float jetId = _jetid->evaluate({float(etas[i]), float(chHEF[i]), float(neHEF[i]), float(chEmEF[i]), float(neEmEF[i]), float(muEF[i]), int(Nch[i]), int(Nne[i]), int(Nch[i])+int(Nne[i])});
                 jetIds.emplace_back(jetId);
             }
             return jetIds;
         };
-        _rlm = _rlm.Define("Jet_JetId", getJetId1, {"Jet_eta", "Jet_chHEF", "Jet_neHEF", "Jet_chEmEF", "Jet_neEmEF", "Jet_muEF", "Jet_chMultiplicity", "Jet_neMultiplicity"});
+        _rlm = _rlm.Define("Jet_passJetIdTightLepVeto", getJetId1, {"Jet_eta", "Jet_chHEF", "Jet_neHEF", "Jet_chEmEF", "Jet_neEmEF", "Jet_muEF", "Jet_chMultiplicity", "Jet_neMultiplicity"});
     } 
     //TODO: below is for NanoAODv12
     //If the others are going to v15, this should be removed
@@ -299,8 +319,8 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
         auto getJetId2= [this](floats &etas, uchars &jetIds, floats &muEF, floats &chEmEF, floats &neHEF, floats neEmEF)->floats{
             floats idVec;
             idVec.reserve(etas.size());
-            for (int i=0; i<etas.size(); i++){
-                float id;
+            for (size_t i=0; i<etas.size(); i++){
+                float id=0;
                 if (std::abs(etas[i]) <= 2.7) id  = (jetIds[i] & (1 << 1)) && (muEF[i] < 0.8) && (chEmEF[i] < 0.8) ;
                 else if (std::abs(etas[i]) > 2.7 && std::abs(etas[i]) <= 3.0) id = (jetIds[i] & (1 << 1)) && (neHEF[i] < 0.99);
                 else if (std::abs(etas[i]) > 3.0) id = (jetIds[i] & (1 << 1)) && (neEmEF[i] < 0.4);
@@ -308,11 +328,11 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
             }
             return idVec;
         };
-        _rlm = _rlm.Define("Jet_JetId", getJetId2, {"Jet_eta", "Jet_jetId", "Jet_muEF", "Jet_chEmEF", "Jet_neHEF", "Jet_neEmEF"});
+        _rlm = _rlm.Define("Jet_passJetIdTightLepVeto", getJetId2, {"Jet_eta", "Jet_jetId", "Jet_muEF", "Jet_chEmEF", "Jet_neHEF", "Jet_neEmEF"});
     }
 
     
-    _rlm = _rlm.Define("loosejetcuts", "Jet_pt>15 && (Jet_JetId==1.0) && (Jet_neEmEF+Jet_chEmEF)<0.9");
+    _rlm = _rlm.Define("loosejetcuts", "Jet_pt>15 && (Jet_passJetIdTightLepVeto==1.0) && (Jet_neEmEF+Jet_chEmEF)<0.9");
     
     _rlm = _rlm.Define("Jet_pt_loosejet", "Jet_pt[loosejetcuts]")
                .Define("Jet_phi_loosejet", "Jet_phi[loosejetcuts]")
@@ -330,8 +350,8 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
             floats xout;
             xout.reserve(eta.size());
             for (size_t i=0; i<eta.size(); i++) {
-                //xout.emplace_back(_vetomap->evaluate({key, eta[i], phi[i]}));
-                xout.emplace_back(0.0);
+                xout.emplace_back(_vetomap->evaluate({key, eta[i], phi[i]}));
+                //xout.emplace_back(0.0);
             }
             return xout;
         };
@@ -358,19 +378,19 @@ void NanoAODAnalyzerrdframe::applyWeights(string pileFile, string map){
 
         // Store sum of weights
         auto storePDFWeights = [this](floats weights, float gen)->floats {
-            for (unsigned int i=0; i<weights.size(); i++)
+            for (size_t i=0; i<weights.size(); i++)
                 PDFWeights[i] += (gen / abs(gen)) * weights[i];
             return PDFWeights;
         };
         auto storePSWeights = [this](floats weights, float gen)->floats {
-            for (unsigned int i=0; i<weights.size(); i++) {
+            for (size_t i=0; i<weights.size(); i++) {
                 if (i > 3) continue; //JME Nano stores all PS
                 PSWeights[i] += (gen / abs(gen)) * weights[i];
             }
             return PSWeights;
         };
         auto storeScaleWeights = [this](floats weights, float gen)->floats {
-            for (unsigned int i=0; i<weights.size(); i++)
+            for (size_t i=0; i<weights.size(); i++)
                 ScaleWeights[i] += (gen / abs(gen)) * weights[i];
             return ScaleWeights;
         };
@@ -509,7 +529,7 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
     auto muonhighscaleup = [muonYear](floats &pts, floats &etas, floats &phis, ints &charges)->floats {
         floats out;
         out.reserve(pts.size());
-        for (unsigned int i=0; i<pts.size(); i++) {
+        for (size_t i=0; i<pts.size(); i++) {
             float pt_tmp = pts[i];
             float pt_out = pt_tmp;
             if (pt_tmp > 200) {
@@ -528,7 +548,7 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
     auto muonhighscaledn = [muonYear](floats &pts, floats &etas, floats &phis, ints &charges)->floats {
         floats out;
         out.reserve(pts.size());
-        for (unsigned int i=0; i<pts.size(); i++) {
+        for (size_t i=0; i<pts.size(); i++) {
             float pt_tmp = pts[i];
             float pt_out = pt_tmp;
             if (pt_tmp > 200) {
@@ -546,7 +566,7 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
 
     auto muonhighscalemet = [](floats &pts, floats &ptcors, float met)->float {
         float out = met;
-        for (unsigned int i=0; i<pts.size(); i++) {
+        for (size_t i=0; i<pts.size(); i++) {
             out -= ptcors[i] - pts[i];
         }
         return out;
@@ -556,7 +576,7 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
         float out = 0.;
         auto metx = met * cos(metphi);
         auto mety = met * sin(metphi);
-        for (unsigned int i=0; i<pts.size(); i++) {
+        for (size_t i=0; i<pts.size(); i++) {
             metx -= (ptcors[i] - pts[i]) * cos(phis[i]);
             mety -= (ptcors[i] - pts[i]) * sin(phis[i]);
         }
@@ -591,13 +611,12 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
             std::string wp = var;
             if (pt.size() == 1){
                 float sf=1.0; float sf_up=1.0; float sf_down=1.0;
+                if (pt[0] >= 20 && pt[0] < 75 && wp.find("Reco")!=std::string::npos) wp = "Reco20to75";
                 if (elecYear.find("2022")!=std::string::npos || elecYear.find("2024")!=std::string::npos){
-                    if (pt[0] >= 20 && pt[0] < 75 && wp.find("Reco")!=std::string::npos) wp = "Reco20to75";
                     sf = _elecid->evaluate({elecYear, "sf", wp, eta[0], pt[0]});
                     sf_up = _elecid->evaluate({elecYear, "sfup", wp, eta[0], pt[0]});
                     sf_down = _elecid->evaluate({elecYear, "sfdown", wp, eta[0], pt[0]});
                 } else if (elecYear.find("2023")!=std::string::npos){
-                    if (pt[0] >= 20 && pt[0] < 75 && wp.find("Reco")!=std::string::npos) wp = "Reco20to75";
                     sf = _elecid->evaluate({elecYear, "sf", wp, eta[0], pt[0], phi[0]});
                     sf_up = _elecid->evaluate({elecYear, "sfup", wp, eta[0], pt[0], phi[0]});
                     sf_down = _elecid->evaluate({elecYear, "sfdown", wp, eta[0], pt[0], phi[0]});
@@ -619,10 +638,11 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
     auto elecSFTrg = [this, _elechlt, elecYear](floats &pt, floats &eta)->floats {
         floats wVec;
         wVec.reserve(3); //cent, up, down
+        string hltpath = "HLT_SF_Ele30_MVAiso90ID";
         if (pt.size() == 1){
-            float sf = _elechlt->evaluate({elecYear, "sf", "HLT_SF_Ele30_MVAiso90ID", eta[0], pt[0]});
-            float sf_up = _elechlt->evaluate({elecYear, "sfup", "HLT_SF_Ele30_MVAiso90ID", eta[0], pt[0]});
-            float sf_down = _elechlt->evaluate({elecYear, "sfdown", "HLT_SF_Ele30_MVAiso90ID", eta[0], pt[0]});
+            float sf = _elechlt->evaluate({elecYear, "sf", hltpath, eta[0], pt[0]});
+            float sf_up = _elechlt->evaluate({elecYear, "sfup", hltpath, eta[0], pt[0]});
+            float sf_down = _elechlt->evaluate({elecYear, "sfdown", hltpath, eta[0], pt[0]});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
@@ -653,7 +673,7 @@ void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, 
     auto tauIdSF = [this, _tauVsJet, _tauVsEle, _tauVsMu, tauid_vsjet, tauid_vse, tauid_vsmu](floats &pts, floats &etas, uchars &dms, uchars &genids)->floats{
         floats xout;
         xout.reserve(pts.size());
-        for (unsigned int i=0; i<pts.size(); i++){
+        for (size_t i=0; i<pts.size(); i++){
             float sf = 1.0;
             if (int(dms[i]) != 5 && int(dms[i]) != 6) {
                 if (int(genids[i]) == 5) { //genuine tau
@@ -677,7 +697,7 @@ void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, 
         return [this, _testool, tauid_vsjet, tauid_vse, var](floats &pts, floats &etas, uchars &dms, uchars &genids)->floats {
             floats xout;
             xout.reserve(pts.size());
-            for (unsigned int i=0; i<pts.size(); i++) {
+            for (size_t i=0; i<pts.size(); i++) {
                 float es = 1.0;
                 int dm_tmp = int (dms[i]);
                 try{
@@ -706,13 +726,13 @@ void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, 
 void NanoAODAnalyzerrdframe::skimJets(string cut) {
     // input vector: vec[pt][vars]
     // Note: do not skim with exact value of pt!
-    auto skimCol = [this](floatsVec toSkim, ints cut)->floatsVec {
-        floatsVec out;
-        for (size_t i=0; i<toSkim.size(); i++) {
-            if (cut[i] > 0) out.emplace_back(toSkim[i]);
-        }
-        return out;
-    };
+    //auto skimCol = [this](floatsVec toSkim, ints cut)->floatsVec {
+    //    floatsVec out;
+    //    for (size_t i=0; i<toSkim.size(); i++) {
+    //        if (cut[i] > 0) out.emplace_back(toSkim[i]);
+    //    }
+    //    return out;
+    //};
 
     // skim jet collection
     // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13p6TeV
@@ -722,10 +742,9 @@ void NanoAODAnalyzerrdframe::skimJets(string cut) {
                .Redefine("Jet_eta", "Jet_eta[jetcuts]")
                .Redefine("Jet_phi", "Jet_phi[jetcuts]")
                .Redefine("Jet_mass", "Jet_mass[jetcuts]")
-               .Redefine("Jet_JetId", "Jet_JetId[jetcuts]")
+               .Redefine("Jet_passJetIdTightLepVeto", "Jet_passJetIdTightLepVeto[jetcuts]")
                .Redefine("Jet_area", "Jet_area[jetcuts]")
                .Redefine("Jet_rawFactor", "Jet_rawFactor[jetcuts]")
-               .Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetcuts]")
                .Redefine("Jet_pt_uncorr", "Jet_pt_uncorr[jetcuts]")
                .Redefine("Jet_btagPNetB", "Jet_btagPNetB[jetcuts]")
                .Redefine("Jet_btagPNetCvB", "Jet_btagPNetCvB[jetcuts]")
@@ -947,7 +966,7 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
 
 }
 
-void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear) {
+void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet, string vsmu, string vse) {
     auto syst_unc = _syst;
 
     //TES var.
@@ -1005,9 +1024,11 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear) {
 
     // Fake factor study - loose but not tight
     // Hadronic Tau Object Selections
+    string deeptauidcuts = "Tau_idDeepTau2018v2p5VSmu >= " + vsmu + " && Tau_idDeepTau2018v2p5VSe >= " + vse + " && Tau_idDeepTau2018v2p5VSjet >= " + vsjet;
+    string deeptauidcuts_loose = "Tau_idDeepTau2018v2p5VSmu >= " + vsmu + " && Tau_idDeepTau2018v2p5VSe >= " + vse + " && Tau_idDeepTau2018v2p5VSjet >= 4";
     _rlm = _rlm.Define("taucuts", cut)
-               .Define("deeptauidcuts","Tau_idDeepTau2018v2p5VSmu >= 4 && Tau_idDeepTau2018v2p5VSe >= 6 && Tau_idDeepTau2018v2p5VSjet >= 7")
-               .Define("deeptauidcuts_loose","Tau_idDeepTau2018v2p5VSmu >= 4 && Tau_idDeepTau2018v2p5VSe >= 2 && Tau_idDeepTau2018v2p5VSjet >= 4");
+               .Define("deeptauidcuts", deeptauidcuts)
+               .Define("deeptauidcuts_loose", deeptauidcuts_loose);
 
     // Hadronic Tau Selection
     _rlm = _rlm.Define("seltaucuts_loose","taucuts && deeptauidcuts_loose && leptauoverlap")
@@ -1059,7 +1080,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear) {
             wVec.reserve(pt.size());
 
             if (pt.size() > 0) {
-                for (unsigned int i=0; i<pt.size(); i++) {
+                for (size_t i=0; i<pt.size(); i++) {
                     uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), int(genmatch[i]), tauid_vsjet, tauid_vse, "nom", "dm"}));
                     uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), int(genmatch[i]), tauid_vsjet, tauid_vse, "up", "dm"}));
                     uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), int(genmatch[i]), tauid_vsjet, tauid_vse, "down", "dm"}));
@@ -1080,7 +1101,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear) {
             wVec.reserve(eta.size());
 
             if (eta.size() > 0) {
-                for (unsigned int i=0; i<eta.size(); i++) {
+                for (size_t i=0; i<eta.size(); i++) {
                     uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), int(genmatch[i]), tauid_vse, "nom"}));
                     uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), int(genmatch[i]), tauid_vse, "up"}));
                     uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), int(genmatch[i]), tauid_vse, "down"}));
@@ -1099,7 +1120,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear) {
             wVec.reserve(eta.size());
 
             if (eta.size() > 0) {
-                for (unsigned int i=0; i<eta.size(); i++) {
+                for (size_t i=0; i<eta.size(); i++) {
                     uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "nom"}));
                     uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "up"}));
                     uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "down"}));
@@ -1135,30 +1156,30 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear) {
 
 void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut) {
     //// input vector: vec[pt][vars], for bSF
-    auto skimCol = [this](doublesVec toSkim, ints cut)->doublesVec {
+    //auto skimCol = [this](doublesVec toSkim, ints cut)->doublesVec {
 
-        doublesVec out;
-        for (size_t i=0; i<toSkim.size(); i++) {
-            if (cut[i] > 0) out.emplace_back(toSkim[i]);
-        }
-        return out;
-    };
+    //    doublesVec out;
+    //    for (size_t i=0; i<toSkim.size(); i++) {
+    //        if (cut[i] > 0) out.emplace_back(toSkim[i]);
+    //    }
+    //    return out;
+    //};
 
     //// input vector: vec[pt][vars]
-    auto calcBSF = [this](doublesVec perJetSF, int nvar)->doubles {
+    //auto calcBSF = [this](doublesVec perJetSF, int nvar)->doubles {
 
-        doubles out;
-        out.reserve(nvar);
-        for (size_t i=0; i<nvar; i++) {
-            double bSF = 1.0;
-            for (size_t j=0; j<perJetSF.size(); j++) {
-                if (perJetSF[j].empty()) continue;
-                bSF *= perJetSF[j][i];
-            }
-            out.emplace_back(bSF);
-        }
-        return out;
-    };
+    //    doubles out;
+    //    out.reserve(nvar);
+    //    for (int i=0; i<nvar; i++) {
+    //        double bSF = 1.0;
+    //        for (size_t j=0; j<perJetSF.size(); j++) {
+    //            if (perJetSF[j].empty()) continue;
+    //            bSF *= perJetSF[j][i];
+    //        }
+    //        out.emplace_back(bSF);
+    //    }
+    //    return out;
+    //};
 
     //if (!_isData) {
 
@@ -1230,7 +1251,6 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
                .Redefine("Jet_eta", "Jet_eta[jetcuts]")
                .Redefine("Jet_phi", "Jet_phi[jetcuts]")
                .Redefine("Jet_mass", "Jet_mass[jetcuts]")
-               .Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetcuts]")
                .Redefine("Jet_btagPNetB", "Jet_btagPNetB[jetcuts]")
                .Redefine("Jet_btagPNetCvB", "Jet_btagPNetCvB[jetcuts]")
                .Redefine("Jet_btagPNetCvL", "Jet_btagPNetCvL[jetcuts]")
@@ -1241,10 +1261,11 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
         _rlm = _rlm.Redefine("Jet_btagUParTAK4CvL", "Jet_btagUParTAK4CvL[jetcuts]");
     }
 
-    //if (!_isData) {
-    //    _rlm = _rlm.Redefine("btagWeight_PNetB_perJet", skimCol, {"btagWeight_PNetB_perJet", "jetcuts"})
-    //               .Redefine("btagWeight_PNetB_jes_perJet", skimCol, {"btagWeight_PNetB_jes_perJet", "jetcuts"});
-    //}
+    if (!_isData) {
+        _rlm = _rlm.Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetcuts]");
+        //_rlm = _rlm.Redefine("btagWeight_PNetB_perJet", skimCol, {"btagWeight_PNetB_perJet", "jetcuts"})
+        //           .Redefine("btagWeight_PNetB_jes_perJet", skimCol, {"btagWeight_PNetB_jes_perJet", "jetcuts"});
+    }
 
     // for checking overlapped jets with leptons
     auto checkoverlap = [](FourVectorVec &seljets, FourVectorVec &sellep) {
@@ -1289,7 +1310,6 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
                .Redefine("Jet_eta", "Jet_eta[jetoverlap]")
                .Redefine("Jet_phi", "Jet_phi[jetoverlap]")
                .Redefine("Jet_mass", "Jet_mass[jetoverlap]")
-               .Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetoverlap]")
                .Redefine("Jet_btagPNetB", "Jet_btagPNetB[jetoverlap]")
                .Redefine("Jet_btagPNetCvB", "Jet_btagPNetCvB[jetoverlap]")
                .Redefine("Jet_btagPNetCvL", "Jet_btagPNetCvL[jetoverlap]")
@@ -1303,8 +1323,9 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
     }
 
     if (!_isData) {
-        int nbsf_var = btag_var.size();
-        int njes_var = jes_var.size();
+        _rlm = _rlm.Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetoverlap]");
+        //int nbsf_var = btag_var.size();
+        //int njes_var = jes_var.size();
         //_rlm = _rlm.Define("nbsf_var", [nbsf_var](){return int(nbsf_var);})
         //           .Define("njes_var", [njes_var](){return int(njes_var);})
                    //.Define("btagWeight_PNetB_perJet_loose", skimCol, {"btagWeight_PNetB_perJet", "jetoverlaploose"})

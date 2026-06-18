@@ -277,7 +277,7 @@ void FactorizedJetCorrector::checkConsistency(const std::vector<std::string>& fL
     handleError("FactorizedJetCorrector",sserr.str());
   }
   //---- Second check: each tag must contain the corresponding sub-correction level.
-  for(unsigned int i=0;i<fTags.size();i++) {
+  for(size_t i=0;i<fTags.size();i++) {
     if ((int)fTags[i].find(fLevels[i])<0) {
       std::stringstream sserr; 
       sserr<<"inconsistent tag: "<<fTags[i]<<" for "<<"the requested correction: "<<fLevels[i];
@@ -369,7 +369,7 @@ std::vector<float> FactorizedJetCorrector::getSubCorrections()
   std::vector<float> factors;
   std::vector<float> vx,vy;
   factor = 1;
-  for(unsigned int i=0;i<mLevels.size();i++) { 
+  for(size_t i=0;i<mLevels.size();i++) { 
     vx = fillVector(mBinTypes[i]);
     vy = fillVector(mParTypes[i]);
     //if (mLevels[i]==kL2 || mLevels[i]==kL6)

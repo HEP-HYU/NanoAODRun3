@@ -15,9 +15,9 @@ class SkimEvents: public NanoAODAnalyzerrdframe
 {
 	public:
 		SkimEvents(TTree *t, std::string outfilename, std::string year="", std::string ch="", std::string syst="", std::string jsonfname="", string globaltag="", int nthreads=1);
-		void defineCuts();
-		void defineMoreVars(); // define higher-level variables from
-		void bookHists();
+		void defineCuts() override;
+		void defineMoreVars() override; // define higher-level variables from
+		void bookHists() override;
         void defineObjectSelection(std::vector<std::string> jes_var) override;
         private:
                 std::string _year;

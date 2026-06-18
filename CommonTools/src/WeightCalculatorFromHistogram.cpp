@@ -78,7 +78,7 @@ TH1* WeightCalculatorFromHistogram::ratio(TH1 *hist, TH1* targethist, bool fixLa
   if(verbose_) std::cout << "." << std::endl;
   if(fixLargeWgts) fixLargeWeights(weights);
   if(verbose_) std::cout << "Final weights: " << std::endl;
-  for(int i=0; i<(int)weights.size(); ++i) {
+  for(size_t i=0; i<(int)weights.size(); ++i) {
     ret->SetBinContent(i,weights[i]);
     if(verbose_) std::cout << std::setprecision(3) << weights[i] << " ";
   }
@@ -89,10 +89,10 @@ TH1* WeightCalculatorFromHistogram::ratio(TH1 *hist, TH1* targethist, bool fixLa
 double WeightCalculatorFromHistogram::checkIntegral(std::vector<double> wgt1, std::vector<double> wgt2) {
   double myint=0;
   double refint=0;
-  for(int i=0; i<(int)wgt1.size(); ++i) {
+  for(size_t i=0; i<(int)wgt1.size(); ++i) {
     myint += wgt1[i]*refvals_[i];
   }
-  for(int i=0; i<(int)wgt2.size(); ++i) {
+  for(size_t i=0; i<(int)wgt2.size(); ++i) {
     refint += wgt2[i]*refvals_[i];
   }
   return (myint-refint)/refint;
@@ -102,7 +102,7 @@ void WeightCalculatorFromHistogram::fixLargeWeights(std::vector<double> &weights
   double maxw = std::min(*(std::max_element(weights.begin(),weights.end())),double(5.));
   std::vector<double> cropped((int) weights.size());
   while (maxw > hardmax) {
-    for(int i=0; i<(int)weights.size(); ++i) cropped[i] = std::min(maxw,weights[i]);
+    for(size_t i=0; i<(int)weights.size(); ++i) cropped[i] = std::min(maxw,weights[i]);
     double shift = checkIntegral(cropped,weights);
     if(verbose_) std::cout << "For maximum weight " << maxw << ": integral relative change: " << shift << std::endl;
     if(abs(shift) > maxshift) break;
@@ -110,8 +110,8 @@ void WeightCalculatorFromHistogram::fixLargeWeights(std::vector<double> &weights
   }
   maxw /= 0.95;
   if (cropped.size()>0) {
-      for(int i=0; i<(int)weights.size(); ++i) cropped[i] = std::min(maxw,weights[i]);
+      for(size_t i=0; i<(int)weights.size(); ++i) cropped[i] = std::min(maxw,weights[i]);
       double normshift = checkIntegral(cropped,weights);
-      for(int i=0; i<(int)weights.size(); ++i) weights[i] = cropped[i]*(1.0-normshift);
+      for(size_t i=0; i<(int)weights.size(); ++i) weights[i] = cropped[i]*(1.0-normshift);
   }
 }

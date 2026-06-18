@@ -109,12 +109,15 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     std::string vetomuon = "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
     std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && Electron_mvaIso_WP90";
     std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
-    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.5 && (Jet_JetId==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
+    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.5 && (Jet_passJetIdTightLepVeto==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
 
     std::string muonid = "NUM_TightID_DEN_TrackerMuons";
     std::string muoniso = "NUM_TightPFIso_DEN_TightID";
     std::string muonhlt = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight";
 
+    if (_isData){
+        noiseFilter();
+    }
     setupJetMETCorrection(jecFile, jecYear, jerMap, jecVersion, _isData);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
@@ -145,12 +148,12 @@ void SkimEvents::defineCuts()
   cout << "Skim cut" << endl;
 
   if (_ch.find("muon") != std::string::npos) {
-      addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0","0");
+      addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && Flag_ecalBadCalibFilter && events_isVeto==0","0");
       if (_isSignal){
           addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "00");
       }
   } else if (_ch.find("electron") != std::string::npos) {
-      addCuts("(HLT_Ele30_WPTight_Gsf || HLT_Ele115_CaloIdVT_GsfTrkIdT || HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 || HLT_Photon200) && nelepass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && events_isVeto==0", "0");
+      addCuts("(HLT_Ele30_WPTight_Gsf || HLT_Ele115_CaloIdVT_GsfTrkIdT || HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 || HLT_Photon200) && nelepass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && Flag_ecalBadCalibFilter && events_isVeto==0", "0");
       if (_isSignal){
           addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "00");
       }
@@ -198,7 +201,7 @@ void SkimEvents::defineMoreVars()
         addVartoStore("Jet_phi");
         addVartoStore("Jet_mass");
         addVartoStore("Jet_jetId");
-        addVartoStore("Jet_JetId");
+        addVartoStore("Jet_passJetIdTightLepVeto");
         addVartoStore("Jet_rawFactor");
         addVartoStore("Jet_btagPNet.*");
         addVartoStore("Jet_btagUParTAK4.*");
