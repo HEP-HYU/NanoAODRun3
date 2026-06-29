@@ -20,8 +20,8 @@ slurm_job_file="slurm_job"
 
 parser.add_option("--title", dest="title",
                   help="Job Title viewied in squeue", default = "BATCHSUBMIT" )
-parser.add_option("--output", dest="output", 
-                  default="/home/ecasilar/slurm_output/",
+parser.add_option("--output", dest="output",
+                  default=os.environ.get("LFV_SLURM_OUTPUT", "./slurm_output/"),
                   help="path for slurm output ")
 (options,args) = parser.parse_args()
 
@@ -58,9 +58,8 @@ echo "{command}"
                 pwd              = os.getenv("PWD")
               )
 
-    slurm_job = file(slurm_job_file, "w")
-    slurm_job.write(template)
-    slurm_job.close()
+    with open(slurm_job_file, "w") as slurm_job:
+        slurm_job.write(template)
     return
 
 
@@ -68,14 +67,14 @@ if __name__ == '__main__':
     if not len(args) == 1:
         raise Exception("Only one argument accepted! Instead this was given: %s"%args)
     if os.path.isfile(args[0]):
-        print "Reading commands from file: %s"%args[0]
+        print("Reading commands from file: %s" % args[0])
         commands = []
         with open(args[0]) as f:
-            for line in f.xreadlines():
+            for line in f:
                 line = line.rstrip("\n")
                 if line:
                     if line.startswith("#"):    
-                        print "Skipping line, seems to be a comment %s"%line
+                        print("Skipping line, seems to be a comment %s" % line)
                         continue
                     commands.append(line)
     elif type(args[0]) == type(""):
@@ -86,7 +85,7 @@ if __name__ == '__main__':
         #os.mkdir(tmp_job_dir)
         for command in commands:
             #job_file = tmp_job_dir +"/" + slurm_job_file
-            hash_string = hashlib.md5("%s"%time.time()).hexdigest()
+            hash_string = hashlib.md5(("%s" % time.time()).encode()).hexdigest()
             job_file = slurm_job_file.rstrip(".sh")+"_%s.sh"%hash_string
             make_slurm_job( job_file , slurm_job_title, slurm_output_dir , command  )
             os.system("sbatch %s"%job_file)

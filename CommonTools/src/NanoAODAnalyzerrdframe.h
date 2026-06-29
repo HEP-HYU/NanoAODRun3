@@ -36,6 +36,38 @@
 using namespace ROOT::RDF;
 
 
+/**
+ * @brief Abstract base class for CMS NanoAOD analysis using ROOT RDataFrame.
+ *
+ * Implements the **Template Method** pattern for the LFV analysis pipeline.
+ * Subclasses must override the four pure virtual methods to define analysis-specific
+ * object selection, higher-level variables, cut-flow, and histogram booking.
+ *
+ * ### Execution model
+ * All `Define()`, `Filter()` calls on `_rlm` are **lazy** — they build a computation
+ * graph. Actual event-loop execution happens only when `run()` calls
+ * `ROOT::RDF::RunGraphs()`. Therefore the *order* in which methods are called
+ * during `setupAnalysis()` is significant: a column must be Defined before it
+ * can be used as input to another Define or Filter.
+ *
+ * ### Cut-flow
+ * `_rnt` (RNodeTree) is a tree of named RDataFrame nodes corresponding to
+ * successive selection stages. Histograms are booked against specific nodes
+ * (cut steps) via `add1DHist()` / `add2DHist()`. The node labels ("0", "00", …)
+ * form the cut-flow index used in histogram naming.
+ *
+ * ### Subclass contract
+ * | Method                    | What to implement                                   |
+ * |---------------------------|-----------------------------------------------------|
+ * | `defineObjectSelection()` | Object-level Define/Filter (jets, leptons, taus)   |
+ * | `defineMoreVars()`        | Higher-level variables (kinematics, weights, systs) |
+ * | `defineCuts()`            | Event selection (addCuts calls)                    |
+ * | `bookHists()`             | Histogram definitions (add1DHist/add2DHist calls)  |
+ *
+ * @warning Do NOT reorder `_rlm` Define calls across method boundaries without
+ *          verifying column dependency order. RDataFrame will throw at runtime
+ *          if a column is referenced before it is defined.
+ */
 class NanoAODAnalyzerrdframe {
   using RDF1DHist = RResultPtr<TH1D>;
   using RDF2DHist = RResultPtr<TH2D>;
@@ -88,11 +120,16 @@ public:
   void setTree(TTree *t, std::string outfilename);
   void setupTree();
 
-  bool _isHTstitching = false;
-  std::string _outfilename;
-  std::string _syst;
-  std::string _year;
-  std::string _ch;
+  /// @name Public configuration flags
+  /// These are set by the constructor and read by both base-class and
+  /// subclass methods. Declared public so Python (cppyy) scripts can inspect them.
+  ///@{
+  bool _isHTstitching = false; ///< Enable HT-based stitching weight for W/DY samples
+  std::string _outfilename;    ///< Output ROOT file path
+  std::string _syst;           ///< Systematic variation tag (e.g. "nominal", "jesup")
+  std::string _year;           ///< Data-taking era (e.g. "2022", "2023BPix")
+  std::string _ch;             ///< Lepton channel ("muon" or "electron")
+  ///@}
 
 
 protected:

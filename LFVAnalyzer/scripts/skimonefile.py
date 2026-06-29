@@ -83,7 +83,7 @@ if __name__=='__main__':
     elif "Run3Summer23BPixNanoAODv" in options.infile:
         options.globaltag = "Summer23BPixPrompt23_V1"
     elif "Run3Summer24NanoAODv" in options.infile:
-        options.globaltag = "Summer23BPixPrompt23_V1"
+        options.globaltag = "Summer24Prompt24"
 
     # load compiled C++ library into ROOT/python
     cppyy.load_reflection_info("libnanoadrdframe.so")

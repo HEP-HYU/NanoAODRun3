@@ -1,0 +1,54 @@
+{
+  "_comment": "Tau fake factors for the LFV analysis (Run 2 UL, cleaned-jet, DM-binned).",
+  "_comment_unc": "unc values are FRACTIONAL: nom=absolute FF, stat/syst=relative uncertainty.",
+  "_comment_formula": "FF_up = nom * (1 + unc), FF_down = nom * (1 - unc)",
+  "_comment_run3": "Run 3 entries are null; update with official measurements before use.",
+  "dm0": {
+    "2016pre":  { "nom": 0.3029, "stat": 0.1235, "syst": 0.3515 },
+    "2016post": { "nom": 0.6584, "stat": 0.1212, "syst": 0.3563 },
+    "2017":     { "nom": 0.6122, "stat": 0.06591,"syst": 0.2855 },
+    "2018":     { "nom": 0.5042, "stat": 0.05853,"syst": 0.2186 },
+    "2022":     null,
+    "2022_preEE":  null,
+    "2022_postEE": null,
+    "2023_preBPix":  null,
+    "2023_postBPix": null,
+    "2024": null
+  },
+  "dm1": {
+    "2016pre":  { "nom": 0.5605, "stat": 0.1067,  "syst": 0.2431   },
+    "2016post": { "nom": 0.4114, "stat": 0.117,   "syst": 0.006893 },
+    "2017":     { "nom": 0.5614, "stat": 0.05839, "syst": 0.2171   },
+    "2018":     { "nom": 0.5407, "stat": 0.05101, "syst": 0.1356   },
+    "2022":     null,
+    "2022_preEE":  null,
+    "2022_postEE": null,
+    "2023_preBPix":  null,
+    "2023_postBPix": null,
+    "2024": null
+  },
+  "dm10": {
+    "2016pre":  { "nom": 0.5634, "stat": 0.147,   "syst": 0.3097 },
+    "2016post": { "nom": 0.4488, "stat": 0.159,   "syst": 0.2005 },
+    "2017":     { "nom": 0.7205, "stat": 0.08742, "syst": 0.2134 },
+    "2018":     { "nom": 0.9003, "stat": 0.06959, "syst": 0.224  },
+    "2022":     null,
+    "2022_preEE":  null,
+    "2022_postEE": null,
+    "2023_preBPix":  null,
+    "2023_postBPix": null,
+    "2024": null
+  },
+  "dm11": {
+    "2016pre":  { "nom": 0.3913, "stat": 0.2608, "syst": 0.1003  },
+    "2016post": { "nom": 1.384,  "stat": 0.2204, "syst": 0.09176 },
+    "2017":     { "nom": 0.208,  "stat": 0.168,  "syst": 0.2655  },
+    "2018":     { "nom": 0.3594, "stat": 0.1152, "syst": 0.1831  },
+    "2022":     null,
+    "2022_preEE":  null,
+    "2022_postEE": null,
+    "2023_preBPix":  null,
+    "2023_postBPix": null,
+    "2024": null
+  }
+}

@@ -20,12 +20,8 @@ public:
     void bookHists() override;
 
 private:
-    std::string _year;
-    std::string _ch;
-    std::string _syst;
     std::string _mode;
     std::string maxstep;
-    bool _isMuonCh;
 };
 
 #endif /* TauFakeFactorAnalyzer_H_ */

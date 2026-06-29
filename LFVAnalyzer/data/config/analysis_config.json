@@ -1,0 +1,44 @@
+{
+  "_comment": "LFV analysis configuration — Run 3.",
+  "_comment_deeptau": "WP integers passed as strings to correctionlib. VSjet/VSmu/VSe scale.",
+  "_comment_deeptau_scale": "0=VVVLoose,1=VVLoose,2=VLoose,3=Loose,4=Medium,5=Tight,6=VTight,7=VVTight",
+
+  "object_selection": {
+    "muon_veto_cut":     "Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25",
+    "electron_veto_cut": "Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1",
+    "jet_cut":           "Jet_pt>40.0 && abs(Jet_eta)<2.5 && Jet_JetId==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8",
+    "tau_cut":           "Tau_pt>40.0 && abs(Tau_eta)<2.5  && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6"
+  },
+
+  "deeptau_wp": {
+    "muon_ch": {
+      "vsjet": "7",
+      "vsmu":  "4",
+      "vse":   "2",
+      "_comment": "VSjet VVTight, VSmu Tight, VSe VVLoose"
+    },
+    "electron_ch": {
+      "vsjet": "7",
+      "vsmu":  "1",
+      "vse":   "6",
+      "_comment": "VSjet VVTight, VSmu VLoose, VSe VTight"
+    }
+  },
+
+  "btag": {
+    "wp_medium": 0.1272,
+    "_comment_wp": "UParT AK4 B medium WP (Run 3). l=0.0246, m=0.1272, t=0.4648",
+    "tagger_run3":       "particleNet_shape",
+    "tagger_light_run3": "UParTAK4_light",
+    "tagger_2024":       "UParTAK4_comb",
+    "era_to_btagYear": {
+      "2022":        "2022_Summer22",
+      "2022_preEE":  "2022_Summer22",
+      "2022_postEE": "2022_Summer22EE",
+      "2023":        "2023_Summer23",
+      "2023_preBPix":  "2023_Summer23",
+      "2023_postBPix": "2023_Summer23BPix",
+      "2024":        "2024_Summer24"
+    }
+  }
+}

@@ -9,16 +9,12 @@
 #include "utility.h"
 
 TauFakeFactorAnalyzer::TauFakeFactorAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads, std::string mode)
-:TopLFVAnalyzer(t, outfilename, year, ch, syst, jsonfname, applytauFF, globaltag, nthreads), _syst(syst), _year(year), _ch(ch), _mode(mode)
+:TopLFVAnalyzer(t, outfilename, year, ch, syst, jsonfname, applytauFF, globaltag, nthreads), _mode(mode)
 {
-    _syst = syst;
-
     if (_ch.find("muon") != std::string::npos){
         cout << "muon channel" << endl;
-        _isMuonCh = true;
     } else{
         cout << "electron channel" << endl;
-        _isMuonCh = false;
     }
 
 }

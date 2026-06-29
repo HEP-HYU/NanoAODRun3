@@ -14,7 +14,6 @@
 #pragma link C++ class ROOT::VecOps::RVec<ROOT::VecOps::RVec<float>>+;
 #pragma link C++ class ROOT::VecOps::RVec<double>+;
 #pragma link C++ class ROOT::VecOps::RVec<ROOT::VecOps::RVec<double>>+;
-#pragma link C++ class std::vector<ROOT::Math::PtEtaPhiMVector>+;
 #pragma link C++ class NanoAODAnalyzerrdframe +;
 #pragma link C++ class TopLFVAnalyzer +;
 #pragma link C++ class ttHHAnalyzer +;

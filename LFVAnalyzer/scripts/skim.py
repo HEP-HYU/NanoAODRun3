@@ -17,8 +17,13 @@ year = options.year
 ch = options.ch
 workdir = os.getcwd()
 
-tgdir = '/data2/common/skimmed_NanoAOD/' + options.version + '/' + ch + '/DATAMC/' + year
-log = '/data2/common/skimmed_NanoAOD/' + options.version + '/' + ch + '/log/' + year
+# Storage base paths — override with env vars for portability.
+# Default values match the original hardcoded paths.
+_SKIM_BASE = os.environ.get("LFV_SKIM_DIR", "/data2/common/skimmed_NanoAOD")
+_NANO_BASE = os.environ.get("LFV_NANO_DIR", "/data2/common/NanoAOD")
+
+tgdir = os.path.join(_SKIM_BASE, options.version, ch, 'DATAMC', year)
+log   = os.path.join(_SKIM_BASE, options.version, ch, 'log', year)
 
 os.makedirs(tgdir.replace('DATAMC', 'data'), exist_ok=True)
 os.makedirs(tgdir.replace('DATAMC', 'mc'), exist_ok=True)
@@ -68,9 +73,9 @@ for fn in os.listdir("data/dataset/" + year):
 
             if options.local:
                 if "data" in infile:
-                    infile = "/data2/common/NanoAOD/data/v15/" + infile[len("/store/data/"):]
+                    infile = os.path.join(_NANO_BASE, "data/v15", infile[len("/store/data/"):])
                 elif "mc" in infile:
-                    infile = "/data2/common/NanoAOD/mc/v15/" + infile[len("/store/mc/"):]
+                    infile = os.path.join(_NANO_BASE, "mc/v15",   infile[len("/store/mc/"):])
             elif options.path=="fnal":
                 infile = "root://cmsxrootd.fnal.gov/"+infile
             else: infile = "root://xrootd-cms.infn.it/"+infile

@@ -23,7 +23,7 @@ with open('V9_7_ttbkg.txt', 'r') as f:
   bins = f.readline() #Should be first line
   bins = ast.literal_eval(bins)
   entries = f.readline()
-  for i in xrange(len(bins)):
+  for i in range(len(bins)):
     hbkg.SetBinContent(i+1, bins[i])
   hbkg.Scale(831.76/float(entries))
 
@@ -31,7 +31,7 @@ with open('V10_3_ttbkg.txt', 'r') as f:
   bins = f.readline() #Should be first line
   bins = ast.literal_eval(bins)
   entries = f.readline()
-  for i in xrange(len(bins)):
+  for i in range(len(bins)):
     hbkg2.SetBinContent(i+1, bins[i])
   hbkg2.Scale(831.76/float(entries))
 
@@ -42,7 +42,7 @@ with open('V9_7_tthct.txt', 'r') as f:
   bins = f.readline() #Should be first line
   bins = ast.literal_eval(bins)
   entries = f.readline()
-  for i in xrange(len(bins)):
+  for i in range(len(bins)):
     hsig.SetBinContent(i+1, bins[i])
   hsig.Scale(496.1/float(entries))
 
@@ -50,7 +50,7 @@ with open('V9_7_tthut.txt', 'r') as f:
   bins = f.readline() #Should be first line
   bins = ast.literal_eval(bins)
   entries = f.readline()
-  for i in xrange(len(bins)):
+  for i in range(len(bins)):
     hsig2.SetBinContent(i+1, bins[i])
   hsig2.Scale(496.1/float(entries))
 
@@ -58,7 +58,7 @@ with open('V10_3_tthct.txt', 'r') as f:
   bins = f.readline() #Should be first line
   bins = ast.literal_eval(bins)
   entries = f.readline()
-  for i in xrange(len(bins)):
+  for i in range(len(bins)):
     hsig3.SetBinContent(i+1, bins[i])
   hsig3.Scale(496.1/float(entries))
 

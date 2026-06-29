@@ -11,7 +11,7 @@
 #include <algorithm>
 
 TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads)
-:NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads), _outfilename(outfilename), _syst(syst), _year(year), _ch(ch), _applytauFF(applytauFF)
+:NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads), _applytauFF(applytauFF)
 {
     cout << "<< Start Process NanoAOD >>" << endl;
 
@@ -20,7 +20,6 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
             syst.find("muonhighscale") != std::string::npos or syst.find("btag") != std::string::npos) {
         ext_syst = true;
     }
-    _syst = syst;
     cout << "syst: " << _syst << endl;
 
     tauYear = _year;
@@ -135,49 +134,86 @@ void TopLFVAnalyzer::defineBTagNormalization(){
 }
 
 void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
+    // ── Load analysis configuration (static cache, read once per process) ────
+    // All physics thresholds are defined in data/config/analysis_config.json.
+    // Values were verified against previous hardcoded literals (Python PASS).
+    static bool cfg_loaded = false;
+    static std::string s_vetomuon, s_vetoelec, s_jetcut, s_taucut;
+    static std::string s_mu_vsjet, s_mu_vsmu, s_mu_vse;
+    static std::string s_el_vsjet, s_el_vsmu, s_el_vse;
+    static float s_btagcut;
+    static std::string s_btagMap, s_btagMapLight;
+
+    if (!cfg_loaded) {
+        const std::string cfgPath = "data/config/analysis_config.json";
+        std::ifstream fin(cfgPath);
+        if (!fin.good()) {
+            std::cerr << "ERROR defineObjectSelection: cannot open " << cfgPath
+                      << " — aborting" << std::endl;
+            std::abort();
+        }
+        Json::Value root;
+        fin >> root;
+
+        const auto &sel  = root["object_selection"];
+        const auto &dtau = root["deeptau_wp"];
+        const auto &bt   = root["btag"];
+
+        s_vetomuon     = sel["muon_veto_cut"].asString();
+        s_vetoelec     = sel["electron_veto_cut"].asString();
+        s_jetcut       = sel["jet_cut"].asString();
+        s_taucut       = sel["tau_cut"].asString();
+        s_mu_vsjet     = dtau["muon_ch"]["vsjet"].asString();
+        s_mu_vsmu      = dtau["muon_ch"]["vsmu"].asString();
+        s_mu_vse       = dtau["muon_ch"]["vse"].asString();
+        s_el_vsjet     = dtau["electron_ch"]["vsjet"].asString();
+        s_el_vsmu      = dtau["electron_ch"]["vsmu"].asString();
+        s_el_vse       = dtau["electron_ch"]["vse"].asString();
+        s_btagcut      = bt["wp_medium"].asFloat();
+        s_btagMap      = bt["tagger_run3"].asString();
+        s_btagMapLight = bt["tagger_light_run3"].asString();
+        cfg_loaded = true;
+    }
+
     std::string cut  = "onlyveto";
-    std::string vetomuon = "Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
-    std::string vetoelec = "Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
-    std::string jetcut = "Jet_pt>40.0 && abs(Jet_eta)<2.5 && Jet_JetId==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8";
-    std::string taucut = "Tau_pt>40.0 && abs(Tau_eta)<2.5  && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6";
 
     std::string btagYear = "";
-    std::string btagMap = "particleNet_shape";
-    std::string btagMapLight = "UParTAK4_light";
-    float btagcut = 0.1272;
+    std::string btagMap      = s_btagMap;
+    std::string btagMapLight = s_btagMapLight;
+    float btagcut = s_btagcut;
     if (_isRun22) {
-        tauYear = "2022_preEE";
+        tauYear  = "2022_preEE";
         btagYear = "2022_Summer22";
     } else if (_isRun22EE) {
-        tauYear = "2022_postEE";
+        tauYear  = "2022_postEE";
         btagYear = "2022_Summer22EE";
     } else if (_isRun23) {
-        tauYear = "2023_preBPix";
+        tauYear  = "2023_preBPix";
         btagYear = "2023_Summer23";
     } else if (_isRun23BPix) {
-        tauYear = "2023_postBPix";
+        tauYear  = "2023_postBPix";
         btagYear = "2023_Summer23BPix";
     } else if (_isRun24){
         //TODO
-        tauYear = "2024";
-        //btagYear = "2023_Summer23BPix";
-        btagYear = "2024_Summer24";
-        btagMap = "UParTAK4_comb";
+        tauYear   = "2024";
+        btagYear  = "2024_Summer24";
+        btagMap   = "UParTAK4_comb"; // 2024-specific tagger; not yet in config
     }
 
     if (_isMuonCh){
-        selectElectrons(cut, vetoelec);
-        selectTaus(taucut, tauYear, "7", "4", "2"); //VSjet VTight, VSmu Tight, VSe VVLoose
+        selectElectrons(cut, s_vetoelec);
+        selectTaus(s_taucut, tauYear, s_mu_vsjet, s_mu_vsmu, s_mu_vse); //VSjet VVTight, VSmu Tight, VSe VVLoose
     } else {
-        selectMuons(cut, vetomuon);
-        selectTaus(taucut, tauYear, "7", "1", "6"); //VSjet VTight, VSmu VLoose, VSe Tight
+        selectMuons(cut, s_vetomuon);
+        selectTaus(s_taucut, tauYear, s_el_vsjet, s_el_vsmu, s_el_vse); //VSjet VVTight, VSmu VLoose, VSe VTight
     }
-    selectJets(jes_var, jes_var_flav, jetcut);
+    selectJets(jes_var, jes_var_flav, s_jetcut);
     if (!_isData){
         topPtReweight();
         applyBSFs(jes_var, btagYear, btagMap, btagMapLight, btagcut);
     }
 }
+
 
 // Define your cuts here
 void TopLFVAnalyzer::defineCuts() {
@@ -207,6 +243,12 @@ void TopLFVAnalyzer::defineCuts() {
 }
 
 void TopLFVAnalyzer::defineMoreVars() {
+    defineKinematicVars();     // 4-vectors, ΔR, MT, ST^MET, top reco, object branches
+    defineWeightVars();        // nominal & systematic eventWeight definitions
+    storeOutputBranches();     // addVartoStore calls
+}
+
+void TopLFVAnalyzer::defineKinematicVars() {
     defineVar("lepvec", ::select_leadingvec, {"lep4vecs"});
     defineVar("lepMET_mt", ::calculate_MT, {"lep4vecs","PuppiMET_pt","PuppiMET_phi"});
     
@@ -338,6 +380,9 @@ void TopLFVAnalyzer::defineMoreVars() {
         defineVar("st_met", ::st_met, {"Electron_pt", "Tau_pt", "Jet_pt", "PuppiMET_pt"});
     }
 
+}
+
+void TopLFVAnalyzer::defineWeightVars() {
     // EventWeights
     // Calculate product of weights and store for systematic study
     // External systs: JES (+btag) (14), JER(2), TES(2), hdamp(2), TuneCP5(2)
@@ -652,6 +697,9 @@ void TopLFVAnalyzer::defineMoreVars() {
         }
     }
     
+}
+
+void TopLFVAnalyzer::storeOutputBranches() {
     // define variables that you want to store
     addVartoStore("run");
     addVartoStore("event");
@@ -688,7 +736,7 @@ void TopLFVAnalyzer::defineMoreVars() {
     addVartoStore("tauFF.*");
     addVartoStore("isFakeTau");
 }
-
+}
 void TopLFVAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 
@@ -906,182 +954,74 @@ void TopLFVAnalyzer::bookHists() {
     }
 }
 
-double TopLFVAnalyzer::tauFF(std::string year_, std::string unc_, int direction_, floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_) {
-    double val = 1.0;
-
-    // For geniune tau, unc and SF are always 1.0
+double TopLFVAnalyzer::tauFF(std::string year_, std::string unc_, int direction_,
+                              floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_) {
+    // For genuine tau: FF and uncertainty are always 1.0.
     if (tau_gen_pt_.size() > 0) return 1.0;
 
-    //Assume exactly one tau for FF (S5)
-    //if (tau_pt_.size() != 1) return 9999999.;
+    if (abs(direction_) != 1 && direction_ != 0) return 1.0;
 
-    if (abs(direction_) != 1 and direction_ != 0) return val;
-    std::map<std::string, std::map<std::string, double>> map_ff;
+    // ── Static JSON-backed cache (loaded once per process) ────────
+    // Values are identical to the previous hardcoded table; the JSON
+    // at data/TauFF/tau_fake_factors.json is the authoritative source.
+    // Key layout: map_ff[dm_key][year][unc] where unc ∈ {nom, stat, syst}.
+    using YearMap = std::map<std::string, std::map<std::string, double>>;
+    static std::map<std::string, YearMap> map_ff;
+    static bool loaded = false;
 
-    // unc: ratio to nominal
-    //map_ff["2016pre"]["nom"]   = 0.5555 ;
-    //map_ff["2016pre"]["stat"]  = 0.06578;
-    //map_ff["2016pre"]["syst"]  = 0.224  ;
-    //map_ff["2016post"]["nom"]  = 0.6094 ;
-    //map_ff["2016post"]["stat"] = 0.07114;
-    //map_ff["2016post"]["syst"] = 0.04278;
-    //map_ff["2017"]["nom"]      = 0.7233 ;
-    //map_ff["2017"]["stat"]     = 0.03818;
-    //map_ff["2017"]["syst"]     = 0.1292 ;
-    //map_ff["2018"]["nom"]      = 0.7393 ;
-    //map_ff["2018"]["stat"]     = 0.03239;
-    //map_ff["2018"]["syst"]     = 0.08293;
-    //cleaned
-    //map_ff["2018"]["nom"]      = 0.5954 ;
-    //map_ff["2018"]["stat"]     = 0.03254;
-    //map_ff["2018"]["syst"]     = 0.2057 ;
-
-    //if (tau_pt_[0] < 140) {
-    //    map_ff["2016pre"]["nom"]   = 0.4889 ;
-    //    map_ff["2016pre"]["stat"]  = 0.06907;
-    //    map_ff["2016pre"]["syst"]  = 0.2267 ;
-    //    map_ff["2016post"]["nom"]  = 0.5870 ;
-    //    map_ff["2016post"]["stat"] = 0.07535;
-    //    map_ff["2016post"]["syst"] = 0.08154;
-    //    map_ff["2017"]["nom"]      = 0.6909 ;
-    //    map_ff["2017"]["stat"]     = 0.03997;
-    //    map_ff["2017"]["syst"]     = 0.1499 ;
-    //    map_ff["2018"]["nom"]      = 0.7232 ;
-    //    map_ff["2018"]["stat"]     = 0.0331 ;
-    //    map_ff["2018"]["syst"]     = 0.08565;
-    //} else if (tau_pt_[0] >= 140) {
-    //    map_ff["2016pre"]["nom"]   = 0.9194 ;
-    //    map_ff["2016pre"]["stat"]  = 0.2231 ;
-    //    map_ff["2016pre"]["syst"]  = 0.3434 ;
-    //    map_ff["2016post"]["nom"]  = 0.6079 ;
-    //    map_ff["2016post"]["stat"] = 0.2227 ;
-    //    map_ff["2016post"]["syst"] = 0.1087 ;
-    //    map_ff["2017"]["nom"]      = 0.7810 ;
-    //    map_ff["2017"]["stat"]     = 0.13   ;
-    //    map_ff["2017"]["syst"]     = 0.05533;
-    //    map_ff["2018"]["nom"]      = 0.8236 ;
-    //    map_ff["2018"]["stat"]     = 0.1362 ;
-    //    map_ff["2018"]["syst"]     = 0.1879 ;
-    //}
-
-    // cleaned jet, dm binned
-    if (tau_dm_[0] == 0) {
-        map_ff["2016pre"]["nom"]  = 0.3029;
-        map_ff["2016pre"]["stat"] = 0.1235;
-        map_ff["2016pre"]["syst"] = 0.3515;
-        map_ff["2016post"]["nom"]  = 0.6584;
-        map_ff["2016post"]["stat"] = 0.1212;
-        map_ff["2016post"]["syst"] = 0.3563;
-        map_ff["2017"]["nom"]  = 0.6122;
-        map_ff["2017"]["stat"] = 0.06591;
-        map_ff["2017"]["syst"] = 0.2855;
-        map_ff["2018"]["nom"]  = 0.5042;
-        map_ff["2018"]["stat"] = 0.05853;
-        map_ff["2018"]["syst"] = 0.2186;
-    } else if (tau_dm_[0] == 1) {
-        map_ff["2016pre"]["nom"]  = 0.5605;
-        map_ff["2016pre"]["stat"] = 0.1067;
-        map_ff["2016pre"]["syst"] = 0.2431;
-        map_ff["2016post"]["nom"]  = 0.4114;
-        map_ff["2016post"]["stat"] = 0.117;
-        map_ff["2016post"]["syst"] = 0.006893;
-        map_ff["2017"]["nom"]  = 0.5614;
-        map_ff["2017"]["stat"] = 0.05839;
-        map_ff["2017"]["syst"] = 0.2171;
-        map_ff["2018"]["nom"]  = 0.5407;
-        map_ff["2018"]["stat"] = 0.05101;
-        map_ff["2018"]["syst"] = 0.1356;
-    } else if (tau_dm_[0] == 10) {
-        map_ff["2016pre"]["nom"]  = 0.5634;
-        map_ff["2016pre"]["stat"] = 0.147;
-        map_ff["2016pre"]["syst"] = 0.3097;
-        map_ff["2016post"]["nom"]  = 0.4488;
-        map_ff["2016post"]["stat"] = 0.159;
-        map_ff["2016post"]["syst"] = 0.2005;
-        map_ff["2017"]["nom"]  = 0.7205;
-        map_ff["2017"]["stat"] = 0.08742;
-        map_ff["2017"]["syst"] = 0.2134;
-        map_ff["2018"]["nom"]  = 0.9003;
-        map_ff["2018"]["stat"] = 0.06959;
-        map_ff["2018"]["syst"] = 0.224;
-    } else if (tau_dm_[0] == 11) {
-        map_ff["2016pre"]["nom"]  = 0.3913;
-        map_ff["2016pre"]["stat"] = 0.2608;
-        map_ff["2016pre"]["syst"] = 0.1003;
-        map_ff["2016post"]["nom"]  = 1.384;
-        map_ff["2016post"]["stat"] = 0.2204;
-        map_ff["2016post"]["syst"] = 0.09176;
-        map_ff["2017"]["nom"]  = 0.208;
-        map_ff["2017"]["stat"] = 0.168;
-        map_ff["2017"]["syst"] = 0.2655;
-        map_ff["2018"]["nom"]  = 0.3594;
-        map_ff["2018"]["stat"] = 0.1152;
-        map_ff["2018"]["syst"] = 0.1831;
-    } else {
-        std::cout << "fatal: wrong decay mode detected" << std::endl;
+    if (!loaded) {
+        const std::string ffPath = "data/TauFF/tau_fake_factors.json";
+        std::ifstream fin(ffPath);
+        if (!fin.good()) {
+            std::cerr << "ERROR tauFF: cannot open " << ffPath
+                      << " — falling back to 1.0" << std::endl;
+            return 1.0;
+        }
+        Json::Value root;
+        fin >> root;
+        for (const auto &dmKey : root.getMemberNames()) {
+            if (dmKey.rfind("_comment", 0) == 0) continue; // skip comments
+            const Json::Value &dmNode = root[dmKey];
+            for (const auto &yr : dmNode.getMemberNames()) {
+                const Json::Value &yrNode = dmNode[yr];
+                if (yrNode.isNull()) continue; // Run 3 placeholder
+                for (const auto &unc : yrNode.getMemberNames()) {
+                    map_ff[dmKey][yr][unc] = yrNode[unc].asDouble();
+                }
+            }
+        }
+        loaded = true;
     }
 
+    // ── Decay-mode key ────────────────────────────────────────────
+    std::string dmKey;
+    const int dm = tau_dm_[0];
+    if      (dm == 0)  dmKey = "dm0";
+    else if (dm == 1)  dmKey = "dm1";
+    else if (dm == 10) dmKey = "dm10";
+    else if (dm == 11) dmKey = "dm11";
+    else {
+        std::cout << "tauFF: unknown decay mode " << dm << std::endl;
+        return 1.0;
+    }
 
-    // uncleaned jet, dm-binned
-    //if (tau_dm_[0] == 0) {
-    //    map_ff["2016pre"]["nom"]  = 0.3374;
-    //    map_ff["2016pre"]["stat"] = 0.1225;
-    //    map_ff["2016pre"]["syst"] = 0.2222;
-    //    map_ff["2016post"]["nom"]  = 0.6906;
-    //    map_ff["2016post"]["stat"] = 0.1207;
-    //    map_ff["2016post"]["syst"] = 0.04169;
-    //    map_ff["2017"]["nom"]  = 0.6926;
-    //    map_ff["2017"]["stat"] = 0.06575;
-    //    map_ff["2017"]["syst"] = 0.06896;
-    //    map_ff["2018"]["nom"]  = 0.7836;
-    //    map_ff["2018"]["stat"] = 0.05808;
-    //    map_ff["2018"]["syst"] = 0.05632;
-    //} else if (tau_dm_[0] == 1) {
-    //    map_ff["2016pre"]["nom"]  = 0.7494;
-    //    map_ff["2016pre"]["stat"] = 0.1061;
-    //    map_ff["2016pre"]["syst"] = 0.1686;
-    //    map_ff["2016post"]["nom"]  = 0.4625;
-    //    map_ff["2016post"]["stat"] = 0.1164;
-    //    map_ff["2016post"]["syst"] = -0.1691;
-    //    map_ff["2017"]["nom"]  = 0.8012;
-    //    map_ff["2017"]["stat"] = 0.05811;
-    //    map_ff["2017"]["syst"] = 0.07565;
-    //    map_ff["2018"]["nom"]  = 0.6315;
-    //    map_ff["2018"]["stat"] = 0.05077;
-    //    map_ff["2018"]["syst"] = -0.01345;
-    //} else if (tau_dm_[0] == 10) {
-    //    map_ff["2016pre"]["nom"]  = 0.6149;
-    //    map_ff["2016pre"]["stat"] = 0.1458;
-    //    map_ff["2016pre"]["syst"] = 0.2284;
-    //    map_ff["2016post"]["nom"]  = 0.5323;
-    //    map_ff["2016post"]["stat"] = 0.1584;
-    //    map_ff["2016post"]["syst"] = 0.1483;
-    //    map_ff["2017"]["nom"]  = 0.8322;
-    //    map_ff["2017"]["stat"] = 0.08726;
-    //    map_ff["2017"]["syst"] = 0.1278;
-    //    map_ff["2018"]["nom"]  = 1.101;
-    //    map_ff["2018"]["stat"] = 0.06937;
-    //    map_ff["2018"]["syst"] = 0.1098;
-    //} else if (tau_dm_[0] == 11) {
-    //    map_ff["2016pre"]["nom"]  = 0.3911;
-    //    map_ff["2016pre"]["stat"] = 0.2607;
-    //    map_ff["2016pre"]["syst"] = -0.07622;
-    //    map_ff["2016post"]["nom"]  = 1.668;
-    //    map_ff["2016post"]["stat"] = 0.2201;
-    //    map_ff["2016post"]["syst"] = 0.04093;
-    //    map_ff["2017"]["nom"]  = 0.292;
-    //    map_ff["2017"]["stat"] = 0.1677;
-    //    map_ff["2017"]["syst"] = 0.1221;
-    //    map_ff["2018"]["nom"]  = 0.4322;
-    //    map_ff["2018"]["stat"] = 0.1149;
-    //    map_ff["2018"]["syst"] = 0.1013;
-    //} else {
-    //    std::cout << "fatal: wrong decay mode detected" << std::endl;
-    //}
+    // Guard for years with null (Run 3) entries
+    if (map_ff.find(dmKey) == map_ff.end() ||
+        map_ff.at(dmKey).find(year_) == map_ff.at(dmKey).end()) {
+        std::cout << "tauFF: no entry for dm=" << dmKey
+                  << " year=" << year_ << " — returning 1.0" << std::endl;
+        return 1.0;
+    }
 
-    if      (unc_ == "nom") val = map_ff[year_][unc_];
-    else if (direction_ == 1) val  = 1.0 + map_ff[year_][unc_];
-    else if (direction_ == -1) val = 1.0 - map_ff[year_][unc_];
-
-    return val;
+    // ── Return value (same formula as before) ─────────────────────
+    const auto &entry = map_ff.at(dmKey).at(year_);
+    if (unc_ == "nom") {
+        return entry.at("nom");
+    } else {
+        const double frac = entry.at(unc_);          // fractional uncertainty
+        if (direction_ ==  1) return 1.0 + frac;
+        if (direction_ == -1) return 1.0 - frac;
+    }
+    return 1.0;
 }
+

@@ -7,12 +7,19 @@ corliblib = $(shell a=`correction config --libdir`; echo $${a%%python*lib})
 corlibflag := $(shell correction config --cflags --ldflags --rpath)
 SOFLAGS = -shared
 
-LD = g++ -m64 -g -Wall
+# Build profile: default is release (-O2). Use 'make DEBUG=1' for debug (-O0 -g).
+ifdef DEBUG
+  OPT_FLAGS = -O0 -g
+else
+  OPT_FLAGS = -O2
+endif
+
+LD = g++ -m64 -Wall $(OPT_FLAGS)
 
 SRCDIR=src
 COMMONDIR=../CommonTools/src
 
-CXXFLAGS = -O0 -g -Wall -fmessage-length=0 $(rootflags) -fpermissive -fPIC -pthread -DSTANDALONE -I. -I$(corlibincl) -I$(COMMONDIR) -I$(SRCDIR)
+CXXFLAGS = $(OPT_FLAGS) -Wall -fmessage-length=0 $(rootflags) -fpermissive -fPIC -pthread -DSTANDALONE -I. -I$(corlibincl) -I$(COMMONDIR) -I$(SRCDIR)
 
 # source files
 SRCS_SRC     := $(wildcard $(SRCDIR)/*.cpp)

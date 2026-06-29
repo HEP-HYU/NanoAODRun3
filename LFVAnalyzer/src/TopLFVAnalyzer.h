@@ -21,16 +21,16 @@ public:
     bool ext_syst = false;
 
 private:
-    std::string _outfilename;
-    std::string _syst;
-    std::string _year;
-    std::string _ch;
     std::string maxstep;
     std::string tauYear = "";
     bool _applytauFF;
-    bool _isSignal;
-    bool _isMuonCh;
     void defineBTagNormalization();
+    /// @name defineMoreVars helpers (called in order; RDataFrame column ordering preserved)
+    ///@{
+    void defineKinematicVars();     ///< 4-vectors, ΔR, M_T, S_T^MET, top reco, object branches
+    void defineWeightVars();        ///< nominal and systematic eventWeight definitions
+    void storeOutputBranches();     ///< addVartoStore calls (flat ntuple branch list)
+    ///@}
     static double tauFF(std::string year_, std::string unc_, int direction_, floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_);
 
     struct tauFFfunctor {
