@@ -9,6 +9,7 @@
 #include "TopLFVAnalyzer.h"
 #include "utility.h"
 #include <algorithm>
+#include <fstream>
 
 TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads)
 :NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads), _applytauFF(applytauFF)
@@ -736,7 +737,7 @@ void TopLFVAnalyzer::storeOutputBranches() {
     addVartoStore("tauFF.*");
     addVartoStore("isFakeTau");
 }
-}
+
 void TopLFVAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 

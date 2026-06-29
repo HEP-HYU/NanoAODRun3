@@ -142,7 +142,7 @@ bool NanoAODAnalyzerrdframe::readjson() {
 
         if (jsonroot.isMember(key)) {
             Json::Value runlumiblocks = jsonroot[key];
-            for (size_t i=0; i<runlumiblocks.size() && !goodeventflag; i++) {
+            for (unsigned int i=0; i<runlumiblocks.size() && !goodeventflag; i++) {
                 auto lumirange = runlumiblocks[i];
                 if (lumisection >= lumirange[0].asUInt() && lumisection <= lumirange[1].asUInt()) goodeventflag = true;
             }
