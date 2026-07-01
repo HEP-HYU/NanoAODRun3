@@ -18,9 +18,9 @@ public:
     void defineMoreVars() override; // define higher-level variables from
     void bookHists() override;
     void defineObjectSelection(std::vector<std::string> jes_var) override;
-    bool ext_syst = false;
 
 private:
+    bool ext_syst = false;  ///< true when _syst encodes an external variation (JES/JER/TES/btag)
     std::string maxstep;
     std::string tauYear = "";
     bool _applytauFF;

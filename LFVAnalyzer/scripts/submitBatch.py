@@ -29,14 +29,11 @@ slurm_job_title  = options.title
 slurm_output_dir = options.output
 
 if not os.path.isdir(slurm_output_dir):
-    os.mkdir(slurm_output_dir)
+    os.makedirs(slurm_output_dir, exist_ok=True)
 
-label="6Sep_test"    # Arbitrary strings
-ana="stlfv"          # or ttlfv
-syst="nom"
-target="/home/ecasilar/lfv_ana/nanoaodframe/"+label+"_"+ana+"/"+syst # Arbitrary folder name
-if not os.path.isdir(target):
-    os.makedirs(target)
+# Ensure trailing slash for correct slurm output path construction
+if not slurm_output_dir.endswith("/"):
+    slurm_output_dir += "/"
 
 
 def make_slurm_job( slurm_job_file, slurm_job_title, slurm_output_dir , command ):

@@ -102,15 +102,20 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
         _rlm = _rlm.Define("muonWeightTrg", muonSFTrg, {"Muon_pt","Muon_eta"});
     }
     
+    // GEScaleSyst only has data for Run 2 UL eras (2016_UL_HIPM/2016_UL/2017_UL/2018_UL).
+    // For Run 3, no official high-pT recommendation exists yet — return identity.
+    // TODO: Replace the guard below with the Run 3 GE scale map once available.
+    const bool isRun2GEera = (_year == "2016_UL_HIPM" || _year == "2016_UL" ||
+                              _year == "2017_UL"       || _year == "2018_UL");
     std::string muonYear = _year;
 
-    auto muonhighscaleup = [muonYear](floats &pts, floats &etas, floats &phis, ints &charges)->floats {
+    auto muonhighscaleup = [muonYear, isRun2GEera](floats &pts, floats &etas, floats &phis, ints &charges)->floats {
         floats out;
         out.reserve(pts.size());
         for (size_t i=0; i<pts.size(); i++) {
             float pt_tmp = pts[i];
             float pt_out = pt_tmp;
-            if (pt_tmp > 200) {
+            if (isRun2GEera && pt_tmp > 200) {
                 float eta_tmp = etas[i];
                 float phi_tmp = phis[i];
                 int charge_tmp = charges[i];
@@ -123,13 +128,13 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
         return out;
     };
 
-    auto muonhighscaledn = [muonYear](floats &pts, floats &etas, floats &phis, ints &charges)->floats {
+    auto muonhighscaledn = [muonYear, isRun2GEera](floats &pts, floats &etas, floats &phis, ints &charges)->floats {
         floats out;
         out.reserve(pts.size());
         for (size_t i=0; i<pts.size(); i++) {
             float pt_tmp = pts[i];
             float pt_out = pt_tmp;
-            if (pt_tmp > 200) {
+            if (isRun2GEera && pt_tmp > 200) {
                 float eta_tmp = etas[i];
                 float phi_tmp = phis[i];
                 int charge_tmp = charges[i];

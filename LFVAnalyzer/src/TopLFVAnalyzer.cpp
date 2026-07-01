@@ -392,11 +392,6 @@ void TopLFVAnalyzer::defineWeightVars() {
     // eventWeight_xx : xxweight
     // eventWeight__xx: xx unc.
 
-    //addVar({"muonHighPtAddUncUp", "Muon1_pt > 200 ? 1.0 + (0.000125 * Muon1_pt - 0.025): 1.0", ""});
-    //addVar({"muonHighPtAddUncDn", "Muon1_pt > 200 ? 1.0 - (0.000125 * Muon1_pt - 0.025): 1.0", ""});
-    //pt dep SF unc for test
-    //addVar({"tauSFAddUncUp", "Tau_pt_gen.size()==0 ? 1.0 + (0.0005 * Tau1_pt): 1.0", ""});
-    //addVar({"tauSFAddUncDn", "Tau_pt_gen.size()==0 ? 1.0 - (0.0005 * Tau1_pt): 1.0", ""});
 
 
     addVar({"eventWeight_no", "1.0"});
@@ -428,30 +423,11 @@ void TopLFVAnalyzer::defineWeightVars() {
         addVar({"eventWeight_notau", "eventWeight_genpumu * btagWeightNorm[0]"});
         addVar({"eventWeight__btagup", "eventWeight_nobtag * btagWeightNorm[1]"});
         addVar({"eventWeight__btagdown", "eventWeight_nobtag * btagWeightNorm[2]"});
-        //addVar({"eventWeight__btaghfup", "eventWeight_nobtag * btagWeightNorm[1]"});
-        //addVar({"eventWeight__btaghfdown", "eventWeight_nobtag * btagWeightNorm[2]"});
-        //addVar({"eventWeight__btaglfup", "eventWeight_nobtag * btagWeightNorm[3]"});
-        //addVar({"eventWeight__btaglfdown", "eventWeight_nobtag * btagWeightNorm[4]"});
-        //addVar({"eventWeight__btaghfstats1up", "eventWeight_nobtag * btagWeightNorm[5]"});
-        //addVar({"eventWeight__btaghfstats1down", "eventWeight_nobtag * btagWeightNorm[6]"});
-        //addVar({"eventWeight__btaghfstats2up", "eventWeight_nobtag * btagWeightNorm[7]"});
-        //addVar({"eventWeight__btaghfstats2down", "eventWeight_nobtag * btagWeightNorm[8]"});
-        //addVar({"eventWeight__btaglfstats1up", "eventWeight_nobtag * btagWeightNorm[9]"});
-        //addVar({"eventWeight__btaglfstats1down", "eventWeight_nobtag * btagWeightNorm[10]"});
-        //addVar({"eventWeight__btaglfstats2up", "eventWeight_nobtag * btagWeightNorm[11]"});
-        //addVar({"eventWeight__btaglfstats2down", "eventWeight_nobtag * btagWeightNorm[12]"});
-        //addVar({"eventWeight__btagcferr1up", "eventWeight_nobtag * btagWeightNorm[13]"});
-        //addVar({"eventWeight__btagcferr1down", "eventWeight_nobtag * btagWeightNorm[14]"});
-        //addVar({"eventWeight__btagcferr2up", "eventWeight_nobtag * btagWeightNorm[15]"});
-        //addVar({"eventWeight__btagcferr2down", "eventWeight_nobtag * btagWeightNorm[16]"});
 
         if (_syst == "" or _syst == "nosyst" or ext_syst) {
             // for external syst, we only need nominal weight
             if (_syst == "" or _syst == "nosyst") {
                 std::cout << "yaho" << std::endl;
-                //if (_outfilename.find("WtoLNu-2Jets") != std::string::npos){
-                //    addVar({"eventWeight", "lhereweight"});
-                //} else{
                 //    addVar({"eventWeight", "1.0"});
                 //}
                 //addVar({"eventWeight", "unitGenWeight"});
@@ -476,22 +452,6 @@ void TopLFVAnalyzer::defineWeightVars() {
                 addVar({"eventWeight_notau", "eventWeight_genpumu * btagWeightNorm[0]"});
                 addVar({"eventWeight__btagup", "eventWeight_nobtag * btagWeightNorm[1]"});
                 addVar({"eventWeight__btagdown", "eventWeight_nobtag * btagWeightNorm[2]"});
-                //addVar({"eventWeight__btaghfup", "eventWeight_nobtag * btagWeightNorm[1]"});
-                //addVar({"eventWeight__btaghfdown", "eventWeight_nobtag * btagWeightNorm[2]"});
-                //addVar({"eventWeight__btaglfup", "eventWeight_nobtag * btagWeightNorm[3]"});
-                //addVar({"eventWeight__btaglfdown", "eventWeight_nobtag * btagWeightNorm[4]"});
-                //addVar({"eventWeight__btaghfstats1up", "eventWeight_nobtag * btagWeightNorm[5]"});
-                //addVar({"eventWeight__btaghfstats1down", "eventWeight_nobtag * btagWeightNorm[6]"});
-                //addVar({"eventWeight__btaghfstats2up", "eventWeight_nobtag * btagWeightNorm[7]"});
-                //addVar({"eventWeight__btaghfstats2down", "eventWeight_nobtag * btagWeightNorm[8]"});
-                //addVar({"eventWeight__btaglfstats1up", "eventWeight_nobtag * btagWeightNorm[9]"});
-                //addVar({"eventWeight__btaglfstats1down", "eventWeight_nobtag * btagWeightNorm[10]"});
-                //addVar({"eventWeight__btaglfstats2up", "eventWeight_nobtag * btagWeightNorm[11]"});
-                //addVar({"eventWeight__btaglfstats2down", "eventWeight_nobtag * btagWeightNorm[12]"});
-                //addVar({"eventWeight__btagcferr1up", "eventWeight_nobtag * btagWeightNorm[13]"});
-                //addVar({"eventWeight__btagcferr1down", "eventWeight_nobtag * btagWeightNorm[14]"});
-                //addVar({"eventWeight__btagcferr2up", "eventWeight_nobtag * btagWeightNorm[15]"});
-                //addVar({"eventWeight__btagcferr2down", "eventWeight_nobtag * btagWeightNorm[16]"});
             } else if (_syst.find("jesAbsoluteup") != std::string::npos) {
                 addVar({"eventWeight", "eventWeight_nobtag * btagWeight_PNetB_jes[0]"});
                 addVar({"eventWeight_notau", "eventWeight_genpumu * btagWeight_PNetB_jes[0]"});
@@ -749,7 +709,6 @@ void TopLFVAnalyzer::bookHists() {
     //               "__muidup", "__muiddown", "__muisoup", "__muisodown", "__mutrgup", "__mutrgdown",
     //               "__muhighptup", "__muhighptdown",
                    "__btagup", "__btagdown",
-    //               "__btaghfup", "__btaghfdown", "__btaglfup", "__btaglfdown",
     //               "__btaghfstats1up", "__btaghfstats1down", "__btaghfstats2up", "__btaghfstats2down",
     //               "__btaglfstats1up", "__btaglfstats1down", "__btaglfstats2up", "__btaglfstats2down",
     //               "__btagcferr1up", "__btagcferr1down", "__btagcferr2up", "__btagcferr2down",

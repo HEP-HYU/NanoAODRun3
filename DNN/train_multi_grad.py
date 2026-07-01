@@ -1,3 +1,17 @@
+"""
+train_multi_grad.py — Gradient-based feature importance tool for LFV DNN.
+
+This script loads a trained model (produced by train_multi.py) and computes
+per-event first-order gradients of the model output w.r.t. each input feature.
+The mean absolute gradient across the test set is reported as a proxy for
+feature importance.
+
+Usage (same CLI as train_multi.py):
+    python train_multi_grad.py -C muon
+    python train_multi_grad.py -C electron
+
+Note: This is NOT the primary training script. Use train_multi.py for training.
+"""
 import os
 import sys
 

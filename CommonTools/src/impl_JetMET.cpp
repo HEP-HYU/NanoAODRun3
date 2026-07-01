@@ -98,19 +98,6 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
 void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     cout << "apply JetVetoMap" << endl;
     
-    //auto checkoverlap = [](FourVectorVec &seljets, FourVectorVec &sellep) {
-    //    ints mindrlepton;
-    //    for (auto ajet: seljets) {
-    //        auto mindr = 6.0;
-    //        for ( auto alepton : sellep ) {
-    //            auto dr = ROOT::Math::VectorUtil::DeltaR(ajet, alepton);
-    //            if (dr < mindr) mindr = dr;
-    //        }
-    //        int out = mindr >= 0.2 ? 1 : 0;
-    //        mindrlepton.emplace_back(out);
-    //    }
-    //    return mindrlepton;
-    //};
 
     //TODO: _isRun24 is implementation for NanoAODv15
     if (_isRun24){
