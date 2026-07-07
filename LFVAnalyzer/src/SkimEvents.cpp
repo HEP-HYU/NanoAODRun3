@@ -41,7 +41,8 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     std::string jetMap = "";
     std::string tauYear = "";
     std::string jecFile = "";
-    std::string jecYear = "";
+    std::string jecYear = "";      // MC JEC key prefix (no run-era label)
+    std::string jecYearData = "";  // DATA JEC key prefix (includes run-era label)
     std::string jerMap = "";
     std::string elecFile = "";
     std::string elecYear = "";
@@ -55,7 +56,8 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2022Re-recoBCD";
         tauYear = "2022_preEE";
         jecFile = "2022_Summer22";
-        jecYear = "Summer22_22Sep2023";
+        jecYear = "Summer22_22Sep2023";         // MC
+        jecYearData = "Summer22_22Sep2023_RunCD"; // DATA
         jerMap = "Summer22_22Sep2023";
     } else if (_isRun22EE) {
         pileFile = "2022_Summer22EE";
@@ -66,7 +68,13 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2022Re-recoE+PromptFG";
         tauYear = "2022_postEE";
         jecFile = "2022_Summer22EE";
-        jecYear = "Summer22EE_22Sep2023";
+        jecYear = "Summer22EE_22Sep2023";  // MC
+        // DATA: Run E/F/G have separate keys. Derive from globaltag set by skimonefile.py.
+        // e.g. _globaltag="Summer22EE_22Sep2023_RunE" → jecYearData="Summer22EE_22Sep2023_RunE"
+        // Fall back to RunF (most common) if not determinable.
+        if      (_globaltag.find("RunE") != std::string::npos) jecYearData = "Summer22EE_22Sep2023_RunE";
+        else if (_globaltag.find("RunG") != std::string::npos) jecYearData = "Summer22EE_22Sep2023_RunG";
+        else                                                    jecYearData = "Summer22EE_22Sep2023_RunF";
         jerMap = "Summer22EE_22Sep2023";
     } else if (_isRun23) {
         pileFile = "2023_Summer23";
@@ -77,7 +85,8 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2023PromptC";
         tauYear = "2023_preBPix";
         jecFile = "2023_Summer23";
-        jecYear = "Summer23Prompt23";
+        jecYear = "Summer23Prompt23";          // MC
+        jecYearData = "Summer23Prompt23_RunCv4"; // DATA (v4 is the standard for Run3)
         jerMap = "Summer23Prompt23_RunCv1234";
     } else if (_isRun23BPix) {
         pileFile = "2023_Summer23BPix";
@@ -88,7 +97,8 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2023PromptD";
         tauYear = "2023_postBPix";
         jecFile = "2023_Summer23BPix";
-        jecYear = "Summer23BPixPrompt23";
+        jecYear = "Summer23BPixPrompt23";          // MC
+        jecYearData = "Summer23BPixPrompt23_RunD"; // DATA
         jerMap = "Summer23BPixPrompt23_RunD";
     } else if (_isRun24) {
         //TODO
@@ -100,7 +110,8 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2024Prompt";
         tauYear = "2024";
         jecFile = "2024_Summer24";
-        jecYear = "Summer24Prompt24";
+        jecYear = "Summer24Prompt24";                     // MC
+        jecYearData = "Summer24Prompt24_RunBCDEFGHI";    // DATA (TODO: per-run when available)
         jerMap = "Summer24Prompt24";
         jecVersion = "_V3_";
     }
@@ -118,7 +129,7 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     if (_isData){
         noiseFilter();
     }
-    setupJetMETCorrection(jecFile, jecYear, jerMap, jecVersion, _isData);
+    setupJetMETCorrection(jecFile, jecYear, jerMap, jecVersion, _isData, jecYearData);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
     if (_ch.find("muon") != std::string::npos){

@@ -200,7 +200,7 @@ protected:
   bool isDefined(string v);
 
   void noiseFilter();
-  void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, std::string jecVersion="_V2_", bool dataMc=false);
+  void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, std::string jecVersion="_V2_", bool dataMc=false, std::string jecYearData="");
 };
 
 #endif /* NANOAODANALYZERRDFRAME_H_ */

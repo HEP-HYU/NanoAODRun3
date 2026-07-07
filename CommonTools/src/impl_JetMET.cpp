@@ -17,17 +17,22 @@
 #include "Math/GenVector/VectorUtil.h"
 using namespace std;
 
-void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc){
+void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc, string jecYearData){
     auto jercReader = correction::CorrectionSet::from_file("data/JME/"+jecFile+"/jet_jerc.json.gz");
     string datamcflag = "";
     if (dataMc) datamcflag = "DATA";
     else datamcflag = "MC";
 
-    string tmp = jecYear + "_V2_" + datamcflag + "_L1FastJet_AK4PFPuppi";
+    // DATA JEC keys include a run-era label (e.g. _RunCD_) that MC keys do not.
+    // jecYearData should be set to the data-specific year string (e.g. "Summer22_22Sep2023_RunCD").
+    // If not provided, fall back to jecYear (preserves MC behavior).
+    const string jecYearLookup = (dataMc && !jecYearData.empty()) ? jecYearData : jecYear;
+
+    string tmp = jecYearLookup + jecVersion + datamcflag + "_L1FastJet_AK4PFPuppi";
     std::cout << tmp << std::endl;
-    auto _L1FastJet = jercReader->at(jecYear + jecVersion + datamcflag + "_L1FastJet_AK4PFPuppi");
-    auto _L2Relative = jercReader->at(jecYear + jecVersion + datamcflag + "_L2Relative_AK4PFPuppi");
-    auto _L2L3Residual = jercReader->at(jecYear + jecVersion + datamcflag + "_L2L3Residual_AK4PFPuppi");
+    auto _L1FastJet   = jercReader->at(jecYearLookup + jecVersion + datamcflag + "_L1FastJet_AK4PFPuppi");
+    auto _L2Relative  = jercReader->at(jecYearLookup + jecVersion + datamcflag + "_L2Relative_AK4PFPuppi");
+    auto _L2L3Residual= jercReader->at(jecYearLookup + jecVersion + datamcflag + "_L2L3Residual_AK4PFPuppi");
 
     auto applyJes = [this, _L1FastJet, _L2Relative, _L2L3Residual, dataMc](floats jetpts, floats jetetas, floats jetphis, floats jetAreas, floats jetrawf, float rho, unsigned int run, floats toCorr)->floats {
         floats corrfactors;
