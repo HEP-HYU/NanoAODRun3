@@ -57,47 +57,45 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
     _rlm = _rlm.Define("Jet_pt_uncorr", "Jet_pt");
     _rlm = _rlm.Define("Jet_pt_corr", applyJes, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_area", "Jet_rawFactor", "Rho_fixedGridRhoFastjetAll", "run", "Jet_pt"})
                .Redefine("Jet_mass", applyJes, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_area", "Jet_rawFactor", "Rho_fixedGridRhoFastjetAll", "run", "Jet_mass"});
-    if (!_isData) {
-      //_rlm = _rlm.Define("Jet_pt_unc", jesUnc, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_area", "Jet_rawFactor", "Rho_fixedGridRhoFastjetAll", "Jet_partonFlavour"});
-    }
     _rlm = _rlm.Redefine("Jet_pt", "Jet_pt_corr");
 
-    auto jerReader = correction::CorrectionSet::from_file("data/JME/jer_smear.json.gz");
-    auto _jerReso = jercReader->at(jerMap + "_JRV1_MC_PtResolution_AK4PFPuppi");
-    auto _jerSF = jercReader->at(jerMap + "_JRV1_MC_ScaleFactor_AK4PFPuppi");
-    auto _jerSmear = jerReader->at("JERSmear");
-
-    auto applyJer = [this, _jerReso, _jerSF, _jerSmear](floats jetpts, floats jetetas, floats jetphis, shorts genidxs, floats genpts, floats genetas, floats genphis, float rho, ULong64_t event, floats toCorr)->floats {
-        floats corrfactors;
-        corrfactors.reserve(jetpts.size());
-
-        for (size_t i=0; i<jetpts.size(); i++){
-            float reso = _jerReso->evaluate({jetetas[i], jetpts[i], rho});
-            float sf = _jerSF->evaluate({jetetas[i], jetpts[i], "nom"});
-            float genPtForSmear = -1.0;
-
-            int genidx = genidxs[i];
-            if (genidx >= 0){
-                float dPhi = std::abs(genphis[genidx] - jetphis[i]);
-                float dEta = std::abs(genetas[genidx] - jetetas[i]);
-                float dR2 = dPhi*dPhi + dEta*dEta;
-                if (dR2 < 0.04 && std::abs(jetpts[i]-genpts[genidx]) < (3*reso*jetpts[i])) {
-                    genPtForSmear = genpts[genidx];
-                }
-            }
-            float smear = _jerSmear->evaluate({jetpts[i], jetetas[i], genPtForSmear, rho, int(event), reso, sf});
-            float corr = (std::isfinite(smear) && smear > 0.0) ? smear : 1.0;
-            float corrfactor = toCorr[i] * corr; 
-            corrfactors.emplace_back(corrfactor);
-        }
-        return corrfactors;
-    };
+    // JER: only for MC. jercReader is a local unique_ptr; _jerReso/_jerSF are raw pointers
+    // into jercReader's memory. On data this block is skipped so the pointers never dangle.
     if (!_isData) {
+        auto _jerReso = jercReader->at(jerMap + "_JRV1_MC_PtResolution_AK4PFPuppi");
+        auto _jerSF   = jercReader->at(jerMap + "_JRV1_MC_ScaleFactor_AK4PFPuppi");
+        auto jerReader = correction::CorrectionSet::from_file("data/JME/jer_smear.json.gz");
+        auto _jerSmear = jerReader->at("JERSmear");
+
+        auto applyJer = [this, _jerReso, _jerSF, _jerSmear](floats jetpts, floats jetetas, floats jetphis, shorts genidxs, floats genpts, floats genetas, floats genphis, float rho, ULong64_t event, floats toCorr)->floats {
+            floats corrfactors;
+            corrfactors.reserve(jetpts.size());
+
+            for (size_t i=0; i<jetpts.size(); i++){
+                float reso = _jerReso->evaluate({jetetas[i], jetpts[i], rho});
+                float sf = _jerSF->evaluate({jetetas[i], jetpts[i], "nom"});
+                float genPtForSmear = -1.0;
+
+                int genidx = genidxs[i];
+                if (genidx >= 0){
+                    float dPhi = std::abs(genphis[genidx] - jetphis[i]);
+                    float dEta = std::abs(genetas[genidx] - jetetas[i]);
+                    float dR2 = dPhi*dPhi + dEta*dEta;
+                    if (dR2 < 0.04 && std::abs(jetpts[i]-genpts[genidx]) < (3*reso*jetpts[i])) {
+                        genPtForSmear = genpts[genidx];
+                    }
+                }
+                float smear = _jerSmear->evaluate({jetpts[i], jetetas[i], genPtForSmear, rho, int(event), reso, sf});
+                float corr = (std::isfinite(smear) && smear > 0.0) ? smear : 1.0;
+                float corrfactor = toCorr[i] * corr;
+                corrfactors.emplace_back(corrfactor);
+            }
+            return corrfactors;
+        };
         _rlm = _rlm.Redefine("Jet_pt_corr", applyJer, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "Rho_fixedGridRhoFastjetAll", "event", "Jet_pt"})
-                   .Redefine("Jet_mass", applyJer, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "Rho_fixedGridRhoFastjetAll", "event", "Jet_mass"})
+                   .Redefine("Jet_mass",    applyJer, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx", "GenJet_pt", "GenJet_eta", "GenJet_phi", "Rho_fixedGridRhoFastjetAll", "event", "Jet_mass"})
                    .Redefine("Jet_pt", "Jet_pt_corr");
     }
-    //_rlm = _rlm.Define("Jet_pt_unc", jesUnc, {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_area", "Jet_rawFactor", "Rho_fixedGridRhoFastjetAll", "Jet_partonFlavour"});
 }
 
 void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {

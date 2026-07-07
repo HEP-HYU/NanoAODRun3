@@ -85,9 +85,10 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2023PromptC";
         tauYear = "2023_preBPix";
         jecFile = "2023_Summer23";
-        jecYear = "Summer23Prompt23";          // MC
-        jecYearData = "Summer23Prompt23_RunCv4"; // DATA (v4 is the standard for Run3)
+        jecYear = "Summer23Prompt23";           // MC
+        jecYearData = "Summer23Prompt23_RunCv4"; // DATA
         jerMap = "Summer23Prompt23_RunCv1234";
+        jecVersion = "_V1_";  // 2023 jet_jerc.json only has _V1_ keys
     } else if (_isRun23BPix) {
         pileFile = "2023_Summer23BPix";
         pileMap = "Collisions2023_369803_370790_eraD_GoldenJson";
@@ -97,9 +98,10 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2023PromptD";
         tauYear = "2023_postBPix";
         jecFile = "2023_Summer23BPix";
-        jecYear = "Summer23BPixPrompt23";          // MC
-        jecYearData = "Summer23BPixPrompt23_RunD"; // DATA
+        jecYear = "Summer23BPixPrompt23";           // MC
+        jecYearData = "Summer23BPixPrompt23_RunD";  // DATA
         jerMap = "Summer23BPixPrompt23_RunD";
+        jecVersion = "_V1_";  // 2023BPix jet_jerc.json only has _V1_ keys
     } else if (_isRun24) {
         //TODO
         pileFile = "2024_Summer24";
