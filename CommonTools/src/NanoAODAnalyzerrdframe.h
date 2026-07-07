@@ -201,6 +201,16 @@ protected:
 
   void noiseFilter();
   void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, std::string jecVersion="_V2_", bool dataMc=false, std::string jecYearData="");
+
+  /// @brief Load a correctionlib CorrectionSet and keep it alive for the
+  /// lifetime of this object.  All lambdas that capture corrections from the
+  /// returned set are guaranteed to use valid memory even after the local
+  /// shared_ptr goes out of scope in the calling function.
+  std::shared_ptr<correction::CorrectionSet> loadCorrectionSet(const std::string& path);
+
+  /// Owns all CorrectionSet objects so that Correction raw-pointers captured
+  /// by RDataFrame lambdas remain valid through the entire event loop.
+  std::vector<std::shared_ptr<correction::CorrectionSet>> _correctionSets;
 };
 
 #endif /* NANOAODANALYZERRDFRAME_H_ */

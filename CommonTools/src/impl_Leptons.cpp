@@ -34,11 +34,11 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
         muonFile = "2024";
     }
 
-    auto muonSFreader = correction::CorrectionSet::from_file("data/MuonSF/ScaleFactors_Muon_Z_ID_ISO_"+muonFile+"_schemaV2.json");
+    auto muonSFreader = loadCorrectionSet("data/MuonSF/ScaleFactors_Muon_Z_ID_ISO_"+muonFile+"_schemaV2.json");
     auto _muonid = muonSFreader->at(muonid);
     auto _muoniso = muonSFreader->at(muoniso);
     if (_isRun24) muonFile = "2023_BPix";
-    auto muonHltSFreader = correction::CorrectionSet::from_file("data/MuonSF/ScaleFactors_Muon_Z_HLT_"+muonFile+"_eta_pt_schemaV2.json");
+    auto muonHltSFreader = loadCorrectionSet("data/MuonSF/ScaleFactors_Muon_Z_HLT_"+muonFile+"_eta_pt_schemaV2.json");
     auto _muontrg = muonHltSFreader->at(muonhlt);
 
     // We have only one muon!
@@ -184,7 +184,7 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
     //Electron SF
     cout << "Loading Electron SF" << endl;
 
-    auto elecSFreader = correction::CorrectionSet::from_file("data/ElectronSF/"+elecFile+"/electron.json.gz");
+    auto elecSFreader = loadCorrectionSet("data/ElectronSF/"+elecFile+"/electron.json.gz");
     auto _elecid = elecSFreader->at("Electron-ID-SF");
 
     auto elecSFId = [this, _elecid, elecYear](std::string var){
@@ -215,7 +215,7 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
     _rlm = _rlm.Define("elecWeightReco", elecSFId("RecoAbove75"), {"Electron_pt","Electron_eta","Electron_phi"})
                .Define("elecWeightId", elecSFId("wp90iso"), {"Electron_pt","Electron_eta","Electron_phi"});
 
-    auto elecHltSFreader = correction::CorrectionSet::from_file("data/ElectronSF/"+elecFile+"/electronHlt.json.gz");
+    auto elecHltSFreader = loadCorrectionSet("data/ElectronSF/"+elecFile+"/electronHlt.json.gz");
     auto _elechlt = elecHltSFreader->at("Electron-HLT-SF");
 
     auto elecSFTrg = [this, _elechlt, elecYear](floats &pt, floats &eta)->floats {

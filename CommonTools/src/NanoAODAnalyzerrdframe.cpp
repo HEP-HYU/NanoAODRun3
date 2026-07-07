@@ -27,6 +27,20 @@
 
 using namespace std;
 
+std::shared_ptr<correction::CorrectionSet>
+NanoAODAnalyzerrdframe::loadCorrectionSet(const std::string& path)
+{
+    // Convert unique_ptr → shared_ptr so we can store it and capture it in lambdas.
+    // If correctionlib's at() returns raw pointers, they remain valid as long as
+    // the CorrectionSet is alive. Storing the shared_ptr in _correctionSets ties
+    // the CorrectionSet lifetime to the analyzer object lifetime.
+    auto sptr = std::shared_ptr<correction::CorrectionSet>(
+        correction::CorrectionSet::from_file(path)
+    );
+    _correctionSets.push_back(sptr);
+    return sptr;
+}
+
 NanoAODAnalyzerrdframe::NanoAODAnalyzerrdframe(TTree *atree, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, std::string globaltag, int nthreads)
 :_rd(*atree), _isData(false), _jsonOK(false), _outfilename(outfilename), _year(year), _ch(ch), _syst(syst), _jsonfname(jsonfname), _globaltag(globaltag), _inrootfile(0), _outrootfile(0), _rlm(_rd), _rnt(&_rlm), currentnode(0), PDFWeights(103, 0.0), PSWeights(4, 0.0), ScaleWeights(9, 0.0) {
 

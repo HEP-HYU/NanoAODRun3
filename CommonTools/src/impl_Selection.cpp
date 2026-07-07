@@ -71,7 +71,7 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     _rlm = _rlm.Define("btag_var", [](){return strings(btag_var);})
                .Define("btag_jes_var", [jes_var](){return strings(jes_var);});
 
-    auto bSFreader = correction::CorrectionSet::from_file("data/BTV/" + btagYear + "/btagging.json.gz");
+    auto bSFreader = loadCorrectionSet("data/BTV/" + btagYear + "/btagging.json.gz");
     auto _btagSF = bSFreader->at(btagMap);
     auto _btagSFlight = bSFreader->at(btagMapLight);
 
@@ -230,7 +230,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         cout << "Tau ID WP vsMuon : " << tauid_vsmu << endl;
         cout << "Tau ID WP vsElectron : " << tauid_vse << endl;
 
-        auto tauSFreader = correction::CorrectionSet::from_file("data/TauIDSFs/tau_DeepTau2018v2p5_" + tauYear + ".json.gz");
+        auto tauSFreader = loadCorrectionSet("data/TauIDSFs/tau_DeepTau2018v2p5_" + tauYear + ".json.gz");
         auto _tauidSFjet = tauSFreader->at("DeepTau2018v2p5VSjet");
         auto _tauidSFele = tauSFreader->at("DeepTau2018v2p5VSe");
         auto _tauidSFmu  = tauSFreader->at("DeepTau2018v2p5VSmu");

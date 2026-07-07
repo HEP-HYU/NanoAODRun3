@@ -18,7 +18,7 @@
 using namespace std;
 
 void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc, string jecYearData){
-    auto jercReader = correction::CorrectionSet::from_file("data/JME/"+jecFile+"/jet_jerc.json.gz");
+    auto jercReader = loadCorrectionSet("data/JME/"+jecFile+"/jet_jerc.json.gz");
     string datamcflag = "";
     if (dataMc) datamcflag = "DATA";
     else datamcflag = "MC";
@@ -64,7 +64,7 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
     if (!_isData) {
         auto _jerReso = jercReader->at(jerMap + "_JRV1_MC_PtResolution_AK4PFPuppi");
         auto _jerSF   = jercReader->at(jerMap + "_JRV1_MC_ScaleFactor_AK4PFPuppi");
-        auto jerReader = correction::CorrectionSet::from_file("data/JME/jer_smear.json.gz");
+        auto jerReader = loadCorrectionSet("data/JME/jer_smear.json.gz");
         auto _jerSmear = jerReader->at("JERSmear");
 
         auto applyJer = [this, _jerReso, _jerSF, _jerSmear](floats jetpts, floats jetetas, floats jetphis, shorts genidxs, floats genpts, floats genetas, floats genphis, float rho, ULong64_t event, floats toCorr)->floats {
@@ -104,7 +104,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
 
     //TODO: _isRun24 is implementation for NanoAODv15
     if (_isRun24){
-        auto jetIDreader = correction::CorrectionSet::from_file("data/JME/2024_Summer24/jetid.json.gz");
+        auto jetIDreader = loadCorrectionSet("data/JME/2024_Summer24/jetid.json.gz");
         auto _jetid = jetIDreader->at("AK4PUPPI_TightLeptonVeto");
         auto getJetId1 = [this, _jetid](floats &etas, floats &chHEF, floats &neHEF, floats &chEmEF, floats &neEmEF, floats &muEF, uchars &Nch, uchars &Nne)->floats{
             floats jetIds;
@@ -145,7 +145,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
                .Define("njetloose", "int(Jet_pt_loosejet.size())")
                .Define("loosejet4vecs", ::gen4vec, {"Jet_pt_loosejet", "Jet_eta_loosejet", "Jet_phi_loosejet", "Jet_mass_loosejet"});
     
-    auto vetoMapreader = correction::CorrectionSet::from_file("data/JME/"+jetFile+"/jetvetomaps.json.gz");
+    auto vetoMapreader = loadCorrectionSet("data/JME/"+jetFile+"/jetvetomaps.json.gz");
     
     auto _vetomap = vetoMapreader->at(map);
  

@@ -26,7 +26,7 @@ void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, 
     cout << "Tau ID WP vsElectron : " << tauid_vse << endl;
 
 
-    auto tauSFreader = correction::CorrectionSet::from_file("data/TauIDSFs/tau_DeepTau2018v2p5_" + tauYear + ".json.gz");
+    auto tauSFreader = loadCorrectionSet("data/TauIDSFs/tau_DeepTau2018v2p5_" + tauYear + ".json.gz");
     auto _testool  = tauSFreader->at("tau_energy_scale");
     auto _tauVsJet = tauSFreader->at("DeepTau2018v2p5VSjet");
     auto _tauVsEle = tauSFreader->at("DeepTau2018v2p5VSe");

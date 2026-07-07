@@ -73,7 +73,7 @@ void NanoAODAnalyzerrdframe::applyWeights(string pileFile, string map){
         };
 
         
-        auto puWeightreader = correction::CorrectionSet::from_file("data/LUM/"+pileFile+"/puWeights.json.gz");
+        auto puWeightreader = loadCorrectionSet("data/LUM/"+pileFile+"/puWeights.json.gz");
         auto _puweight = puWeightreader->at(map);
 
         auto PuWeight = [this, _puweight](float x) -> floats {
