@@ -44,9 +44,11 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
             float L1corr = _L1FastJet->evaluate({jetAreas[i], jetetas[i], rawjetpt, rho});
             float L1pt = rawjetpt * L1corr;
             float L2corr = 1; float L2L3corr = 1;
-            L2corr = _L2Relative->evaluate({jetetas[i], jetphis[i], L1pt});
-            //if (_isRun24) L2corr = _L2Relative->evaluate({jetetas[i], jetphis[i], L1pt});
-            //else  L2corr = _L2Relative->evaluate({jetetas[i], L1pt});
+            // L2Relative: Run3Summer24 adds JetPhi as second input; earlier eras use only {eta, pt}
+            if (_isRun24)
+                L2corr = _L2Relative->evaluate({jetetas[i], jetphis[i], L1pt});
+            else
+                L2corr = _L2Relative->evaluate({jetetas[i], L1pt});
             float L2pt = L1pt * L2corr;
             if (dataMc) L2L3corr = _L2L3Residual->evaluate({float(run), jetetas[i], L2pt});
             float corrfactor = toCorr[i] * rawFact * L1corr * L2corr * L2L3corr; 
