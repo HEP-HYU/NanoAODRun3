@@ -1,0 +1,35 @@
+--- Robustness & Bootstrap Report (muon channel) ---
+Mean Bootstrap Accuracy = 0.8686
+Standard Error (SD) = 0.0013
+95% Confidence Interval = [0.8667, 0.8715]
+
+Feature stability summary table:
+        Feature  Accuracy_ShiftUp  Accuracy_ShiftDown  MaxImpact
+       Muon1_pt          0.867922            0.868090   0.000578
+      Muon1_eta          0.868612            0.868743   0.000243
+        Tau1_pt          0.868127            0.867847   0.000653
+      Tau1_mass          0.868519            0.868668   0.000168
+       Tau1_eta          0.868649            0.868351   0.000149
+        Jet1_pt          0.868239            0.868761   0.000261
+      Jet1_mass          0.868351            0.868948   0.000448
+       Jet1_eta          0.868481            0.868556   0.000056
+ Jet1_btagPNetB          0.868500            0.868556   0.000056
+        Jet2_pt          0.868631            0.868500   0.000131
+      Jet2_mass          0.868668            0.868705   0.000205
+       Jet2_eta          0.868780            0.868556   0.000280
+ Jet2_btagPNetB          0.868444            0.868631   0.000131
+        Jet3_pt          0.868873            0.868351   0.000373
+      Jet3_mass          0.868500            0.868687   0.000187
+       Jet3_eta          0.868668            0.868500   0.000168
+ Jet3_btagPNetB          0.868500            0.868575   0.000075
+           chi2          0.868705            0.868705   0.000205
+  chi2_SMW_mass          0.868407            0.868911   0.000410
+chi2_SMTop_mass          0.867996            0.868743   0.000504
+  chi2_wqq_dEta          0.868500            0.868631   0.000131
+  chi2_wqq_dPhi          0.868519            0.868649   0.000149
+    chi2_wqq_dR          0.868612            0.868444   0.000112
+    leptau_mass          0.866933            0.866970   0.001567
+    leptau_dEta          0.868631            0.868556   0.000131
+    leptau_dPhi          0.868873            0.868090   0.000410
+      leptau_dR          0.864713            0.866448   0.003788
+    PuppiMET_pt          0.867716            0.868780   0.000784

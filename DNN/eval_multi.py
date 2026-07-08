@@ -86,6 +86,11 @@ def run(inputs):
     print ("model: ", model_dir)
     model = tf.keras.models.load_model(model_dir)
 
+    scaler_dir = os.path.join(training_path, ch+"_nom/scaler.pkl")
+    print ("scaler: ", scaler_dir)
+    with open(scaler_dir, "rb") as f:
+        scaler = pickle.load(f)
+
     hists_path = os.path.join(outdir+"/"+ch, year)
     if not os.path.isdir(hists_path):
         os.makedirs(hists_path, exist_ok=True)
@@ -153,6 +158,7 @@ def run(inputs):
         else: muon_pt = tree["Electron1_pt"].array()
         tau_pt = tree["Tau1_pt"].array()
         pd_data = tree.arrays(inputvars, library="pd")
+        pd_data = abs(pd_data)
         pd_weight = tree.arrays(weights, library="np")
         pred_data = np.array(pd_data.filter(items = inputvars), dtype=np.float32)
 
@@ -168,6 +174,7 @@ def run(inputs):
         if len(pred_data) == 0:
             return
 
+        pred_data = scaler.transform(pred_data)
         pred = model.predict(pred_data, batch_size=128, verbose=0)
         #pred_df = pd.DataFrame(pred, columns=['Prediction1', 'Prediction2', 'Prediction3'])
         #print("3 - PRED SHAPE : ", pred.shape)

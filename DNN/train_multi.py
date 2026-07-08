@@ -204,8 +204,16 @@ numbertr = len(y_total)
 trainlen = int(0.7*numbertr) # Fraction used for training
 
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 x_train, x_val, y_train, y_val = train_test_split(x_total, y_cat, test_size=0.3, random_state=args.seed)
 print(len(x_train),len(x_val),len(y_train),len(y_val))
+
+scaler = StandardScaler()
+x_train = scaler.fit_transform(x_train)
+x_val = scaler.transform(x_val)
+
+with open(os.path.join(train_outdir, 'scaler.pkl'), 'wb') as f:
+    pickle.dump(scaler, f)
 
 patience_epoch = 30
 # Early Stopping with Validation Loss for Best Model
@@ -222,26 +230,29 @@ model = tf.keras.models.Sequential()
 model.add(tf.keras.layers.Flatten(input_shape = (x_train.shape[1],)))
 #model.add(tf.keras.layers.Dense(100, input_shape = (x_train.shape[1],), activation = "relu"))
 #drop = 0.2
-activation_function='relu'
-#activation_function='elu'
-#weight_initializer = 'random_normal'
+activation_function='elu'
 weight_initializer = 'he_uniform'
 ###############   Hidden Layer 1    ###############
 model.add(tf.keras.layers.BatchNormalization())
-model.add(tf.keras.layers.Dense(50, activation=activation_function))
-#model.add(tf.keras.layers.Dropout(drop))
+model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_regularizer='l2', kernel_initializer=weight_initializer))
 
 ###############   Hidden Layer 2    ###############
 model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_regularizer='l2', kernel_initializer=weight_initializer))
-model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_initializer=weight_initializer))
-#model.add(tf.keras.layers.Dropout(drop))
-
+model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_regularizer='l2', kernel_initializer=weight_initializer))
 
 ###############    Output Layer     ###############
 model.add(tf.keras.layers.Dense(3, activation="softmax"))
 batch_size = 1024
-model.compile(optimizer=tf.keras.optimizers.Adam(clipvalue=0.5), loss="categorical_crossentropy", metrics = ["accuracy"])
+
+steps_per_epoch = int(np.ceil(len(x_train) / batch_size))
+decay_steps = steps_per_epoch * 150 # Decay over 150 epochs
+lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
+    initial_learning_rate=1e-3,
+    decay_steps=decay_steps,
+    alpha=1e-2
+)
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule, clipvalue=0.5), loss="categorical_crossentropy", metrics = ["accuracy"])
 
 model.summary()
 hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,

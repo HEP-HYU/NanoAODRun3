@@ -121,9 +121,8 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     //TODO: below is for NanoAODv12
     //If the others are going to v15, this should be removed
     else{
-        // NanoAODv12: Jet_jetId is Int_t. Using uchars for an Int_t branch causes
-        // silent heap corruption (1-byte vs 4-byte element read → munmap_chunk crash).
-        auto getJetId2 = [this](floats &etas, ints &jetIds, floats &muEF, floats &chEmEF, floats &neHEF, floats &neEmEF)->floats{
+        // NanoAODv12: Jet_jetId is UChar_t (bit-field stored as unsigned char)
+        auto getJetId2 = [this](floats &etas, uchars &jetIds, floats &muEF, floats &chEmEF, floats &neHEF, floats &neEmEF)->floats{
             floats idVec;
             idVec.reserve(etas.size());
             for (size_t i=0; i<etas.size(); i++){
@@ -136,6 +135,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
             return idVec;
         };
         _rlm = _rlm.Define("Jet_passJetIdTightLepVeto", getJetId2, {"Jet_eta", "Jet_jetId", "Jet_muEF", "Jet_chEmEF", "Jet_neHEF", "Jet_neEmEF"});
+
 
     }
 
