@@ -106,7 +106,8 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     if (_isRun24){
         auto jetIDreader = loadCorrectionSet("data/JME/2024_Summer24/jetid.json.gz");
         auto _jetid = jetIDreader->at("AK4PUPPI_TightLeptonVeto");
-        auto getJetId1 = [this, _jetid](floats &etas, floats &chHEF, floats &neHEF, floats &chEmEF, floats &neEmEF, floats &muEF, ints &Nch, ints &Nne)->floats{
+        // NanoAODv15: Jet_chMultiplicity and Jet_neMultiplicity are UChar_t
+        auto getJetId1 = [this, _jetid](floats &etas, floats &chHEF, floats &neHEF, floats &chEmEF, floats &neEmEF, floats &muEF, uchars &Nch, uchars &Nne)->floats{
             floats jetIds;
             jetIds.reserve(etas.size());
             for (size_t i=0; i<etas.size(); i++){
@@ -120,7 +121,9 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     //TODO: below is for NanoAODv12
     //If the others are going to v15, this should be removed
     else{
-        auto getJetId2= [this](floats &etas, uchars &jetIds, floats &muEF, floats &chEmEF, floats &neHEF, floats neEmEF)->floats{
+        // NanoAODv12: Jet_jetId is Int_t. Using uchars for an Int_t branch causes
+        // silent heap corruption (1-byte vs 4-byte element read → munmap_chunk crash).
+        auto getJetId2 = [this](floats &etas, ints &jetIds, floats &muEF, floats &chEmEF, floats &neHEF, floats &neEmEF)->floats{
             floats idVec;
             idVec.reserve(etas.size());
             for (size_t i=0; i<etas.size(); i++){
@@ -133,6 +136,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
             return idVec;
         };
         _rlm = _rlm.Define("Jet_passJetIdTightLepVeto", getJetId2, {"Jet_eta", "Jet_jetId", "Jet_muEF", "Jet_chEmEF", "Jet_neHEF", "Jet_neEmEF"});
+
     }
 
     
