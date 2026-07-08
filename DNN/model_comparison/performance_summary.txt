@@ -1,7 +1,7 @@
 --- Model Comparison Summary (muon channel) ---
 Baseline model path: top_lfv_0708_1550/muon_nom
-Improved model path: top_lfv_0708_1626/muon_nom
+Improved model path: top_lfv_0708_2027/muon_nom
 
 Baseline: Loss = 0.3287, Accuracy = 0.8723
-Improved: Loss = 0.3457, Accuracy = 0.8685
-Accuracy Difference: -0.0038
+Improved: Loss = 0.3412, Accuracy = 0.8737
+Accuracy Difference: +0.0014

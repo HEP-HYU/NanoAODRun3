@@ -228,18 +228,17 @@ model = tf.keras.models.Sequential()
 
 ###############    Input Layer      ###############
 model.add(tf.keras.layers.Flatten(input_shape = (x_train.shape[1],)))
-#model.add(tf.keras.layers.Dense(100, input_shape = (x_train.shape[1],), activation = "relu"))
-#drop = 0.2
 activation_function='elu'
 weight_initializer = 'he_uniform'
+l2_factor = 1e-4
+
 ###############   Hidden Layer 1    ###############
 model.add(tf.keras.layers.BatchNormalization())
-model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_regularizer='l2', kernel_initializer=weight_initializer))
+model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
 
 ###############   Hidden Layer 2    ###############
 model.add(tf.keras.layers.BatchNormalization())
-model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_regularizer='l2', kernel_initializer=weight_initializer))
-model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_regularizer='l2', kernel_initializer=weight_initializer))
+model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
 
 ###############    Output Layer     ###############
 model.add(tf.keras.layers.Dense(3, activation="softmax"))
