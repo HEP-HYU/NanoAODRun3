@@ -112,8 +112,10 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2024Prompt";
         tauYear = "2024";
         jecFile = "2024_Summer24";
-        jecYear = "Summer24Prompt24";                     // MC
-        jecYearData = "Summer24Prompt24_RunBCDEFGHI";    // DATA (TODO: per-run when available)
+        jecYear = "Summer24Prompt24";   // MC
+        // DATA: Summer24Prompt24 keys have NO run-era label — same prefix as MC
+        // e.g. Summer24Prompt24_V3_DATA_L1FastJet_AK4PFPuppi
+        jecYearData = "Summer24Prompt24";
         jerMap = "Summer24Prompt24";
         jecVersion = "_V3_";
     }

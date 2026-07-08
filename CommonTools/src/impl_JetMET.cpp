@@ -106,7 +106,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     if (_isRun24){
         auto jetIDreader = loadCorrectionSet("data/JME/2024_Summer24/jetid.json.gz");
         auto _jetid = jetIDreader->at("AK4PUPPI_TightLeptonVeto");
-        auto getJetId1 = [this, _jetid](floats &etas, floats &chHEF, floats &neHEF, floats &chEmEF, floats &neEmEF, floats &muEF, uchars &Nch, uchars &Nne)->floats{
+        auto getJetId1 = [this, _jetid](floats &etas, floats &chHEF, floats &neHEF, floats &chEmEF, floats &neEmEF, floats &muEF, ints &Nch, ints &Nne)->floats{
             floats jetIds;
             jetIds.reserve(etas.size());
             for (size_t i=0; i<etas.size(); i++){
