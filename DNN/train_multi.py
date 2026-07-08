@@ -1,3 +1,7 @@
+# use: python train_multi.py -C muon -P /home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/ --seed 42
+# use: python train_multi.py -C electron
+# outdir: top_lfv_date_time
+
 import os
 import sys
 
@@ -12,22 +16,24 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('Agg')
 import pickle
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.utils import to_categorical
 from utils.plots import *
-#from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import KFold
-#from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.model_selection import cross_val_score, GridSearchCV
 from datetime import datetime
 
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon")
+parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/", help="Processed NanoAOD histogram base directory")
+parser.add_argument("--seed", dest="seed", type=int, default=42)
 args = parser.parse_args()
 ch = args.ch
+np.random.seed(args.seed)
+tf.random.set_seed(args.seed)
 
 def min_max_scaling(series):
     return (series - series.min()) / (series.max() - series.min())
@@ -37,7 +43,9 @@ root_dir = os.getcwd().replace("DNN","") # Upper directory
 # MODIFY !!!
 syst = "nom"
 label = "top_lfv"
-class_names = ["bkg", "sigTT", "sigST"]
+project_dir = args.project_dir
+
+class_names = ["bkg","sigTT", "sigST"]
 
 print("Start multi LFV Training")
 epochs = 1000
@@ -54,7 +62,6 @@ inputvars_st = [ # "Muon1_pt","Muon1_eta",
 if ch == "muon": inputvars_st = ["Muon1_pt", "Muon1_eta"] + inputvars_st
 else: inputvars_st = ["Electron1_pt", "Electron1_eta"] + inputvars_st
 
-#"Jet1_pt"
 processed = datetime.now().strftime("%m%d_%H%M")
 
 #"MET_pt" : helps to the expected limits, do not remove from the input vars.
@@ -62,42 +69,41 @@ sbratio = 1 # sig:bkg = 1:1
 
 train_outdir = label+"_"+processed+"/"+ch+"_"+syst+"/"
 os.makedirs(train_outdir, exist_ok=True)
-
 print ("output dir: ", train_outdir)
 
-#siglist_st = ["ST_LFV_TCMuTau_Scalar","ST_LFV_TCMuTau_Vector","ST_LFV_TCMuTau_Tensor","ST_LFV_TUMuTau_Vector","ST_LFV_TUMuTau_Scalar","ST_LFV_TUMuTau_Tensor"]
-#siglist_tt = ['TT_LFV_TCMuTau_Scalar', 'TT_LFV_TCMuTau_Tensor', 'TT_LFV_TCMuTau_Vector', 'TT_LFV_TUMuTau_Scalar', 'TT_LFV_TUMuTau_Tensor', 'TT_LFV_TUMuTau_Vector']
 siglist_st = []
 siglist_tt = []
 if ch == "muon":
     siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
-    #siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
     siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"]
 else:
     siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
     siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
-years = ["v2022", "v2022EE", "v2023", "v2023_BPix", "v15_2024"]
+
 years = ["v15_2024"]
-project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0323_btag_v5/"
-project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0429_btag_v2/"
 
 df_sig_st_list = []
 df_sig_tt_list = []
 df_bkg_tt_list = []
 #We use all the years together
-for year in years:
+for eny,year in enumerate(years):
    project_dir_y = project_dir+"/"+ch+"/"+year+"/"
+   print("N MC events in eny: " , eny, " year: ", year )
 
    #Concatinate ST signals
    for sig_tree in siglist_st:
       sig_tree_ = uproot.open(project_dir_y+"hist_"+sig_tree+".root")["Events"]
       df_sig_ = sig_tree_.arrays(inputvars_st,library="pd")
+      print("signal ST ",sig_tree," ",  len(df_sig_))
+      df_sig_["year"] = eny
       df_sig_st_list.append(df_sig_)
 
    #Concatinate TT signals
    for sig_tree in siglist_tt:
       sig_tree_ = uproot.open(project_dir_y+"hist_"+sig_tree+".root")["Events"]
       df_sig_ = sig_tree_.arrays(inputvars_st,library="pd")
+      print("signal TT ", sig_tree," ", len(df_sig_))
+      df_sig_["year"] = eny
       df_sig_tt_list.append(df_sig_)
 
    bkg1_filedir_tt = project_dir_y+"hist_TTto2L2Nu.root"
@@ -106,15 +112,21 @@ for year in years:
    bkg2_tree_tt = uproot.open(bkg2_filedir_tt)["Events"]
    df_bkg1_tt = bkg1_tree_tt.arrays(inputvars_st,library="pd")
    df_bkg2_tt = bkg2_tree_tt.arrays(inputvars_st,library="pd")
+   df_bkg1_tt["year"] = eny
+   df_bkg2_tt["year"] = eny
+   n_bkg2 = len(df_bkg2_tt)
+   df_bkg1_tt = df_bkg1_tt.sample(n = 7*n_bkg2)
    df_bkg_tt_list.append(df_bkg1_tt)
    df_bkg_tt_list.append(df_bkg2_tt)
+   print("background tt ll :", len(df_bkg1_tt ))
+   print("background tt lj :", len(df_bkg2_tt ))
 
 df_sig_st = pd.concat(df_sig_st_list)
 df_sig_tt = pd.concat(df_sig_tt_list)
 df_bkg = pd.concat(df_bkg_tt_list)
 
-ntotsig_st = len(df_sig_st)
 ntotsig_tt = len(df_sig_tt)
+ntotsig_st = len(df_sig_st)
 ntotbkg = len(df_bkg)
 print(df_bkg.replace(np.nan, 0))
 print(df_sig_st.replace(np.nan, 0))
@@ -127,7 +139,6 @@ nsig_tt = ntotsig_tt
 nbkg = ntotbkg
 nsig = min(nsig_st,nsig_tt)
 print("nsig: ", nsig)
-nsig = nsig_st
 
 if nsig >= nbkg:
     if sbratio == 1: nsig = nbkg
@@ -142,13 +153,14 @@ else:
 
 print("Take LFV : "+str(nsig)+" events")
 print("Take TT  : "+str(nbkg)+" events")
-df_sig_st = df_sig_st.sample(n=nsig)
-#df_sig_tt = df_sig_tt.sample(n=nsig)
-df_bkg = df_bkg.sample(n=nbkg)
+df_sig_st = df_sig_st.sample(n=nsig, random_state=args.seed)
+df_sig_tt = df_sig_tt.sample(n=nsig, random_state=args.seed)
+df_bkg = df_bkg.sample(n=nbkg, random_state=args.seed)
 df_sig_st["category"] = 2
 df_sig_tt["category"] = 1
 df_bkg["category"] = 0
 
+print ("ST LFV: ", len(df_sig_st), " TT LFV: ", len(df_sig_tt), " ttbar: ", len(df_bkg))
 pd_data = pd.concat([df_sig_tt,df_sig_st,df_bkg])
 pd_data = abs(pd_data)
 colnames = pd_data.columns
@@ -166,6 +178,8 @@ pd_sig_st = pd_data[pd_data['category'] == 2]
 pd_sig_tt = pd_data[pd_data['category'] == 1]
 pd_bkg = pd_data[pd_data['category'] == 0]
 
+print("N MC events after shuffle ====  "  )
+print("N MC events  year 2024 : " ,   len(pd_sig_st[pd_sig_st['year'] == 0]),len(pd_sig_tt[pd_sig_tt['year'] == 0]),len(pd_bkg[pd_bkg['year'] == 0]) )
 print("Plotting corr_matrix total")
 plot_corrMatrix(pd_data,train_outdir,"total")
 print("Plotting corr_matrix ST")
@@ -175,21 +189,13 @@ plot_corrMatrix(pd_sig_tt,train_outdir,"sig_tt")
 print("Plotting corr_matrix bkg")
 plot_corrMatrix(pd_bkg,train_outdir,"bkg")
 plot_corrMatrix(abs(pd_sig_st.subtract(pd_bkg)),train_outdir,"st-bkg")
-pd_data = pd_data.sample(frac=1).reset_index(drop=True)
+pd_data = pd_data.sample(frac=1, random_state=args.seed).reset_index(drop=True)
 
-print(pd_data.head())
+pd_data = pd_data.astype('float32')
+print(pd_data.head().to_string())
 
 x_total = np.array(pd_data.filter(items = inputvars_st))
 y_total = np.array(pd_data.filter(items = ['category']))
-
-# Standard Scaling
-scaler = StandardScaler()
-x_total = scaler.fit_transform(x_total)
-
-with open(train_outdir + "/scaler.pkl", "wb") as f:
-    pickle.dump(scaler, f)
-
-print("Saved scaler:", train_outdir + "/scaler.pkl")
 
 y_cat = to_categorical(y_total)
 print("Y cat: ", y_cat)
@@ -198,7 +204,7 @@ numbertr = len(y_total)
 trainlen = int(0.7*numbertr) # Fraction used for training
 
 from sklearn.model_selection import train_test_split
-x_train, x_val, y_train, y_val = train_test_split(x_total, y_cat, test_size=0.3)
+x_train, x_val, y_train, y_val = train_test_split(x_total, y_cat, test_size=0.3, random_state=args.seed)
 print(len(x_train),len(x_val),len(y_train),len(y_val))
 
 patience_epoch = 30
@@ -233,7 +239,6 @@ model.add(tf.keras.layers.Dense(50, activation=activation_function, kernel_initi
 
 
 ###############    Output Layer     ###############
-#model.add(tf.keras.layers.Dense(3, activation="softmax"))
 model.add(tf.keras.layers.Dense(3, activation="softmax"))
 batch_size = 1024
 model.compile(optimizer=tf.keras.optimizers.Adam(clipvalue=0.5), loss="categorical_crossentropy", metrics = ["accuracy"])
@@ -260,16 +265,15 @@ plt.plot(accuracy_validation, 'b', label='Validation loss')
 plt.savefig(train_outdir+'/acc_vs_epochs.png')
 plt.close()
 
-y_pred = model.predict(x_train)
-pred_train = np.argmax(y_pred, axis=1)
+pred_train = np.argmax(model.predict(x_train), axis=1)
 #pred_train = model.predict(x_train)
 print("pred_train", pred_train)
 print("orig train", y_train)
 y_train = np.argmax(y_train, axis=1)
 from sklearn.metrics import confusion_matrix
 #train_result = pd.DataFrame(np.array([y_train.T[0], pred_train.T[1]]).T, columns=["True", "Pred"])
-y_pred_val = model.predict(x_val)
-pred_val = np.argmax(y_pred_val, axis=1)
+#pred_val = model.predict(x_val)
+pred_val = np.argmax(model.predict(x_val), axis=1)
 y_val = np.argmax(y_val, axis=1)
 print("pred_val", pred_val)
 print("orig val", y_val)

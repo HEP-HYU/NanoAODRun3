@@ -1,3 +1,7 @@
+# use: python eval_multi.py -O DNN_ -I top_lfv_date_time -C muon -P /home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/ --xsecfile xsec.yaml --alpha 0.1
+# use: python eval_multi.py -I top_lfv_date_time -C muon
+# outdir: DNN_datetime
+
 import os
 import sys
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
@@ -11,6 +15,9 @@ import matplotlib.pyplot as plt
 import tensorflow.keras.backend as K
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import multiprocessing
+from datetime import datetime
+import pickle
+import yaml
 
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -20,18 +27,32 @@ if gpus:
         print(e)
 
 parser = argparse.ArgumentParser(usage="%prog [options]")
-parser.add_argument("-O", "--outdir", dest="outdir", type=str, default="test", help="Output folder in your working directory")
-parser.add_argument("-I", "--indir", dest="indir", type=str, default="test", help="Iput folder in your working directory")
+parser.add_argument("-O", "--outdir", dest="outdir", type=str, default="DNN_", help="Evaluation folder in your working directory")
+parser.add_argument("-I", "--indir", dest="indir", type=str, default="top_lfv_0521_1312", help="Training folder in your working directory")
 parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon")
+parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/", help="Processed NanoAOD histogram base directory")
+parser.add_argument("--xsecfile", dest="xsecfile", type=str, default="", help="Optional YAML file. If set, evaluate only ROOT files listed in the YAML keys")
+parser.add_argument("--alpha", dest="alpha", type=float, default=0.1, help="DNN score mixing: ((1-alpha)*p_ST + alpha*p_TT)/p_bkg")
 options = parser.parse_args()
 ch = options.ch
+outdir = options.outdir+datetime.now().strftime("%m%d")
 
 def min_max_scaling(series):
     return (series - series.min()) / (series.max() - series.min())
 
 
 training_path = options.indir
-#training_path = ""
+
+def load_xsec_rootfiles(xsecfile):
+    if not xsecfile:
+        return None
+    if yaml is None:
+        raise ImportError("PyYAML is required to use --xsecfile")
+    with open(xsecfile, "r") as handle:
+        data = yaml.safe_load(handle)
+    if not data:
+        raise RuntimeError("Could not load any dataset from %s" % xsecfile)
+    return set([name for name in data.keys() if name.endswith(".root")])
 
 inputvars = [#"Muon1_pt", "Muon1_eta",
             "Tau1_pt","Tau1_mass","Tau1_eta",
@@ -47,23 +68,25 @@ if ch == "muon": inputvars = ["Muon1_pt", "Muon1_eta"] + inputvars
 else: inputvars = ["Electron1_pt", "Electron1_eta"] + inputvars
 
 
-#discriminators = {"p_st" : 2, "p_tt" : 1 , "p_bkg" : 0 , "p_st_tt" : 999, "p_st_tt_ob" : 999 }
+discriminators = {"p_st" : 2, "p_tt" : 1 , "p_bkg" : 0 , "p_st_tt" : 999, "p_st_tt_ob" : 999 }
 
 def run(inputs):
     year = inputs[0]
     input_file = inputs[1]
-    #discriminator_key = inputs[2]
-    #alpha = inputs[3]
-    alpha = inputs[2]
-    #print(year, discriminator_key , alpha)
+    discriminator_key = inputs[2]
+    alpha = inputs[3]
+    print(year, discriminator_key , alpha)
 
-    binedges = [0,0.01,1,3,5,10,30,100]
+    binedges = [0,1,2,5,10,30,100]
+    binedges2 = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+    if "ob" in discriminator_key : binedges = [0,0.01,1,3,5,10,30,100]
     #binedges = [i for i in frange(0.0, 100.01, 0.01)]
 
     model_dir = os.path.join(training_path, ch+"_nom/best_model.keras")
+    print ("model: ", model_dir)
     model = tf.keras.models.load_model(model_dir)
 
-    hists_path = os.path.join(options.outdir+"/"+ch, year)
+    hists_path = os.path.join(outdir+"/"+ch, year)
     if not os.path.isdir(hists_path):
         os.makedirs(hists_path, exist_ok=True)
 
@@ -81,6 +104,7 @@ def run(inputs):
     syst_list = [syst.split("__")[1] for syst in branch_names if "eventWeight__" in syst]
     hcounter = infile["hcounter"]
     nEvents = len(tree)
+    print("1 - N EVENTS : ", nEvents)
     syst_hist_dnn_dict = {}
     syst_hist_dnn_entries_dict = {}
     hist_nevents_S4_dict = {}
@@ -98,18 +122,24 @@ def run(inputs):
         #    PSWeightSum = infile['PSWeightSum']
         #    LHEPdfWeightSum = infile['LHEPdfWeightSum']
 
-    pd_data = tree.arrays(inputvars, library="pd")
-    if nEvents == 0 or pd_data is None or len(pd_data) == 0:
+    if nEvents == 0:
         print("No events : "+input_file)
-        print ("pd_data: ", pd_data)
-        print ("len(pd_data)", len(pd_data))
         #Need to add empth histograms for technical reasons ....
         muon_pt = []
         tau_pt = []
         pred = []
+        pred_st = []
+        pred_tt = []
+        pred_bkg = []
         pd_weight = []
         dnnhist_nom = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
         dnnhist_entries_nom = np.histogram(pred, bins=binedges, density=False)
+        #dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
+        #dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
+        #dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
+        #dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
+        #dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
+        #dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
         print ("syst_list: ", syst_list)
         for syst in syst_list:
             syst_hist_dnn_dict["h_dnn_pred_S5__"+syst] = dnnhist_nom
@@ -118,33 +148,66 @@ def run(inputs):
                 hist_nevents_S4_dict["h_nevents_S4__"+syst] = infile_forS["h_nevents_S4__"+syst]
                 hist_nevents_S5_dict["h_nevents_S5__"+syst] = infile["h_nevents_S5__"+syst]
     else:
-        muon_pt = 0
+        muon_pt = None
         if ch == "muon": muon_pt = tree["Muon1_pt"].array()
         else: muon_pt = tree["Electron1_pt"].array()
         tau_pt = tree["Tau1_pt"].array()
+        pd_data = tree.arrays(inputvars, library="pd")
         pd_weight = tree.arrays(weights, library="np")
-        pred_data = np.array(pd_data.filter(items = inputvars))
+        pred_data = np.array(pd_data.filter(items = inputvars), dtype=np.float32)
 
-        pred = model.predict(pred_data, batch_size=128)
-        #print ("pred0: ", pred)
+        print(type(pred_data))
+
+        try:
+            print("len =", len(pred_data))
+        except Exception as e:
+            print("len failed:", e)
+
+        if isinstance(pred_data, np.ndarray):
+            print(pred_data.shape)
+        if len(pred_data) == 0:
+            return
+
+        pred = model.predict(pred_data, batch_size=128, verbose=0)
         #pred_df = pd.DataFrame(pred, columns=['Prediction1', 'Prediction2', 'Prediction3'])
-        #print("PRED SHAPE : ", pred.shape)
+        #print("3 - PRED SHAPE : ", pred.shape)
         #result_df = pd.concat([pd_data, pred_df], axis=1)
         #result_df.to_csv(outf_dir.split(".root")[0]+'combined_data.csv', index=False)
         #print("PRED COMB SHAPE : ", result_df.shape)
         #print("DF saved here: ", outf_dir.split(".root")[0]+'combined_data.csv')
 
-        rmzeros = pred[:,0]
-        rmzeros[rmzeros <= 0.001] = 0.001
-        pred[:,0] = rmzeros
-        pred = ( ((1 - alpha) * pred[:,2] + alpha * pred[:,1]) / pred[:,0])
-        pred[pred >= 100.0] = 99.999
-        pred = pred.tolist()
+        if discriminator_key == "p_st_tt_ob"  : 
+             rmzeros = pred[:,0] 
+             rmzeros[rmzeros<=0.00] = 0.001
+             pred[:,0] = rmzeros
+             if alpha <10: pred = ( ( (1-alpha) * pred[:,2] + alpha * pred[:,1] ) / pred[:,0] ).tolist()
+             else: pred = ( ( pred[:,2] + pred[:,1] ) / pred[:,0] ).tolist()
+             pred = np.array(pred)
+             pred[pred>=100.0] = 99.999
+             pred = pred.tolist()
+        elif discriminator_key == "p_st_tt"  : pred = ( pred[:,2] + pred[:,1] ).tolist()
+        elif discriminator_key == "p_max"  : pred = ( np.amax(pred, axis=1) ).tolist()
+        elif discriminator_key == "p_mean"  : pred = ( np.mean(pred, axis=1) ).tolist()
+        elif discriminator_key == "p_min"  : pred = ( np.min(pred, axis=1) ).tolist()
+        else  : pred = ( pred[:, discriminators[discriminator_key]] ).tolist()
+
+        #pred_st = pred[:,2].tolist()
+        #pred_tt = pred[:,1].tolist()
+        #pred_bkg = pred[:,0].tolist()
+        #pred = ( ((1 - alpha) * pred[:,2] + alpha * pred[:,1]) / pred[:,0])
+        #pred[pred >= 100.0] = 99.999
+        #pred = pred.tolist()
         #print ("pred: ", pred)
         pd_weight = pd_weight[eventWeight].tolist()
         nom_weight = pd_weight.copy()
         dnnhist_nom = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
         dnnhist_entries_nom = np.histogram(pred, bins=binedges, density=False)
+        #dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
+        #dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
+        #dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
+        #dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
+        #dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
+        #dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
 
         print ("syst_list: ", syst_list)
         for syst in syst_list:
@@ -225,15 +288,23 @@ def run(inputs):
 
     with uproot.recreate(outf_dir) as outf:
         if '__' not in outf_dir.split('/')[-1]:
-            outt= outf.mktree("Events", {"Muon1_pt": np.float64, "Tau1_pt": np.float64, "dnn_pred": np.float64})
-            outt.extend({"Muon1_pt": muon_pt, "Tau1_pt": tau_pt, "dnn_pred": pred})
+            outt= outf.mktree("Events", {"Muon1_pt": np.float64, "Tau1_pt": np.float64, "dnn_pred": np.float64})#, "dnn_st": np.float64, "dnn_tt": np.float64, "dnn_bkg": np.float64})
+            outt.extend({"Muon1_pt": muon_pt, "Tau1_pt": tau_pt, "dnn_pred": pred})#, "dnn_st": pred_st, "dnn_tt": pred_tt, "dnn_bkg": pred_bkg})
         outf["h_dnn_pred_S5"] = dnnhist_nom
         outf["h_dnn_entries_S5"] = dnnhist_entries_nom
+        #outf["h_dnn_pred_st_S5"] = dnnhist_st
+        #outf["h_dnn_entries_st_S5"] = dnnhist_entries_st
+        #outf["h_dnn_pred_tt_S5"] = dnnhist_tt
+        #outf["h_dnn_entries_tt_S5"] = dnnhist_entries_tt
+        #outf["h_dnn_pred_bkg_S5"] = dnnhist_bkg
+        #outf["h_dnn_entries_bkg_S5"] = dnnhist_entries_bkg
         outf["hcounter"] = hcounter
 
         if not "Muon" in input_file:
             outf["h_nevents_S4_nobtag"] = h_nevents_S4_nobtag
             outf["h_nevents_S4"] = h_nevents_S4
+            outf["h_nevents_S2_nobtag"] = h_nevents_S2_nobtag
+            outf["h_nevents_S2"] = h_nevents_S2
 
             #if any(string in input_file for string in ["Tau-LFV","TTt","_ST_t"]) and "__" not in input_file:
             #    outf["ScaleWeightSum"] = ScaleWeightSum
@@ -267,23 +338,25 @@ def run(inputs):
 if __name__ == '__main__':
 
     print("Start Multi LFV Evaluation")
-    #discriminator = "p_st_tt_ob"
-    alpha=0.1
+    discriminator = "p_st_tt_ob"
+    #discriminator = "p_tt"
+    alpha=options.alpha
     parameters = []
-    #for year in ["v2022", "v2022EE", "v2023", "v2023_BPix", "v15_2024"]:
+    xsec_rootfiles = load_xsec_rootfiles(options.xsecfile)
     for year in ["v15_2024"]:
         print(year)
-        project_dir = "/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0429_btag_v2/" + ch + "/" + year + "/"
+        project_dir = options.project_dir + "/" + ch + "/" + year + "/"
         flist = os.listdir(project_dir)
         flist = [i for i in flist if (".root" in i)]
+        if xsec_rootfiles is not None:
+            flist = [i for i in flist if i in xsec_rootfiles]
         for curfile in flist:
-            #parameters.append((year, project_dir + curfile, discriminator, alpha))
-            parameters.append((year, project_dir + curfile, alpha))
+            parameters.append((year, project_dir + curfile, discriminator, alpha))
 
     parameters_sorted = [tup for tup in parameters if '__' not in tup[1]]
     parameters_sorted.extend([tup for tup in parameters if '__' in tup[1]])
     print ("params: ", parameters_sorted)
-    pool = multiprocessing.get_context("spawn").Pool(4)
+    pool = multiprocessing.get_context("spawn").Pool(8)
     pool.map(run, parameters_sorted)
     pool.close()
     pool.join()
