@@ -1,5 +1,6 @@
 # use: python feature_combination_scan.py --mode sfs -C muon -P /home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/ -D sfs_results.json --epochs 1000 --patience 10
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import sys
 import argparse
 import uproot
@@ -25,7 +26,7 @@ parser.add_argument("--mode", dest="mode", type=str, default="sfs", choices=["sf
 parser.add_argument("--n-random", dest="n_random", type=int, default=200, help="Number of random combinations to test in random mode")
 parser.add_argument("--epochs", dest="epochs", type=int, default=1000, help="Max number of epochs per model run (rely on early stopping)")
 parser.add_argument("--patience", dest="patience", type=int, default=10, help="Early stopping patience")
-parser.add_argument("--workers", dest="workers", type=int, default=4, help="Number of parallel threads for model evaluation")
+parser.add_argument("--workers", dest="workers", type=int, default=8, help="Number of parallel threads for model evaluation")
 parser.add_argument("--seed", dest="seed", type=int, default=42)
 args = parser.parse_args()
 
@@ -170,7 +171,7 @@ if args.mode == "sfs":
         print(f"\n--- SFS Step {step} | Evaluating {len(candidates)} candidates in parallel (workers={args.workers}) ---")
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
             futures = {
-                executor.submit(evaluate_feature_subset, current_features + [cand]): cand 
+                executor.submit(evaluate_feature_subset, current_features + [cand]): cand
                 for cand in candidates
             }
             
@@ -250,21 +251,21 @@ if args.mode == "sfs":
 
 elif args.mode == "random":
     print(f"\nStarting Random Combination Search ({args.n_random} iterations)...")
-    
+
     accuracies = []
     num_features = []
     top_combinations = []
-    
+
     for i in range(args.n_random):
         k = np.random.randint(5, len(all_features) + 1)
         subset = list(np.random.choice(all_features, size=k, replace=False))
-        
+
         acc, loss = evaluate_feature_subset(subset)
         print(f"Iteration {i+1}/{args.n_random} | Features: {len(subset)} | Val Acc: {acc:.4f} | Loss: {loss:.4f}")
-        
+
         accuracies.append(acc)
         num_features.append(len(subset))
-        
+
         results_dict[f"run_{i+1}"] = {
             "features": subset,
             "accuracy": acc,
@@ -284,20 +285,20 @@ elif args.mode == "random":
     plt.savefig("random_features_scatter.png")
     plt.close()
     print("Scatter plot saved as random_features_scatter.png")
-    
+
     # 2. Feature frequency in top 10%
     top_combinations.sort(key=lambda x: x[1], reverse=True)
     top_n = max(1, int(0.1 * args.n_random))
     top_comb_sub = top_combinations[:top_n]
-    
+
     feature_counts_dict = {f: 0 for f in all_features}
     for comb, _ in top_comb_sub:
         for f in comb:
             feature_counts_dict[f] += 1
-            
+
     sorted_freq = sorted(feature_counts_dict.items(), key=lambda x: x[1], reverse=True)
     features_sorted, counts = zip(*sorted_freq)
-    
+
     plt.figure(figsize=(12, 8))
     plt.barh(features_sorted[::-1], counts[::-1], color='teal')
     plt.xlabel(f"Occurrences in Top {top_n} Combinations")
