@@ -1,3 +1,4 @@
+# use: python feature_combination_scan.py --mode sfs -C muon -P /home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/ -D sfs_results.json --epochs 1000 --patience 10
 import os
 import sys
 import argparse
@@ -15,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 # Arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon", help="muon or electron")
-parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/Users/su/Desktop/antigravity_lfvcode/NanoAODRun3/process_0513_v7/")
+parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/")
 parser.add_argument("-O", "--outfile", dest="outfile", type=str, default="feature_scan_results.json")
 parser.add_argument("--mode", dest="mode", type=str, default="sfs", choices=["sfs", "random"], help="sfs (Sequential Forward Selection) or random (Random Search)")
 parser.add_argument("--n-random", dest="n_random", type=int, default=200, help="Number of random combinations to test in random mode")
@@ -54,17 +55,17 @@ df_bkg_tt_list = []
 
 for year in years:
     project_dir_y = os.path.join(args.project_dir, args.ch, year)
-    
+
     for sig_tree in siglist_st:
         tree = uproot.open(os.path.join(project_dir_y, f"hist_{sig_tree}.root"))["Events"]
         df = tree.arrays(all_features, library="pd")
         df_sig_st_list.append(df)
-        
+
     for sig_tree in siglist_tt:
         tree = uproot.open(os.path.join(project_dir_y, f"hist_{sig_tree}.root"))["Events"]
         df = tree.arrays(all_features, library="pd")
         df_sig_tt_list.append(df)
-        
+
     bkg1 = uproot.open(os.path.join(project_dir_y, "hist_TTto2L2Nu.root"))["Events"].arrays(all_features, library="pd")
     bkg2 = uproot.open(os.path.join(project_dir_y, "hist_TTtoLNu2Q.root"))["Events"].arrays(all_features, library="pd")
     bkg1 = bkg1.sample(n=min(len(bkg1), 7*len(bkg2)), random_state=args.seed)
@@ -97,39 +98,41 @@ train_idx, val_idx = train_test_split(np.arange(len(pd_data)), test_size=0.3, ra
 def evaluate_feature_subset(selected_features):
     if len(selected_features) == 0:
         return 0.0, 999.0
-        
+
     x_sub = np.array(pd_data.filter(items=selected_features))
-    
+
     x_tr = x_sub[train_idx]
     x_va = x_sub[val_idx]
     y_tr = y_cat[train_idx]
     y_va = y_cat[val_idx]
-    
+
     # Scale subset
     scaler = StandardScaler()
     x_tr = scaler.fit_transform(x_tr)
     x_va = scaler.transform(x_va)
-    
+
     # Simple, fast model on GPU
     model = tf.keras.models.Sequential([
         tf.keras.layers.Flatten(input_shape=(x_tr.shape[1],)),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(128, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
+        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(128, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
+        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
         tf.keras.layers.Dense(3, activation='softmax')
     ])
-    
+
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3), loss="categorical_crossentropy", metrics=["accuracy"])
     es = EarlyStopping(monitor='val_loss', mode='min', patience=args.patience, verbose=0, restore_best_weights=True)
-    
+
     # Train until early stop
     history = model.fit(x_tr, y_tr, batch_size=2048, epochs=args.epochs, validation_data=(x_va, y_va), callbacks=[es], verbose=0)
-    
+
     best_epoch = np.argmin(history.history['val_loss'])
     val_acc = history.history['val_accuracy'][best_epoch]
     val_loss = history.history['val_loss'][best_epoch]
-    
+
     return float(val_acc), float(val_loss)
 
 # 2. Search Strategies
@@ -139,25 +142,25 @@ if args.mode == "sfs":
     print("\nStarting Sequential Forward Selection (SFS)...")
     current_features = []
     best_overall_acc = 0.0
-    
+
     step = 1
     accuracies = []
     feature_counts = []
-    
+
     while len(current_features) < len(all_features):
         candidates = [f for f in all_features if f not in current_features]
         step_results = []
-        
+
         for cand in candidates:
             test_subset = current_features + [cand]
             acc, loss = evaluate_feature_subset(test_subset)
             step_results.append((cand, acc, loss))
             print(f"Testing subset: {test_subset} -> Val Acc: {acc:.4f}")
-            
+
         # Pick candidate that gives highest validation accuracy
         step_results.sort(key=lambda x: x[1], reverse=True)
         best_cand, best_cand_acc, best_cand_loss = step_results[0]
-        
+
         if best_cand_acc > best_overall_acc:
             current_features.append(best_cand)
             best_overall_acc = best_cand_acc
