@@ -16,99 +16,10 @@ from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import multiprocessing
 
-# Arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon", help="muon or electron")
-parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/")
-parser.add_argument("-O", "--outfile", dest="outfile", type=str, default="feature_scan_results.json")
-parser.add_argument("--mode", dest="mode", type=str, default="sfs", choices=["sfs", "random"], help="sfs (Sequential Forward Selection) or random (Random Search)")
-parser.add_argument("--n-random", dest="n_random", type=int, default=200, help="Number of random combinations to test in random mode")
-parser.add_argument("--epochs", dest="epochs", type=int, default=1000, help="Max number of epochs per model run (rely on early stopping)")
-parser.add_argument("--patience", dest="patience", type=int, default=10, help="Early stopping patience")
-parser.add_argument("--workers", dest="workers", type=int, default=8, help="Number of parallel threads for model evaluation")
-parser.add_argument("--seed", dest="seed", type=int, default=42)
-args = parser.parse_args()
-
-np.random.seed(args.seed)
-tf.random.set_seed(args.seed)
-
-# Limit GPU memory growth to support concurrent threads on GPU
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-    except RuntimeError as e:
-        print(f"GPU growth configuration error: {e}")
-
-# 1. Load Data
-print("Loading data files...")
-base_vars = [
-    "Tau1_pt","Tau1_mass","Tau1_eta",
-    "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
-    "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
-    "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-    "chi2","chi2_SMW_mass","chi2_SMTop_mass",
-    "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-    "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-    "PuppiMET_pt"
-]
-if args.ch == "muon":
-    all_features = ["Muon1_pt", "Muon1_eta"] + base_vars
-else:
-    all_features = ["Electron1_pt", "Electron1_eta"] + base_vars
-
-siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"] if args.ch == "muon" else ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
-siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"] if args.ch == "muon" else ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
-
-years = ["v15_2024"]
-df_sig_st_list = []
-df_sig_tt_list = []
-df_bkg_tt_list = []
-
-for year in years:
-    project_dir_y = os.path.join(args.project_dir, args.ch, year)
-
-    for sig_tree in siglist_st:
-        tree = uproot.open(os.path.join(project_dir_y, f"hist_{sig_tree}.root"))["Events"]
-        df = tree.arrays(all_features, library="pd")
-        df_sig_st_list.append(df)
-
-    for sig_tree in siglist_tt:
-        tree = uproot.open(os.path.join(project_dir_y, f"hist_{sig_tree}.root"))["Events"]
-        df = tree.arrays(all_features, library="pd")
-        df_sig_tt_list.append(df)
-
-    bkg1 = uproot.open(os.path.join(project_dir_y, "hist_TTto2L2Nu.root"))["Events"].arrays(all_features, library="pd")
-    bkg2 = uproot.open(os.path.join(project_dir_y, "hist_TTtoLNu2Q.root"))["Events"].arrays(all_features, library="pd")
-    bkg1 = bkg1.sample(n=min(len(bkg1), 7*len(bkg2)), random_state=args.seed)
-    df_bkg_tt_list.extend([bkg1, bkg2])
-
-df_sig_st = pd.concat(df_sig_st_list)
-df_sig_tt = pd.concat(df_sig_tt_list)
-df_bkg = pd.concat(df_bkg_tt_list)
-
-nsig = min(len(df_sig_st), len(df_sig_tt), len(df_bkg))
-df_sig_st = df_sig_st.sample(n=nsig, random_state=args.seed)
-df_sig_tt = df_sig_tt.sample(n=nsig, random_state=args.seed)
-df_bkg = df_bkg.sample(n=nsig, random_state=args.seed)
-
-df_sig_st["category"] = 2
-df_sig_tt["category"] = 1
-df_bkg["category"] = 0
-
-pd_data = pd.concat([df_sig_tt, df_sig_st, df_bkg])
-pd_data = abs(pd_data) # Preprocessing: absolute values
-pd_data = pd_data.sample(frac=1, random_state=args.seed).reset_index(drop=True).astype('float32')
-
-print(f"Data loaded. Total events: {len(pd_data)} | Max Features: {len(all_features)}")
-
-# Split and Scale
-y_cat = to_categorical(np.array(pd_data['category']))
-train_idx, val_idx = train_test_split(np.arange(len(pd_data)), test_size=0.3, random_state=args.seed)
-
-# # Define fast model training worker function for ProcessPoolExecutor
+# Define fast model training worker function at top level
+# Child processes will only import and run this function without loading the datasets
 def evaluate_subset_worker(x_tr, x_va, y_tr, y_va, epochs, patience):
     # Scale subset
     scaler = StandardScaler()
@@ -151,193 +62,272 @@ def evaluate_subset_worker(x_tr, x_va, y_tr, y_va, epochs, patience):
 
     return float(val_acc), float(val_loss)
 
-# 2. Search Strategies
-results_dict = {}
+def main():
+    # Arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon", help="muon or electron")
+    parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/Users/su/Desktop/antigravity_lfvcode/NanoAODRun3/process_0513_v7/")
+    parser.add_argument("-O", "--outfile", dest="outfile", type=str, default="feature_scan_results.json")
+    parser.add_argument("--mode", dest="mode", type=str, default="sfs", choices=["sfs", "random"], help="sfs (Sequential Forward Selection) or random (Random Search)")
+    parser.add_argument("--n-random", dest="n_random", type=int, default=200, help="Number of random combinations to test in random mode")
+    parser.add_argument("--epochs", dest="epochs", type=int, default=1000, help="Max number of epochs per model run (rely on early stopping)")
+    parser.add_argument("--patience", dest="patience", type=int, default=10, help="Early stopping patience")
+    parser.add_argument("--workers", dest="workers", type=int, default=4, help="Number of parallel threads for model evaluation")
+    parser.add_argument("--seed", dest="seed", type=int, default=42)
+    args = parser.parse_args()
 
-if args.mode == "sfs":
-    print("\nStarting Sequential Forward Selection (SFS)...")
-    current_features = []
-    best_overall_acc = 0.0
-    
-    step = 1
-    accuracies = []
-    feature_counts = []
-    step_candidate_accuracies = []
-    
-    while len(current_features) < len(all_features):
-        candidates = [f for f in all_features if f not in current_features]
-        step_results = []
+    np.random.seed(args.seed)
+    tf.random.set_seed(args.seed)
+
+    # Limit GPU memory growth in main process
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+        except RuntimeError as e:
+            print(f"GPU growth configuration error: {e}")
+
+    # Load Data
+    print("Loading data files...")
+    base_vars = [
+        "Tau1_pt","Tau1_mass","Tau1_eta",
+        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
+        "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
+        "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
+        "chi2","chi2_SMW_mass","chi2_SMTop_mass",
+        "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
+        "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
+        "PuppiMET_pt"
+    ]
+    if args.ch == "muon":
+        all_features = ["Muon1_pt", "Muon1_eta"] + base_vars
+    else:
+        all_features = ["Electron1_pt", "Electron1_eta"] + base_vars
+
+    siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"] if args.ch == "muon" else ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
+    siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"] if args.ch == "muon" else ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
+
+    years = ["v15_2024"]
+    df_sig_st_list = []
+    df_sig_tt_list = []
+    df_bkg_tt_list = []
+
+    for year in years:
+        project_dir_y = os.path.join(args.project_dir, args.ch, year)
         
-        # Parallel evaluation of candidates in the current SFS step
-        print(f"\n--- SFS Step {step} | Evaluating {len(candidates)} candidates in parallel (workers={args.workers}) ---")
+        for sig_tree in siglist_st:
+            tree = uproot.open(os.path.join(project_dir_y, f"hist_{sig_tree}.root"))["Events"]
+            df = tree.arrays(all_features, library="pd")
+            df_sig_st_list.append(df)
+            
+        for sig_tree in siglist_tt:
+            tree = uproot.open(os.path.join(project_dir_y, f"hist_{sig_tree}.root"))["Events"]
+            df = tree.arrays(all_features, library="pd")
+            df_sig_tt_list.append(df)
+            
+        bkg1 = uproot.open(os.path.join(project_dir_y, "hist_TTto2L2Nu.root"))["Events"].arrays(all_features, library="pd")
+        bkg2 = uproot.open(os.path.join(project_dir_y, "hist_TTtoLNu2Q.root"))["Events"].arrays(all_features, library="pd")
+        bkg1 = bkg1.sample(n=min(len(bkg1), 7*len(bkg2)), random_state=args.seed)
+        df_bkg_tt_list.extend([bkg1, bkg2])
+
+    df_sig_st = pd.concat(df_sig_st_list)
+    df_sig_tt = pd.concat(df_sig_tt_list)
+    df_bkg = pd.concat(df_bkg_tt_list)
+
+    nsig = min(len(df_sig_st), len(df_sig_tt), len(df_bkg))
+    df_sig_st = df_sig_st.sample(n=nsig, random_state=args.seed)
+    df_sig_tt = df_sig_tt.sample(n=nsig, random_state=args.seed)
+    df_bkg = df_bkg.sample(n=nsig, random_state=args.seed)
+
+    df_sig_st["category"] = 2
+    df_sig_tt["category"] = 1
+    df_bkg["category"] = 0
+
+    pd_data = pd.concat([df_sig_tt, df_sig_st, df_bkg])
+    pd_data = abs(pd_data)
+    pd_data = pd_data.sample(frac=1, random_state=args.seed).reset_index(drop=True).astype('float32')
+
+    print(f"Data loaded. Total events: {len(pd_data)} | Max Features: {len(all_features)}")
+
+    y_cat = to_categorical(np.array(pd_data['category']))
+    train_idx, val_idx = train_test_split(np.arange(len(pd_data)), test_size=0.3, random_state=args.seed)
+
+    results_dict = {}
+
+    if args.mode == "sfs":
+        print("\nStarting Sequential Forward Selection (SFS)...")
+        current_features = []
+        best_overall_acc = 0.0
+        
+        step = 1
+        accuracies = []
+        feature_counts = []
+        step_candidate_accuracies = []
+        
+        while len(current_features) < len(all_features):
+            candidates = [f for f in all_features if f not in current_features]
+            step_results = []
+            
+            # Parallel evaluation of candidates in the current SFS step
+            print(f"\n--- SFS Step {step} | Evaluating {len(candidates)} candidates in parallel (workers={args.workers}) ---")
+            with ProcessPoolExecutor(max_workers=args.workers) as executor:
+                futures = {}
+                for cand in candidates:
+                    test_subset = current_features + [cand]
+                    x_sub = np.array(pd_data.filter(items=test_subset))
+                    x_tr = x_sub[train_idx]
+                    x_va = x_sub[val_idx]
+                    y_tr = y_cat[train_idx]
+                    y_va = y_cat[val_idx]
+                    
+                    futures[executor.submit(evaluate_subset_worker, x_tr, x_va, y_tr, y_va, args.epochs, args.patience)] = cand
+                
+                for future in as_completed(futures):
+                    cand = futures[future]
+                    try:
+                        acc, loss = future.result()
+                        step_results.append((cand, acc, loss))
+                        print(f"Tested candidate: {cand} -> Val Acc: {acc:.4f} | Val Loss: {loss:.4f}")
+                    except Exception as e:
+                        print(f"Error evaluating candidate {cand}: {e}")
+                
+            # Pick candidate that gives highest validation accuracy
+            step_results.sort(key=lambda x: x[1], reverse=True)
+            best_cand, best_cand_acc, best_cand_loss = step_results[0]
+            
+            current_features.append(best_cand)
+            if best_cand_acc > best_overall_acc:
+                best_overall_acc = best_cand_acc
+                
+            accuracies.append(best_cand_acc)
+            feature_counts.append(len(current_features))
+            
+            cand_accs = [acc for cand, acc, loss in step_results]
+            step_candidate_accuracies.append(cand_accs)
+            
+            print(f"\n[Step {step}] Selected best feature: '{best_cand}' (Acc: {best_cand_acc:.4f}) | Total Features: {len(current_features)}")
+            
+            results_dict[f"step_{step}"] = {
+                "selected_feature": best_cand,
+                "accuracy": best_cand_acc,
+                "loss": best_cand_loss,
+                "current_feature_subset": list(current_features),
+                "all_candidates": {
+                    cand: {"accuracy": acc, "loss": loss} for cand, acc, loss in step_results
+                }
+            }
+            
+            with open(args.outfile, "w") as f:
+                json.dump(results_dict, f, indent=4)
+            print(f"Autosaved progress to {args.outfile}")
+            
+            step += 1
+            
+        if len(accuracies) > 0:
+            plt.figure(figsize=(14, 8))
+            
+            for idx, cand_accs in enumerate(step_candidate_accuracies):
+                x_vals = [idx + 1] * len(cand_accs)
+                if idx == 0:
+                    plt.scatter(x_vals, cand_accs, color='dodgerblue', alpha=0.3, s=30, label='All Tested Candidates', zorder=2)
+                else:
+                    plt.scatter(x_vals, cand_accs, color='dodgerblue', alpha=0.3, s=30, zorder=2)
+            
+            plt.plot(feature_counts, accuracies, marker='o', linewidth=2.5, color='darkorange', label='Best Subset Path', zorder=3)
+            
+            labels = [results_dict[f"step_{i}"]["selected_feature"] for i in range(1, step)]
+            plt.xticks(feature_counts, labels, rotation=45, ha='right')
+            
+            plt.xlabel("Features Added (Greedy SFS Steps)")
+            plt.ylabel("Validation Accuracy")
+            plt.title("Sequential Forward Selection (SFS) Path and Candidate Performance Distribution")
+            plt.legend(loc='lower right')
+            plt.grid(True, linestyle='--', alpha=0.5)
+            plt.tight_layout()
+            plt.savefig("sfs_accuracy_curve.png")
+            plt.close()
+            print("SFS Curve saved as sfs_accuracy_curve.png")
+
+    elif args.mode == "random":
+        print(f"\nStarting Random Combination Search ({args.n_random} iterations)...")
+
+        accuracies = []
+        num_features = []
+        top_combinations = []
+
+        subsets = []
+        for i in range(args.n_random):
+            k = np.random.randint(5, len(all_features) + 1)
+            subset = list(np.random.choice(all_features, size=k, replace=False))
+            subsets.append(subset)
+
+        print(f"\n--- Random Mode | Evaluating {args.n_random} combinations in parallel (workers={args.workers}) ---")
         with ProcessPoolExecutor(max_workers=args.workers) as executor:
             futures = {}
-            for cand in candidates:
-                test_subset = current_features + [cand]
-                x_sub = np.array(pd_data.filter(items=test_subset))
+            for idx, subset in enumerate(subsets):
+                x_sub = np.array(pd_data.filter(items=subset))
                 x_tr = x_sub[train_idx]
                 x_va = x_sub[val_idx]
                 y_tr = y_cat[train_idx]
                 y_va = y_cat[val_idx]
                 
-                futures[executor.submit(evaluate_subset_worker, x_tr, x_va, y_tr, y_va, args.epochs, args.patience)] = cand
-            
+                futures[executor.submit(evaluate_subset_worker, x_tr, x_va, y_tr, y_va, args.epochs, args.patience)] = (idx, subset)
+                
             for future in as_completed(futures):
-                cand = futures[future]
+                idx, subset = futures[future]
                 try:
                     acc, loss = future.result()
-                    step_results.append((cand, acc, loss))
-                    print(f"Tested candidate: {cand} -> Val Acc: {acc:.4f} | Val Loss: {loss:.4f}")
+                    print(f"Iteration {idx+1}/{args.n_random} | Features: {len(subset)} | Val Acc: {acc:.4f} | Loss: {loss:.4f}")
+                    
+                    accuracies.append(acc)
+                    num_features.append(len(subset))
+                    
+                    results_dict[f"run_{idx+1}"] = {
+                        "features": subset,
+                        "accuracy": acc,
+                        "loss": loss
+                    }
+                    top_combinations.append((subset, acc))
                 except Exception as e:
-                    print(f"Error evaluating candidate {cand}: {e}")
-            
-        # Pick candidate that gives highest validation accuracy
-        step_results.sort(key=lambda x: x[1], reverse=True)
-        best_cand, best_cand_acc, best_cand_loss = step_results[0]
-        
-        # Add to current features regardless of whether it beats the historical best
-        current_features.append(best_cand)
-        if best_cand_acc > best_overall_acc:
-            best_overall_acc = best_cand_acc
-            
-        accuracies.append(best_cand_acc)
-        feature_counts.append(len(current_features))
-        
-        # Track all candidate accuracies for this step
-        cand_accs = [acc for cand, acc, loss in step_results]
-        step_candidate_accuracies.append(cand_accs)
-        
-        print(f"\n[Step {step}] Selected best feature: '{best_cand}' (Acc: {best_cand_acc:.4f}) | Total Features: {len(current_features)}")
-        
-        # Store comprehensive step info including all candidate evaluations
-        results_dict[f"step_{step}"] = {
-            "selected_feature": best_cand,
-            "accuracy": best_cand_acc,
-            "loss": best_cand_loss,
-            "current_feature_subset": list(current_features),
-            "all_candidates": {
-                cand: {"accuracy": acc, "loss": loss} for cand, acc, loss in step_results
-            }
-        }
-        
-        # Real-time Autosave at the end of each step
-        with open(args.outfile, "w") as f:
-            json.dump(results_dict, f, indent=4)
-        print(f"Autosaved progress to {args.outfile}")
-        
-        step += 1
-        
-    # Visualize SFS Curve & All Candidate Distributions
-    if len(accuracies) > 0:
-        plt.figure(figsize=(14, 8))
-        
-        # Plot all candidates as vertical scatter points at each step
-        for idx, cand_accs in enumerate(step_candidate_accuracies):
-            x_vals = [idx + 1] * len(cand_accs)
-            if idx == 0:
-                plt.scatter(x_vals, cand_accs, color='dodgerblue', alpha=0.3, s=30, label='All Tested Candidates', zorder=2)
-            else:
-                plt.scatter(x_vals, cand_accs, color='dodgerblue', alpha=0.3, s=30, zorder=2)
-        
-        # Plot the best subset path line
-        plt.plot(feature_counts, accuracies, marker='o', linewidth=2.5, color='darkorange', label='Best Subset Path', zorder=3)
-        
-        # Annotate feature labels on the x-axis
-        labels = [results_dict[f"step_{i}"]["selected_feature"] for i in range(1, step)]
-        plt.xticks(feature_counts, labels, rotation=45, ha='right')
-        
-        plt.xlabel("Features Added (Greedy SFS Steps)")
+                    print(f"Error evaluating random combination {idx+1}: {e}")
+
+        plt.figure(figsize=(9, 6))
+        plt.scatter(num_features, accuracies, alpha=0.7, color='indigo')
+        plt.xlabel("Number of Features in Combination")
         plt.ylabel("Validation Accuracy")
-        plt.title("Sequential Forward Selection (SFS) Path and Candidate Performance Distribution")
-        plt.legend(loc='lower right')
-        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.title("Random Feature Combination Performance")
+        plt.grid(True, linestyle='--', alpha=0.6)
         plt.tight_layout()
-        plt.savefig("sfs_accuracy_curve.png")
+        plt.savefig("random_features_scatter.png")
         plt.close()
-        print("SFS Curve saved as sfs_accuracy_curve.png")
+        print("Scatter plot saved as random_features_scatter.png")
 
-elif args.mode == "random":
-    print(f"\nStarting Random Combination Search ({args.n_random} iterations)...")
+        top_combinations.sort(key=lambda x: x[1], reverse=True)
+        top_n = max(1, int(0.1 * args.n_random))
+        top_comb_sub = top_combinations[:top_n]
 
-    accuracies = []
-    num_features = []
-    top_combinations = []
+        feature_counts_dict = {f: 0 for f in all_features}
+        for comb, _ in top_comb_sub:
+            for f in comb:
+                feature_counts_dict[f] += 1
 
-    # Generate all subsets first
-    subsets = []
-    for i in range(args.n_random):
-        k = np.random.randint(5, len(all_features) + 1)
-        subset = list(np.random.choice(all_features, size=k, replace=False))
-        subsets.append(subset)
+        sorted_freq = sorted(feature_counts_dict.items(), key=lambda x: x[1], reverse=True)
+        features_sorted, counts = zip(*sorted_freq)
 
-    # Evaluate in parallel using ProcessPoolExecutor
-    print(f"\n--- Random Mode | Evaluating {args.n_random} combinations in parallel (workers={args.workers}) ---")
-    with ProcessPoolExecutor(max_workers=args.workers) as executor:
-        futures = {}
-        for idx, subset in enumerate(subsets):
-            x_sub = np.array(pd_data.filter(items=subset))
-            x_tr = x_sub[train_idx]
-            x_va = x_sub[val_idx]
-            y_tr = y_cat[train_idx]
-            y_va = y_cat[val_idx]
-            
-            futures[executor.submit(evaluate_subset_worker, x_tr, x_va, y_tr, y_va, args.epochs, args.patience)] = (idx, subset)
-            
-        for future in as_completed(futures):
-            idx, subset = futures[future]
-            try:
-                acc, loss = future.result()
-                print(f"Iteration {idx+1}/{args.n_random} | Features: {len(subset)} | Val Acc: {acc:.4f} | Loss: {loss:.4f}")
-                
-                accuracies.append(acc)
-                num_features.append(len(subset))
-                
-                results_dict[f"run_{idx+1}"] = {
-                    "features": subset,
-                    "accuracy": acc,
-                    "loss": loss
-                }
-                top_combinations.append((subset, acc))
-            except Exception as e:
-                print(f"Error evaluating random combination {idx+1}: {e}")
+        plt.figure(figsize=(12, 8))
+        plt.barh(features_sorted[::-1], counts[::-1], color='teal')
+        plt.xlabel(f"Occurrences in Top {top_n} Combinations")
+        plt.title(f"Feature Selection Frequency in Top 10% Performers (out of {args.n_random} runs)")
+        plt.tight_layout()
+        plt.savefig("feature_selection_frequency.png")
+        plt.close()
+        print("Selection frequency chart saved as feature_selection_frequency.png")
 
-    # Save random search plots
-    # 1. Scatter plot
-    plt.figure(figsize=(9, 6))
-    plt.scatter(num_features, accuracies, alpha=0.7, color='indigo')
-    plt.xlabel("Number of Features in Combination")
-    plt.ylabel("Validation Accuracy")
-    plt.title("Random Feature Combination Performance")
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.tight_layout()
-    plt.savefig("random_features_scatter.png")
-    plt.close()
-    print("Scatter plot saved as random_features_scatter.png")
+    with open(args.outfile, "w") as f:
+        json.dump(results_dict, f, indent=4)
+    print(f"\nScan complete! Results saved to {args.outfile}")
 
-    # 2. Feature frequency in top 10%
-    top_combinations.sort(key=lambda x: x[1], reverse=True)
-    top_n = max(1, int(0.1 * args.n_random))
-    top_comb_sub = top_combinations[:top_n]
-
-    feature_counts_dict = {f: 0 for f in all_features}
-    for comb, _ in top_comb_sub:
-        for f in comb:
-            feature_counts_dict[f] += 1
-
-    sorted_freq = sorted(feature_counts_dict.items(), key=lambda x: x[1], reverse=True)
-    features_sorted, counts = zip(*sorted_freq)
-
-    plt.figure(figsize=(12, 8))
-    plt.barh(features_sorted[::-1], counts[::-1], color='teal')
-    plt.xlabel(f"Occurrences in Top {top_n} Combinations")
-    plt.title(f"Feature Selection Frequency in Top 10% Performers (out of {args.n_random} runs)")
-    plt.tight_layout()
-    plt.savefig("feature_selection_frequency.png")
-    plt.close()
-    print("Selection frequency chart saved as feature_selection_frequency.png")
-
-# Save results
-with open(args.outfile, "w") as f:
-    json.dump(results_dict, f, indent=4)
-
-print(f"\nScan complete! Results saved to {args.outfile}")
+if __name__ == '__main__':
+    multiprocessing.set_start_method('spawn', force=True)
+    main()
