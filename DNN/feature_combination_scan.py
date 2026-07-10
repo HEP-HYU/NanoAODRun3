@@ -156,15 +156,16 @@ if args.mode == "sfs":
     print("\nStarting Sequential Forward Selection (SFS)...")
     current_features = []
     best_overall_acc = 0.0
-
+    
     step = 1
     accuracies = []
     feature_counts = []
-
+    step_candidate_accuracies = []
+    
     while len(current_features) < len(all_features):
         candidates = [f for f in all_features if f not in current_features]
         step_results = []
-
+        
         # Parallel evaluation of candidates in the current SFS step
         print(f"\n--- SFS Step {step} | Evaluating {len(candidates)} candidates in parallel (workers={args.workers}) ---")
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
@@ -172,7 +173,7 @@ if args.mode == "sfs":
                 executor.submit(evaluate_feature_subset, current_features + [cand]): cand 
                 for cand in candidates
             }
-
+            
             for future in as_completed(futures):
                 cand = futures[future]
                 try:
@@ -181,44 +182,67 @@ if args.mode == "sfs":
                     print(f"Tested candidate: {cand} -> Val Acc: {acc:.4f} | Val Loss: {loss:.4f}")
                 except Exception as e:
                     print(f"Error evaluating candidate {cand}: {e}")
-
+            
         # Pick candidate that gives highest validation accuracy
         step_results.sort(key=lambda x: x[1], reverse=True)
         best_cand, best_cand_acc, best_cand_loss = step_results[0]
-
+        
+        # Add to current features regardless of whether it beats the historical best
+        current_features.append(best_cand)
         if best_cand_acc > best_overall_acc:
-            current_features.append(best_cand)
             best_overall_acc = best_cand_acc
-            accuracies.append(best_overall_acc)
-            feature_counts.append(len(current_features))
-            print(f"\n[Step {step}] Added '{best_cand}' | Current Best Acc: {best_overall_acc:.4f}")
-
-            results_dict[f"step_{step}"] = {
-                "features": list(current_features),
-                "added_feature": best_cand,
-                "accuracy": best_cand_acc,
-                "loss": best_cand_loss
+            
+        accuracies.append(best_cand_acc)
+        feature_counts.append(len(current_features))
+        
+        # Track all candidate accuracies for this step
+        cand_accs = [acc for cand, acc, loss in step_results]
+        step_candidate_accuracies.append(cand_accs)
+        
+        print(f"\n[Step {step}] Selected best feature: '{best_cand}' (Acc: {best_cand_acc:.4f}) | Total Features: {len(current_features)}")
+        
+        # Store comprehensive step info including all candidate evaluations
+        results_dict[f"step_{step}"] = {
+            "selected_feature": best_cand,
+            "accuracy": best_cand_acc,
+            "loss": best_cand_loss,
+            "current_feature_subset": list(current_features),
+            "all_candidates": {
+                cand: {"accuracy": acc, "loss": loss} for cand, acc, loss in step_results
             }
-
-            # Real-time Autosave at the end of each step
-            with open(args.outfile, "w") as f:
-                json.dump(results_dict, f, indent=4)
-            print(f"Autosaved progress to {args.outfile}")
-
-            step += 1
-        else:
-            print(f"\nNo single feature addition improved the best validation accuracy ({best_overall_acc:.4f}). Stopping search.")
-            break
-
-    # Visualize SFS Curve
+        }
+        
+        # Real-time Autosave at the end of each step
+        with open(args.outfile, "w") as f:
+            json.dump(results_dict, f, indent=4)
+        print(f"Autosaved progress to {args.outfile}")
+        
+        step += 1
+        
+    # Visualize SFS Curve & All Candidate Distributions
     if len(accuracies) > 0:
-        plt.figure(figsize=(10, 6))
-        plt.plot(feature_counts, accuracies, marker='o', linewidth=2, color='royalblue')
-        plt.xticks(feature_counts, [results_dict[f"step_{i}"]["added_feature"] for i in range(1, step)], rotation=45, ha='right')
-        plt.xlabel("Features Added")
+        plt.figure(figsize=(14, 8))
+        
+        # Plot all candidates as vertical scatter points at each step
+        for idx, cand_accs in enumerate(step_candidate_accuracies):
+            x_vals = [idx + 1] * len(cand_accs)
+            if idx == 0:
+                plt.scatter(x_vals, cand_accs, color='dodgerblue', alpha=0.3, s=30, label='All Tested Candidates', zorder=2)
+            else:
+                plt.scatter(x_vals, cand_accs, color='dodgerblue', alpha=0.3, s=30, zorder=2)
+        
+        # Plot the best subset path line
+        plt.plot(feature_counts, accuracies, marker='o', linewidth=2.5, color='darkorange', label='Best Subset Path', zorder=3)
+        
+        # Annotate feature labels on the x-axis
+        labels = [results_dict[f"step_{i}"]["selected_feature"] for i in range(1, step)]
+        plt.xticks(feature_counts, labels, rotation=45, ha='right')
+        
+        plt.xlabel("Features Added (Greedy SFS Steps)")
         plt.ylabel("Validation Accuracy")
-        plt.title("Sequential Forward Selection (SFS) Performance Curve")
-        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.title("Sequential Forward Selection (SFS) Path and Candidate Performance Distribution")
+        plt.legend(loc='lower right')
+        plt.grid(True, linestyle='--', alpha=0.5)
         plt.tight_layout()
         plt.savefig("sfs_accuracy_curve.png")
         plt.close()
