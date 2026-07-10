@@ -15,7 +15,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Arguments
 parser = argparse.ArgumentParser()
@@ -108,22 +108,23 @@ print(f"Data loaded. Total events: {len(pd_data)} | Max Features: {len(all_featu
 y_cat = to_categorical(np.array(pd_data['category']))
 train_idx, val_idx = train_test_split(np.arange(len(pd_data)), test_size=0.3, random_state=args.seed)
 
-# Define fast model training function
-def evaluate_feature_subset(selected_features):
-    if len(selected_features) == 0:
-        return 0.0, 999.0
-
-    x_sub = np.array(pd_data.filter(items=selected_features))
-
-    x_tr = x_sub[train_idx]
-    x_va = x_sub[val_idx]
-    y_tr = y_cat[train_idx]
-    y_va = y_cat[val_idx]
-
+# # Define fast model training worker function for ProcessPoolExecutor
+def evaluate_subset_worker(x_tr, x_va, y_tr, y_va, epochs, patience):
     # Scale subset
     scaler = StandardScaler()
     x_tr = scaler.fit_transform(x_tr)
     x_va = scaler.transform(x_va)
+
+    # Configure GPU memory growth dynamically inside the worker process
+    import tensorflow as tf
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+        except RuntimeError:
+            pass
+
     model = tf.keras.models.Sequential([
         tf.keras.layers.Input(shape=(x_tr.shape[1],)),
         tf.keras.layers.BatchNormalization(),
@@ -136,16 +137,16 @@ def evaluate_feature_subset(selected_features):
     ])
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3), loss="categorical_crossentropy", metrics=["accuracy"])
-    es = EarlyStopping(monitor='val_loss', mode='min', patience=args.patience, verbose=0, restore_best_weights=True)
+    es = EarlyStopping(monitor='val_loss', mode='min', patience=patience, verbose=0, restore_best_weights=True)
 
     # Train until early stop
-    history = model.fit(x_tr, y_tr, batch_size=2048, epochs=args.epochs, validation_data=(x_va, y_va), callbacks=[es], verbose=0)
+    history = model.fit(x_tr, y_tr, batch_size=2048, epochs=epochs, validation_data=(x_va, y_va), callbacks=[es], verbose=0)
 
     best_epoch = np.argmin(history.history['val_loss'])
     val_acc = history.history['val_accuracy'][best_epoch]
     val_loss = history.history['val_loss'][best_epoch]
 
-    # Clean up backend session graph to free GPU memory and prevent retracing warnings
+    # Clean up backend session graph to free GPU memory
     tf.keras.backend.clear_session()
 
     return float(val_acc), float(val_loss)
@@ -169,11 +170,17 @@ if args.mode == "sfs":
         
         # Parallel evaluation of candidates in the current SFS step
         print(f"\n--- SFS Step {step} | Evaluating {len(candidates)} candidates in parallel (workers={args.workers}) ---")
-        with ThreadPoolExecutor(max_workers=args.workers) as executor:
-            futures = {
-                executor.submit(evaluate_feature_subset, current_features + [cand]): cand
-                for cand in candidates
-            }
+        with ProcessPoolExecutor(max_workers=args.workers) as executor:
+            futures = {}
+            for cand in candidates:
+                test_subset = current_features + [cand]
+                x_sub = np.array(pd_data.filter(items=test_subset))
+                x_tr = x_sub[train_idx]
+                x_va = x_sub[val_idx]
+                y_tr = y_cat[train_idx]
+                y_va = y_cat[val_idx]
+                
+                futures[executor.submit(evaluate_subset_worker, x_tr, x_va, y_tr, y_va, args.epochs, args.patience)] = cand
             
             for future in as_completed(futures):
                 cand = futures[future]
@@ -256,22 +263,43 @@ elif args.mode == "random":
     num_features = []
     top_combinations = []
 
+    # Generate all subsets first
+    subsets = []
     for i in range(args.n_random):
         k = np.random.randint(5, len(all_features) + 1)
         subset = list(np.random.choice(all_features, size=k, replace=False))
+        subsets.append(subset)
 
-        acc, loss = evaluate_feature_subset(subset)
-        print(f"Iteration {i+1}/{args.n_random} | Features: {len(subset)} | Val Acc: {acc:.4f} | Loss: {loss:.4f}")
-
-        accuracies.append(acc)
-        num_features.append(len(subset))
-
-        results_dict[f"run_{i+1}"] = {
-            "features": subset,
-            "accuracy": acc,
-            "loss": loss
-        }
-        top_combinations.append((subset, acc))
+    # Evaluate in parallel using ProcessPoolExecutor
+    print(f"\n--- Random Mode | Evaluating {args.n_random} combinations in parallel (workers={args.workers}) ---")
+    with ProcessPoolExecutor(max_workers=args.workers) as executor:
+        futures = {}
+        for idx, subset in enumerate(subsets):
+            x_sub = np.array(pd_data.filter(items=subset))
+            x_tr = x_sub[train_idx]
+            x_va = x_sub[val_idx]
+            y_tr = y_cat[train_idx]
+            y_va = y_cat[val_idx]
+            
+            futures[executor.submit(evaluate_subset_worker, x_tr, x_va, y_tr, y_va, args.epochs, args.patience)] = (idx, subset)
+            
+        for future in as_completed(futures):
+            idx, subset = futures[future]
+            try:
+                acc, loss = future.result()
+                print(f"Iteration {idx+1}/{args.n_random} | Features: {len(subset)} | Val Acc: {acc:.4f} | Loss: {loss:.4f}")
+                
+                accuracies.append(acc)
+                num_features.append(len(subset))
+                
+                results_dict[f"run_{idx+1}"] = {
+                    "features": subset,
+                    "accuracy": acc,
+                    "loss": loss
+                }
+                top_combinations.append((subset, acc))
+            except Exception as e:
+                print(f"Error evaluating random combination {idx+1}: {e}")
 
     # Save random search plots
     # 1. Scatter plot
