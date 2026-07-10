@@ -7,11 +7,14 @@ import json
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Arguments
 parser = argparse.ArgumentParser()
@@ -22,11 +25,21 @@ parser.add_argument("--mode", dest="mode", type=str, default="sfs", choices=["sf
 parser.add_argument("--n-random", dest="n_random", type=int, default=200, help="Number of random combinations to test in random mode")
 parser.add_argument("--epochs", dest="epochs", type=int, default=1000, help="Max number of epochs per model run (rely on early stopping)")
 parser.add_argument("--patience", dest="patience", type=int, default=10, help="Early stopping patience")
+parser.add_argument("--workers", dest="workers", type=int, default=4, help="Number of parallel threads for model evaluation")
 parser.add_argument("--seed", dest="seed", type=int, default=42)
 args = parser.parse_args()
 
 np.random.seed(args.seed)
 tf.random.set_seed(args.seed)
+
+# Limit GPU memory growth to support concurrent threads on GPU
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        print(f"GPU growth configuration error: {e}")
 
 # 1. Load Data
 print("Loading data files...")
@@ -110,16 +123,14 @@ def evaluate_feature_subset(selected_features):
     scaler = StandardScaler()
     x_tr = scaler.fit_transform(x_tr)
     x_va = scaler.transform(x_va)
-
-    # Simple, fast model on GPU
     model = tf.keras.models.Sequential([
         tf.keras.layers.Flatten(input_shape=(x_tr.shape[1],)),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
+        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4), kernel_initializer='he_uniform'),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
+        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4), kernel_initializer='he_uniform'),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4)),
+        tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4), kernel_initializer='he_uniform'),
         tf.keras.layers.Dense(3, activation='softmax')
     ])
 
@@ -151,11 +162,22 @@ if args.mode == "sfs":
         candidates = [f for f in all_features if f not in current_features]
         step_results = []
 
-        for cand in candidates:
-            test_subset = current_features + [cand]
-            acc, loss = evaluate_feature_subset(test_subset)
-            step_results.append((cand, acc, loss))
-            print(f"Testing subset: {test_subset} -> Val Acc: {acc:.4f}")
+        # Parallel evaluation of candidates in the current SFS step
+        print(f"\n--- SFS Step {step} | Evaluating {len(candidates)} candidates in parallel (workers={args.workers}) ---")
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            futures = {
+                executor.submit(evaluate_feature_subset, current_features + [cand]): cand 
+                for cand in candidates
+            }
+
+            for future in as_completed(futures):
+                cand = futures[future]
+                try:
+                    acc, loss = future.result()
+                    step_results.append((cand, acc, loss))
+                    print(f"Tested candidate: {cand} -> Val Acc: {acc:.4f} | Val Loss: {loss:.4f}")
+                except Exception as e:
+                    print(f"Error evaluating candidate {cand}: {e}")
 
         # Pick candidate that gives highest validation accuracy
         step_results.sort(key=lambda x: x[1], reverse=True)
@@ -167,18 +189,24 @@ if args.mode == "sfs":
             accuracies.append(best_overall_acc)
             feature_counts.append(len(current_features))
             print(f"\n[Step {step}] Added '{best_cand}' | Current Best Acc: {best_overall_acc:.4f}")
-            
+
             results_dict[f"step_{step}"] = {
                 "features": list(current_features),
                 "added_feature": best_cand,
                 "accuracy": best_cand_acc,
                 "loss": best_cand_loss
             }
+
+            # Real-time Autosave at the end of each step
+            with open(args.outfile, "w") as f:
+                json.dump(results_dict, f, indent=4)
+            print(f"Autosaved progress to {args.outfile}")
+
             step += 1
         else:
             print(f"\nNo single feature addition improved the best validation accuracy ({best_overall_acc:.4f}). Stopping search.")
             break
-            
+
     # Visualize SFS Curve
     if len(accuracies) > 0:
         plt.figure(figsize=(10, 6))
