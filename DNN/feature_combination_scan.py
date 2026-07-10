@@ -124,7 +124,7 @@ def evaluate_feature_subset(selected_features):
     x_tr = scaler.fit_transform(x_tr)
     x_va = scaler.transform(x_va)
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Flatten(input_shape=(x_tr.shape[1],)),
+        tf.keras.layers.Input(shape=(x_tr.shape[1],)),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.Dense(256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(1e-4), kernel_initializer='he_uniform'),
         tf.keras.layers.BatchNormalization(),
@@ -143,6 +143,9 @@ def evaluate_feature_subset(selected_features):
     best_epoch = np.argmin(history.history['val_loss'])
     val_acc = history.history['val_accuracy'][best_epoch]
     val_loss = history.history['val_loss'][best_epoch]
+
+    # Clean up backend session graph to free GPU memory and prevent retracing warnings
+    tf.keras.backend.clear_session()
 
     return float(val_acc), float(val_loss)
 
