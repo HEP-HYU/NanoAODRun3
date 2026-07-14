@@ -44,13 +44,23 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
             float L1corr = _L1FastJet->evaluate({jetAreas[i], jetetas[i], rawjetpt, rho});
             float L1pt = rawjetpt * L1corr;
             float L2corr = 1; float L2L3corr = 1;
-            // L2Relative: Run3Summer24 adds JetPhi as second input; earlier eras use only {eta, pt}
-            if (_isRun24)
+            // L2Relative: Run3Summer24 AND Run3Summer23BPix add JetPhi as 2nd input → [JetEta, JetPhi, JetPt].
+            // Earlier eras (22, 22EE, 23 preBPix) use only [JetEta, JetPt].
+            // Passing the wrong number of args corrupts the heap.
+            if (_isRun24 || _isRun23BPix)
                 L2corr = _L2Relative->evaluate({jetetas[i], jetphis[i], L1pt});
             else
                 L2corr = _L2Relative->evaluate({jetetas[i], L1pt});
             float L2pt = L1pt * L2corr;
-            if (dataMc) L2L3corr = _L2L3Residual->evaluate({float(run), jetetas[i], L2pt});
+            // L2L3Residual: Run3Summer24 stores the run number as an additional first input → [run, JetEta, JetPt].
+            // All pre-24 eras use only [JetEta, JetPt].
+            // Passing 3 args to a 2-input correction corrupts the heap → munmap_chunk for 22/23 DATA.
+            if (dataMc) {
+                if (_isRun24)
+                    L2L3corr = _L2L3Residual->evaluate({float(run), jetetas[i], L2pt});
+                else
+                    L2L3corr = _L2L3Residual->evaluate({jetetas[i], L2pt});
+            }
             float corrfactor = toCorr[i] * rawFact * L1corr * L2corr * L2L3corr; 
             corrfactors.emplace_back(corrfactor);
         }
@@ -75,7 +85,11 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
 
             for (size_t i=0; i<jetpts.size(); i++){
                 float reso = _jerReso->evaluate({jetetas[i], jetpts[i], rho});
-                float sf = _jerSF->evaluate({jetetas[i], jetpts[i], "nom"});
+                // Run3Summer24 ScaleFactor has no systematic input: [JetEta, JetPt] (2 inputs).
+                // Earlier eras have [JetEta, JetPt, systematic] (3 inputs).
+                // Passing 3 args to a 2-input correction corrupts the heap.
+                float sf = _isRun24 ? _jerSF->evaluate({jetetas[i], jetpts[i]})
+                                    : _jerSF->evaluate({jetetas[i], jetpts[i], "nom"});
                 float genPtForSmear = -1.0;
 
                 int genidx = genidxs[i];
