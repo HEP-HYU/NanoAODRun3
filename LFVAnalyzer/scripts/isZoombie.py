@@ -1,3 +1,5 @@
+#use: python isZombie.py /input/path/ --isSkim
+
 import os
 import argparse
 import ROOT
