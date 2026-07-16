@@ -6,7 +6,7 @@
   "object_selection": {
     "muon_veto_cut":     "Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25",
     "electron_veto_cut": "Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1",
-    "jet_cut":           "Jet_pt>40.0 && abs(Jet_eta)<2.5 && Jet_JetId==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8",
+    "jet_cut":           "Jet_pt>40.0 && abs(Jet_eta)<2.5 && Jet_passJetIdTightLepVeto==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8",
     "tau_cut":           "Tau_pt>40.0 && abs(Tau_eta)<2.5  && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6"
   },
 

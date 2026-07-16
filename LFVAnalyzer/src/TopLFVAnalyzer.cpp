@@ -195,11 +195,16 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
         tauYear  = "2023_postBPix";
         btagYear = "2023_Summer23BPix";
     } else if (_isRun24){
-        //TODO
-        tauYear   = "2024";
-        btagYear  = "2024_Summer24";
-        btagMap   = "UParTAK4_comb"; // 2024-specific tagger; not yet in config
+        tauYear  = "2024";
+        // TODO: Run3Summer24 UParTAK4 shape SF not yet available.
+        // Temporarily use 2023BPix particleNet_shape correction.
+        btagYear = "2023_Summer23BPix";
+        // btagMap stays "particleNet_shape" (default from config)
     }
+    // NanoAODv12 btag JSONs do not have "UParTAK4_light".
+    // Use "particleNet_shape" for all eras (exists in all v12 JSONs and in the
+    // 2023BPix JSON used as the 2024 temporary fallback).
+    btagMapLight = "particleNet_shape";
 
     if (_isMuonCh){
         selectElectrons(cut, s_vetoelec);
@@ -325,28 +330,53 @@ void TopLFVAnalyzer::defineKinematicVars() {
     addVar({"Jet1_eta", "Jet_eta[0]", ""});
     addVar({"Jet1_mass", "Jet_mass[0]", ""});
     addVar({"Jet1_btagPNetB","Jet_btagPNetB[0]",""});
-    addVar({"Jet1_btagUParTAK4B","Jet_btagUParTAK4B[0]",""});
-    addVar({"Jet1_btagUParTAK4CvB","Jet_btagUParTAK4CvB[0]",""});
-    addVar({"Jet1_btagUParTAK4CvL","Jet_btagUParTAK4CvL[0]",""});
-    addVar({"Jet1_btag", "Jet_btagUParTAK4B[0] > 0.1272", ""});
+    // NanoAODv12 (22/23 eras) does not have UParTAK4 tagger branches in the skim output.
+    // Use PNet equivalents for pre-2024; keep UParTAK4 for v15_2024.
+    const std::string bB0   = _isRun24 ? "Jet_btagUParTAK4B[0]"   : "Jet_btagPNetB[0]";
+    const std::string bCvB0 = _isRun24 ? "Jet_btagUParTAK4CvB[0]" : "Jet_btagPNetCvB[0]";
+    const std::string bCvL0 = _isRun24 ? "Jet_btagUParTAK4CvL[0]" : "Jet_btagPNetCvL[0]";
+    const std::string bB1   = _isRun24 ? "Jet_btagUParTAK4B[1]"   : "Jet_btagPNetB[1]";
+    const std::string bCvB1 = _isRun24 ? "Jet_btagUParTAK4CvB[1]" : "Jet_btagPNetCvB[1]";
+    const std::string bCvL1 = _isRun24 ? "Jet_btagUParTAK4CvL[1]" : "Jet_btagPNetCvL[1]";
+    const std::string bB2   = _isRun24 ? "Jet_btagUParTAK4B[2]"   : "Jet_btagPNetB[2]";
+    const std::string bCvB2 = _isRun24 ? "Jet_btagUParTAK4CvB[2]" : "Jet_btagPNetCvB[2]";
+    const std::string bCvL2 = _isRun24 ? "Jet_btagUParTAK4CvL[2]" : "Jet_btagPNetCvL[2]";
+    // Read btag medium WP from config (static cache; defineObjectSelection has already loaded it)
+    static float _btagcutKin = -1.f;
+    if (_btagcutKin < 0.f) {
+        const std::string cfgPath = "data/config/analysis_config.json";
+        std::ifstream fin(cfgPath);
+        if (fin.good()) {
+            Json::Value root; fin >> root;
+            _btagcutKin = root["btag"]["wp_medium"].asFloat();
+        } else {
+            _btagcutKin = 0.1272f; // fallback: UParT AK4 B medium WP
+        }
+    }
+    const std::string bWP = std::to_string(_btagcutKin);
+
+    addVar({"Jet1_btagUParTAK4B",  bB0,   ""});
+    addVar({"Jet1_btagUParTAK4CvB", bCvB0, ""});
+    addVar({"Jet1_btagUParTAK4CvL", bCvL0, ""});
+    addVar({"Jet1_btag", bB0 + " > " + bWP, ""});
 
     addVar({"Jet2_pt", "Jet_pt[1]", ""});
     addVar({"Jet2_eta", "Jet_eta[1]", ""});
     addVar({"Jet2_mass", "Jet_mass[1]", ""});
     addVar({"Jet2_btagPNetB","Jet_btagPNetB[1]",""});
-    addVar({"Jet2_btagUParTAK4B","Jet_btagUParTAK4B[1]",""});
-    addVar({"Jet2_btagUParTAK4CvB","Jet_btagUParTAK4CvB[1]",""});
-    addVar({"Jet2_btagUParTAK4CvL","Jet_btagUParTAK4CvL[1]",""});
-    addVar({"Jet2_btag", "Jet_btagUParTAK4B[1] > 0.1272", ""});
+    addVar({"Jet2_btagUParTAK4B",  bB1,   ""});
+    addVar({"Jet2_btagUParTAK4CvB", bCvB1, ""});
+    addVar({"Jet2_btagUParTAK4CvL", bCvL1, ""});
+    addVar({"Jet2_btag", bB1 + " > " + bWP, ""});
 
     addVar({"Jet3_pt", "Jet_pt[2]", ""});
     addVar({"Jet3_eta", "Jet_eta[2]", ""});
     addVar({"Jet3_mass", "Jet_mass[2]", ""});
     addVar({"Jet3_btagPNetB","Jet_btagPNetB[2]",""});
-    addVar({"Jet3_btagUParTAK4B","Jet_btagUParTAK4B[2]",""});
-    addVar({"Jet3_btagUParTAK4CvB","Jet_btagUParTAK4CvB[2]",""});
-    addVar({"Jet3_btagUParTAK4CvL","Jet_btagUParTAK4CvL[2]",""});
-    addVar({"Jet3_btag", "Jet_btagUParTAK4B[2] > 0.1272", ""});
+    addVar({"Jet3_btagUParTAK4B",  bB2,   ""});
+    addVar({"Jet3_btagUParTAK4CvB", bCvB2, ""});
+    addVar({"Jet3_btagUParTAK4CvL", bCvL2, ""});
+    addVar({"Jet3_btag", bB2 + " > " + bWP, ""});
 
 
     addVar({"bJet1_pt", "bJet_pt[0]", ""});

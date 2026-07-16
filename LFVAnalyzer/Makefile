@@ -18,8 +18,7 @@ LD = g++ -m64 -Wall $(OPT_FLAGS)
 
 SRCDIR=src
 COMMONDIR=../CommonTools/src
-
-CXXFLAGS = $(OPT_FLAGS) -Wall -fmessage-length=0 $(rootflags) -fpermissive -fPIC -pthread -DSTANDALONE -I. -I$(corlibincl) -I$(COMMONDIR) -I$(SRCDIR)
+CXXFLAGS = $(OPT_FLAGS) -Wall -fmessage-length=0 $(rootflags) -fpermissive -fPIC -pthread -DSTANDALONE -I. -I$(COMMONDIR) -I$(SRCDIR) $(if $(corlibincl),-I$(corlibincl))
 
 # source files
 SRCS_SRC     := $(wildcard $(SRCDIR)/*.cpp)
