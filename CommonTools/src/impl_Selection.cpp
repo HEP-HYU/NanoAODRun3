@@ -276,7 +276,10 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             return wVec;
         };
 
-        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu](floats &eta, uchars &genmatch)->floatsVec {
+        // 2024 DeepTau2018v2p5VSmu schema adds wp_VSe and wp_VSjet inputs:
+        // pre-2024: [eta, genmatch, wp, syst]                      → 4 inputs
+        // 2024:     [eta, genmatch, wp, wp_VSe, wp_VSjet, syst]    → 6 inputs
+        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet](floats &eta, uchars &genmatch)->floatsVec {
 
             floats uncSources;
             uncSources.reserve(3);
@@ -285,9 +288,15 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
 
             if (eta.size() > 0) {
                 for (size_t i=0; i<eta.size(); i++) {
-                    uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "nom"}));
-                    uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "up"}));
-                    uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "down"}));
+                    if (_isRun24) {
+                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, tauid_vse, tauid_vsjet, "nom"}));
+                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, tauid_vse, tauid_vsjet, "up"}));
+                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, tauid_vse, tauid_vsjet, "down"}));
+                    } else {
+                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "nom"}));
+                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "up"}));
+                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "down"}));
+                    }
                     wVec.emplace_back(uncSources);
                     uncSources.clear();
                 }
