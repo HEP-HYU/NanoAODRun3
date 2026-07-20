@@ -302,23 +302,32 @@ void TopLFVAnalyzer::defineKinematicVars() {
 
     // There should be 'good' tau (or none) and exactly one muon
     */
+    // Safe-index helper: "(col.size()>n) ? float(col[n]) : fallback"
+    // Prevents UB / heap corruption when the vector is empty at early cut levels.
+    auto si  = [](const std::string& c, int n, const std::string& fb="-1.f") -> std::string {
+        return "(" + c + ".size()>" + std::to_string(n) + ") ? float(" + c + "[" + std::to_string(n) + "]) : " + fb;
+    };
+    auto sii = [](const std::string& c, int n, const std::string& fb="-1") -> std::string {
+        return "(" + c + ".size()>" + std::to_string(n) + ") ? int(" + c + "[" + std::to_string(n) + "]) : " + fb;
+    };
+
     if (_isMuonCh) {
-        addVar({"Muon1_pt", "Muon_pt[0]", ""});
-        addVar({"Muon1_eta", "Muon_eta[0]", ""});
-        addVar({"Muon1_mass", "Muon_mass[0]", ""});
-        addVar({"Muon1_charge", "Muon_charge[0]", ""});
+        addVar({"Muon1_pt",     si("Muon_pt",     0),        ""});
+        addVar({"Muon1_eta",    si("Muon_eta",    0, "-99.f"), ""});
+        addVar({"Muon1_mass",   si("Muon_mass",   0),        ""});
+        addVar({"Muon1_charge", sii("Muon_charge", 0, "0"),   ""});
     } else {
-        addVar({"Electron1_pt", "Electron_pt[0]", ""});
-        addVar({"Electron1_eta", "Electron_eta[0]", ""});
-        addVar({"Electron1_mass", "Electron_mass[0]", ""});
-        addVar({"Electron1_charge", "Electron_charge[0]", ""});
+        addVar({"Electron1_pt",     si("Electron_pt",     0),        ""});
+        addVar({"Electron1_eta",    si("Electron_eta",    0, "-99.f"), ""});
+        addVar({"Electron1_mass",   si("Electron_mass",   0),        ""});
+        addVar({"Electron1_charge", sii("Electron_charge", 0, "0"),   ""});
     }
-    
-    addVar({"Tau1_pt", "Tau_pt[0]", ""});
-    addVar({"Tau1_eta", "Tau_eta[0]", ""});
-    addVar({"Tau1_mass", "Tau_mass[0]", ""});
-    addVar({"Tau1_charge", "Tau_charge[0]", ""});
-    addVar({"Tau1_decayMode", "Tau_decayMode[0]", ""});
+
+    addVar({"Tau1_pt",        si("Tau_pt",       0),        ""});
+    addVar({"Tau1_eta",       si("Tau_eta",      0, "-99.f"), ""});
+    addVar({"Tau1_mass",      si("Tau_mass",     0),        ""});
+    addVar({"Tau1_charge",    sii("Tau_charge",  0, "0"),   ""});
+    addVar({"Tau1_decayMode", sii("Tau_decayMode",0, "-1"), ""});
 
     if (_isMuonCh) {
         addVar({"leptau_charge", "Muon1_charge * Tau1_charge", ""});
@@ -326,21 +335,17 @@ void TopLFVAnalyzer::defineKinematicVars() {
         addVar({"leptau_charge", "Electron1_charge * Tau1_charge", ""});
     }
 
-    addVar({"Jet1_pt", "(Jet_pt.size()>0) ? Jet_pt[0] : -1", ""});
-    addVar({"Jet1_eta", "Jet_eta[0]", ""});
-    addVar({"Jet1_mass", "Jet_mass[0]", ""});
-    addVar({"Jet1_btagPNetB","Jet_btagPNetB[0]",""});
+    addVar({"Jet1_pt",   si("Jet_pt",   0),        ""});
+    addVar({"Jet1_eta",  si("Jet_eta",  0, "-99.f"), ""});
+    addVar({"Jet1_mass", si("Jet_mass", 0),        ""});
+    addVar({"Jet1_btagPNetB", si("Jet_btagPNetB", 0), ""});
+
     // NanoAODv12 (22/23 eras) does not have UParTAK4 tagger branches in the skim output.
     // Use PNet equivalents for pre-2024; keep UParTAK4 for v15_2024.
-    const std::string bB0   = _isRun24 ? "Jet_btagUParTAK4B[0]"   : "Jet_btagPNetB[0]";
-    const std::string bCvB0 = _isRun24 ? "Jet_btagUParTAK4CvB[0]" : "Jet_btagPNetCvB[0]";
-    const std::string bCvL0 = _isRun24 ? "Jet_btagUParTAK4CvL[0]" : "Jet_btagPNetCvL[0]";
-    const std::string bB1   = _isRun24 ? "Jet_btagUParTAK4B[1]"   : "Jet_btagPNetB[1]";
-    const std::string bCvB1 = _isRun24 ? "Jet_btagUParTAK4CvB[1]" : "Jet_btagPNetCvB[1]";
-    const std::string bCvL1 = _isRun24 ? "Jet_btagUParTAK4CvL[1]" : "Jet_btagPNetCvL[1]";
-    const std::string bB2   = _isRun24 ? "Jet_btagUParTAK4B[2]"   : "Jet_btagPNetB[2]";
-    const std::string bCvB2 = _isRun24 ? "Jet_btagUParTAK4CvB[2]" : "Jet_btagPNetCvB[2]";
-    const std::string bCvL2 = _isRun24 ? "Jet_btagUParTAK4CvL[2]" : "Jet_btagPNetCvL[2]";
+    const std::string bTagCol    = _isRun24 ? "Jet_btagUParTAK4B"   : "Jet_btagPNetB";
+    const std::string bTagColCvB = _isRun24 ? "Jet_btagUParTAK4CvB" : "Jet_btagPNetCvB";
+    const std::string bTagColCvL = _isRun24 ? "Jet_btagUParTAK4CvL" : "Jet_btagPNetCvL";
+
     // Read btag medium WP from config (static cache; defineObjectSelection has already loaded it)
     static float _btagcutKin = -1.f;
     if (_btagcutKin < 0.f) {
@@ -350,38 +355,42 @@ void TopLFVAnalyzer::defineKinematicVars() {
             Json::Value root; fin >> root;
             _btagcutKin = root["btag"]["wp_medium"].asFloat();
         } else {
-            _btagcutKin = 0.1272f; // fallback: UParT AK4 B medium WP
+            _btagcutKin = 0.1272f;
         }
     }
     const std::string bWP = std::to_string(_btagcutKin);
 
-    addVar({"Jet1_btagUParTAK4B",  bB0,   ""});
-    addVar({"Jet1_btagUParTAK4CvB", bCvB0, ""});
-    addVar({"Jet1_btagUParTAK4CvL", bCvL0, ""});
-    addVar({"Jet1_btag", bB0 + " > " + bWP, ""});
+    // Safe boolean index helper: "(col.size()>n) ? (col[n] op thr) : false"
+    auto sib = [](const std::string& c, int n, const std::string& op, const std::string& thr) -> std::string {
+        return "(" + c + ".size()>" + std::to_string(n) + ") ? (" + c + "[" + std::to_string(n) + "] " + op + " " + thr + ") : false";
+    };
 
-    addVar({"Jet2_pt", "Jet_pt[1]", ""});
-    addVar({"Jet2_eta", "Jet_eta[1]", ""});
-    addVar({"Jet2_mass", "Jet_mass[1]", ""});
-    addVar({"Jet2_btagPNetB","Jet_btagPNetB[1]",""});
-    addVar({"Jet2_btagUParTAK4B",  bB1,   ""});
-    addVar({"Jet2_btagUParTAK4CvB", bCvB1, ""});
-    addVar({"Jet2_btagUParTAK4CvL", bCvL1, ""});
-    addVar({"Jet2_btag", bB1 + " > " + bWP, ""});
+    addVar({"Jet1_btagUParTAK4B",   si(bTagCol,    0), ""});
+    addVar({"Jet1_btagUParTAK4CvB", si(bTagColCvB, 0), ""});
+    addVar({"Jet1_btagUParTAK4CvL", si(bTagColCvL, 0), ""});
+    addVar({"Jet1_btag", sib(bTagCol, 0, ">", bWP), ""});
 
-    addVar({"Jet3_pt", "Jet_pt[2]", ""});
-    addVar({"Jet3_eta", "Jet_eta[2]", ""});
-    addVar({"Jet3_mass", "Jet_mass[2]", ""});
-    addVar({"Jet3_btagPNetB","Jet_btagPNetB[2]",""});
-    addVar({"Jet3_btagUParTAK4B",  bB2,   ""});
-    addVar({"Jet3_btagUParTAK4CvB", bCvB2, ""});
-    addVar({"Jet3_btagUParTAK4CvL", bCvL2, ""});
-    addVar({"Jet3_btag", bB2 + " > " + bWP, ""});
+    addVar({"Jet2_pt",   si("Jet_pt",   1),        ""});
+    addVar({"Jet2_eta",  si("Jet_eta",  1, "-99.f"), ""});
+    addVar({"Jet2_mass", si("Jet_mass", 1),        ""});
+    addVar({"Jet2_btagPNetB",        si("Jet_btagPNetB", 1), ""});
+    addVar({"Jet2_btagUParTAK4B",   si(bTagCol,    1), ""});
+    addVar({"Jet2_btagUParTAK4CvB", si(bTagColCvB, 1), ""});
+    addVar({"Jet2_btagUParTAK4CvL", si(bTagColCvL, 1), ""});
+    addVar({"Jet2_btag", sib(bTagCol, 1, ">", bWP), ""});
 
+    addVar({"Jet3_pt",   si("Jet_pt",   2),        ""});
+    addVar({"Jet3_eta",  si("Jet_eta",  2, "-99.f"), ""});
+    addVar({"Jet3_mass", si("Jet_mass", 2),        ""});
+    addVar({"Jet3_btagPNetB",        si("Jet_btagPNetB", 2), ""});
+    addVar({"Jet3_btagUParTAK4B",   si(bTagCol,    2), ""});
+    addVar({"Jet3_btagUParTAK4CvB", si(bTagColCvB, 2), ""});
+    addVar({"Jet3_btagUParTAK4CvL", si(bTagColCvL, 2), ""});
+    addVar({"Jet3_btag", sib(bTagCol, 2, ">", bWP), ""});
 
-    addVar({"bJet1_pt", "bJet_pt[0]", ""});
-    addVar({"bJet1_eta", "bJet_eta[0]", ""});
-    addVar({"bJet1_mass", "bJet_mass[0]", ""});
+    addVar({"bJet1_pt",   si("bJet_pt",   0), ""});
+    addVar({"bJet1_eta",  si("bJet_eta",  0, "-99.f"), ""});
+    addVar({"bJet1_mass", si("bJet_mass", 0), ""});
 
 
     //if (_syst == "data") {
