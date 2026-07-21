@@ -99,12 +99,22 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
             for (auto &syst: systs){
                 float sf = 1.0;
                 if (pts[i] < 30 || etas[i] > 2.5) {
-                    std::cout << "hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm" << std::endl;
                     sf = 1.0;
-                }else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) sf = 1.0;
-                else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) sf = 1.0;
-                else sf = _btagSF->evaluate({syst, int(hadflav[i]), abs(etas[i]), pts[i], btags[i]}); 
-                //std::cout << i << " " << syst << " " << sf << std::endl;
+                } else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) {
+                    sf = 1.0;
+                } else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) {
+                    sf = 1.0;
+                } else {
+                    try {
+                        sf = _btagSF->evaluate({syst, int(hadflav[i]), abs(etas[i]), pts[i], btags[i]});
+                    } catch (const std::exception &e) {
+                        std::cerr << "[WARN] btagSF evaluate failed (syst=" << syst
+                                  << " flav=" << int(hadflav[i]) << " eta=" << etas[i]
+                                  << " pt=" << pts[i] << " disc=" << btags[i]
+                                  << "): " << e.what() << "\n";
+                        sf = 1.0;
+                    }
+                }
                 wVec.emplace_back(sf);
             }
             out.emplace_back(wVec);
@@ -236,8 +246,9 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         auto _tauidSFmu  = tauSFreader->at("DeepTau2018v2p5VSmu");
 
         auto tauSFIdVsJet = [this, _tauidSFjet, tauid_vsjet, tauid_vse](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
-            //std::cout << "tauSFIdVsJet vsjet_wp: "<< tauid_vsjet << std::endl;
-
+            // CMS tau POG: DeepTauVSjet SF applies ONLY to real hadronic taus (genmatch==5).
+            // Calling evaluate() for other genmatch values (fake/electron/muon) is unsupported
+            // in the JSON and throws a correctionlib exception → ROOT heap corruption.
             floats uncSources;
             uncSources.reserve(3);
             floatsVec wVec;
@@ -245,57 +256,20 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
 
             if (pt.size() > 0) {
                 for (size_t i=0; i<pt.size(); i++) {
-                    uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), int(genmatch[i]), tauid_vsjet, tauid_vse, "nom", "dm"}));
-                    uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), int(genmatch[i]), tauid_vsjet, tauid_vse, "up", "dm"}));
-                    uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), int(genmatch[i]), tauid_vsjet, tauid_vse, "down", "dm"}));
-                    wVec.emplace_back(uncSources);
-                    uncSources.clear();
-                }
-            }
-            return wVec;
-        };
-
-
-        auto tauSFIdVsEl = [this, _tauidSFele, tauid_vse](floats &eta, uchars &dm, uchars &genmatch)->floatsVec {
-
-            //std::cout << "tauSFIdVsEl" << std::endl;
-            floats uncSources;
-            uncSources.reserve(3);
-            floatsVec wVec;
-            wVec.reserve(eta.size());
-
-            if (eta.size() > 0) {
-                for (size_t i=0; i<eta.size(); i++) {
-                    uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), int(genmatch[i]), tauid_vse, "nom"}));
-                    uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), int(genmatch[i]), tauid_vse, "up"}));
-                    uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), int(genmatch[i]), tauid_vse, "down"}));
-                    wVec.emplace_back(uncSources);
-                    uncSources.clear();
-                }
-            }
-            return wVec;
-        };
-
-        // 2024 DeepTau2018v2p5VSmu schema adds wp_VSe and wp_VSjet inputs:
-        // pre-2024: [eta, genmatch, wp, syst]                      → 4 inputs
-        // 2024:     [eta, genmatch, wp, wp_VSe, wp_VSjet, syst]    → 6 inputs
-        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet](floats &eta, uchars &genmatch)->floatsVec {
-
-            floats uncSources;
-            uncSources.reserve(3);
-            floatsVec wVec;
-            wVec.reserve(eta.size());
-
-            if (eta.size() > 0) {
-                for (size_t i=0; i<eta.size(); i++) {
-                    if (_isRun24) {
-                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, tauid_vse, tauid_vsjet, "nom"}));
-                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, tauid_vse, tauid_vsjet, "up"}));
-                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, tauid_vse, tauid_vsjet, "down"}));
+                    int gm = int(genmatch[i]);
+                    if (gm == 5) {  // real hadronic tau only
+                        try {
+                            uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "nom", "dm"}));
+                            uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "up",  "dm"}));
+                            uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "down","dm"}));
+                        } catch (const std::exception &e) {
+                            std::cerr << "[WARN] tauSFIdVsJet evaluate failed (pt=" << pt[i]
+                                      << " dm=" << int(dm[i]) << " gm=" << gm << "): " << e.what() << "\n";
+                            uncSources.assign(3, 1.0f);
+                        }
                     } else {
-                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "nom"}));
-                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "up"}));
-                        uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], int(genmatch[i]), tauid_vsmu, "down"}));
+                        // SF = 1.0 for non-real-tau objects (jets, electrons, muons faking tau)
+                        uncSources.assign(3, 1.0f);
                     }
                     wVec.emplace_back(uncSources);
                     uncSources.clear();
@@ -303,6 +277,83 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             }
             return wVec;
         };
+
+
+
+        auto tauSFIdVsEl = [this, _tauidSFele, tauid_vse](floats &eta, uchars &dm, uchars &genmatch)->floatsVec {
+            // CMS tau POG: DeepTauVSe SF applies to electrons faking tau:
+            //   genmatch=1 (prompt e), genmatch=3 (tau→e).
+            // Other genmatch values are not in the JSON → exception.
+            floats uncSources;
+            uncSources.reserve(3);
+            floatsVec wVec;
+            wVec.reserve(eta.size());
+
+            if (eta.size() > 0) {
+                for (size_t i=0; i<eta.size(); i++) {
+                    int gm = int(genmatch[i]);
+                    if (gm == 1 || gm == 3) {  // prompt e or tau→e
+                        try {
+                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "nom"}));
+                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "up"}));
+                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "down"}));
+                        } catch (const std::exception &e) {
+                            std::cerr << "[WARN] tauSFIdVsEl evaluate failed (eta=" << eta[i]
+                                      << " dm=" << int(dm[i]) << " gm=" << gm << "): " << e.what() << "\n";
+                            uncSources.assign(3, 1.0f);
+                        }
+                    } else {
+                        uncSources.assign(3, 1.0f);
+                    }
+                    wVec.emplace_back(uncSources);
+                    uncSources.clear();
+                }
+            }
+            return wVec;
+        };
+
+
+        // 2024 DeepTau2018v2p5VSmu schema adds wp_VSe and wp_VSjet inputs:
+        // pre-2024: [eta, genmatch, wp, syst]                      → 4 inputs
+        // 2024:     [eta, genmatch, wp, wp_VSe, wp_VSjet, syst]    → 6 inputs
+        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet](floats &eta, uchars &genmatch)->floatsVec {
+            // CMS tau POG: DeepTauVSmu SF applies to muons faking tau:
+            //   genmatch=2 (prompt μ), genmatch=4 (tau→μ).
+            // Other genmatch values are not in the JSON → exception.
+            floats uncSources;
+            uncSources.reserve(3);
+            floatsVec wVec;
+            wVec.reserve(eta.size());
+
+            if (eta.size() > 0) {
+                for (size_t i=0; i<eta.size(); i++) {
+                    int gm = int(genmatch[i]);
+                    if (gm == 2 || gm == 4) {  // prompt μ or tau→μ
+                        try {
+                            if (_isRun24) {
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "nom"}));
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "up"}));
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "down"}));
+                            } else {
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, "nom"}));
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, "up"}));
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, "down"}));
+                            }
+                        } catch (const std::exception &e) {
+                            std::cerr << "[WARN] tauSFIdVsMu evaluate failed (eta=" << eta[i]
+                                      << " gm=" << gm << "): " << e.what() << "\n";
+                            uncSources.assign(3, 1.0f);
+                        }
+                    } else {
+                        uncSources.assign(3, 1.0f);
+                    }
+                    wVec.emplace_back(uncSources);
+                    uncSources.clear();
+                }
+            }
+            return wVec;
+        };
+
 
         _rlm = _rlm.Define("tauWeightIdVsJet", tauSFIdVsJet, {"Tau_pt","Tau_decayMode","Tau_genPartFlav"})
                    .Define("tauWeightIdVsEl", tauSFIdVsEl, {"Tau_eta","Tau_decayMode", "Tau_genPartFlav"})
