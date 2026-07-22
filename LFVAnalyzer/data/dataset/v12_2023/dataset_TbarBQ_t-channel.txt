@@ -1,8 +1,6 @@
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/9237cb52-4feb-4254-a3f9-b671c21ef738.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/6643d91f-4596-4908-99d1-64960fa50133.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/943d257b-f1d1-429b-bdf8-95d7c49e2683.root
-/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/31eef995-271f-45bc-a242-a4ec33f85426.root
-/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/8da0a2f8-1922-4de6-9e6a-0e326665ea98.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/7493ea83-d107-4e50-b5fd-f518845342b9.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/0dd01878-ab4c-4c7c-ac75-c374b4b93e96.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/b9ef1f78-2529-4e96-bc50-feba9ebca39e.root
@@ -26,6 +24,8 @@
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/0085ccb3-24ca-4fff-af67-84a46c49e9db.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/01d1c8e9-057e-4382-b2de-18df08ff0995.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/67159c90-7538-4f60-b7e2-8017bfca35f4.root
+/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/31eef995-271f-45bc-a242-a4ec33f85426.root
+/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/8da0a2f8-1922-4de6-9e6a-0e326665ea98.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/47e49251-f505-4332-a982-ce945d1c60d3.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/0ded4f06-7b73-482c-a8cb-859381ace427.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/09c8ccd0-0e38-4e17-b7c7-f2d845bce430.root
@@ -33,15 +33,15 @@
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/2e28b987-f385-41bb-92af-d2dc7bc27323.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/ca6e3b6c-a211-486a-b394-900a1dd0f18c.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/499b50c4-8f31-4fdf-90d7-41d49cd855d0.root
-/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/b26360c8-7dee-4bd7-b7c7-b745bea3760a.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/c7704c0c-2448-489a-8145-5ae9481b4897.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/306875a0-fc5f-4068-acf0-9fdf39e687f0.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/f2dfc6f7-2578-4c9c-ad37-e1894ba3a264.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/4e4000d5-bd16-42c9-a533-abeabac556b2.root
+/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/74af57ca-a8a1-40fa-b9ba-d897215190b1.root
+/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/b26360c8-7dee-4bd7-b7c7-b745bea3760a.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/8a3646f5-4ead-4e2d-83b9-aea05cbf48e8.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/c8d73050-771b-47f2-8ad3-d5b9c9270ef5.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/66770f7b-8fb7-45b4-a188-6264e3de31c1.root
-/store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/74af57ca-a8a1-40fa-b9ba-d897215190b1.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/d36b1585-f8a9-4c68-8392-c7166636a633.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/96004c0b-ddbc-48f9-bdb3-4559b4d4be79.root
 /store/mc/Run3Summer23NanoAODv12/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/688868c6-b10b-4fed-a115-a755ba55e6cd.root

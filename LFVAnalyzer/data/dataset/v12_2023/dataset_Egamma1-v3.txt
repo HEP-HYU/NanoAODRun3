@@ -21,5 +21,5 @@
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v3-v1/30000/fb3a056f-74ee-4974-9e56-987f7cedcc8b.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v3-v1/30000/a0d013c1-6f4d-4cb1-aede-f417f1411738.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v3-v1/30000/e17bf5ec-24ea-4958-bbe4-fc73aeb2cfb1.root
-/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v3-v1/30000/ef780c64-622a-480b-8b43-56fecb7a3ef7.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v3-v1/50000/d38af452-e4ed-4a5e-92e5-750a3a246b6b.root
+/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v3-v1/30000/ef780c64-622a-480b-8b43-56fecb7a3ef7.root

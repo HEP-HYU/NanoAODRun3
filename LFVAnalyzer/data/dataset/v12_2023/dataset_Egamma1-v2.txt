@@ -15,10 +15,10 @@
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/9227d9ef-b8f8-4754-a94b-96e5b27d6a3d.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/afa01397-c015-4f67-908b-27b9896d15dc.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/53685499-777e-4186-8eff-dac545b8671e.root
-/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/3386dd29-98a3-4394-9a6a-681f729c0ce5.root
-/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/4e613e52-c5b9-466b-abfc-d2af8af86a5e.root
-/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/7a15bf34-5667-4c0e-ac9d-48cdfbb96bcd.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/550af053-5bd9-4bc9-aa83-9a576d63fe74.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/4b879fb2-03ff-404f-8df8-622ee67a10d4.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/50000/3a6cc2c8-07f5-4182-a6b3-317e10470225.root
 /store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/50000/d0fe9bb0-a2dc-4136-8c88-8742da1bdb87.root
+/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/7a15bf34-5667-4c0e-ac9d-48cdfbb96bcd.root
+/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/3386dd29-98a3-4394-9a6a-681f729c0ce5.root
+/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/4e613e52-c5b9-466b-abfc-d2af8af86a5e.root

@@ -24,9 +24,9 @@
 /store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/c9fb572b-cd5b-4ba8-9477-9ddfabfda287.root
 /store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/3b8246da-a868-494c-8a9a-c001f33f48f0.root
 /store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/4dfffd3b-7338-4753-a922-5aadb2c23e4d.root
-/store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/ca0392bd-b304-4b10-86e2-a8854b3c8e2b.root
-/store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/2494c072-0da3-4146-945d-8c611170561e.root
 /store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/c643f9e5-382f-47ff-89ea-4581a256156c.root
 /store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/729577d1-0a9a-4028-b2de-0cdad21e90c5.root
 /store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/afd95d67-a772-409e-9299-167984ce3b26.root
 /store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/3aa16303-aade-4ccb-b4f3-f24fca800e54.root
+/store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/2494c072-0da3-4146-945d-8c611170561e.root
+/store/mc/Run3Summer23NanoAODv12/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2560000/ca0392bd-b304-4b10-86e2-a8854b3c8e2b.root

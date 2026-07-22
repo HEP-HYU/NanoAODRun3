@@ -27,10 +27,10 @@
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/cc958dce-6b54-447c-94c1-eebbbda92c99.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/06f23186-b959-410d-a4ca-f052e16f1191.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/f92ee78e-6e96-4e4f-8cfe-d8916dcbedcc.root
-/store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/cf3f1aec-0395-41d3-91a4-8542e6d4a1a6.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/ae9c8405-0ead-4a6f-9f10-167a55ee668d.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/cf22dbdc-470f-4d7d-8519-e954b640d610.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/8820da04-00d3-488d-8302-c0f942908c74.root
+/store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/cf3f1aec-0395-41d3-91a4-8542e6d4a1a6.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/b0533360-ba70-4cba-9b8c-6791aef5e7c7.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/8ba465a6-bd30-4276-bcbb-c556fc173f29.root
 /store/mc/Run3Summer22EENanoAODv12/TCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2560000/5881ded8-2d38-416c-98ea-8e04a1fdc389.root
