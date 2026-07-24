@@ -11,7 +11,7 @@ parser.add_argument("-y", dest="yield_only", action="store_true", default=False,
 parser.add_argument("--postfix", dest="postfix", type=str, default="", help="Add postfix to output here, to have rebinning for histograms")
 args = parser.parse_args()
 
-dest_path = args.input
+dest_path = args.input.rstrip('/')
 postfix = args.postfix
 
 # Auto-detect channel if not specified
@@ -62,56 +62,62 @@ if not os.path.exists(fig_dir):
 # Determine per-era folder structure inside dest_path
 resolved_eras = {}
 for era_key, era_info in eras.items():
-    matched_dir = None
+    matched_rel_path = None
     for cand in era_info['dir_candidates']:
-        test_path1 = os.path.join(dest_path, f"{cand}_postprocess{postfix}")
-        test_path2 = os.path.join(dest_path, f"{cand}{postfix}")
-        test_path3 = os.path.join(dest_path, cand)
-        if os.path.exists(test_path1):
-            matched_dir = f"{cand}_postprocess{postfix}"
-            break
-        elif os.path.exists(test_path2):
-            matched_dir = f"{cand}{postfix}"
-            break
-        elif os.path.exists(test_path3):
-            matched_dir = cand
+        subpaths_to_test = [
+            os.path.join(channel, f"{cand}_postprocess{postfix}"),
+            os.path.join(channel, f"{cand}{postfix}"),
+            os.path.join(channel, cand),
+            f"{cand}_postprocess{postfix}",
+            f"{cand}{postfix}",
+            cand
+        ]
+        for sub in subpaths_to_test:
+            full_p = os.path.join(dest_path, sub)
+            if os.path.exists(full_p):
+                matched_rel_path = sub
+                break
+        if matched_rel_path:
             break
 
-    if not matched_dir:
-        matched_dir = f"{era_info['dir_candidates'][0]}_postprocess{postfix}"
-    resolved_eras[era_key] = matched_dir
+    if not matched_rel_path:
+        matched_rel_path = f"{era_info['dir_candidates'][0]}_postprocess{postfix}"
+    resolved_eras[era_key] = matched_rel_path
 
-has_merged_run3 = os.path.exists(os.path.join(dest_path, 'Run3' + postfix))
+has_merged_run3 = os.path.exists(os.path.join(dest_path, 'Run3' + postfix)) or os.path.exists(os.path.join(dest_path, channel, 'Run3' + postfix))
 
 string_for_files = ''
 for era_key, era_info in eras.items():
     lumi = era_info['lumi']
-    era_dir = resolved_eras[era_key]
-    files_yml_path=''
-    if '2024' in era_key:
-        files_yml_path = os.path.join(config_path, 'files24.yml')
-    else:
-        files_yml_path = os.path.join(config_path, 'files.yml')
+    era_rel_path = resolved_eras[era_key]
+    files_yml_path = os.path.join(config_path, 'files.yml')
 
     if os.path.exists(files_yml_path):
         with open(files_yml_path) as f:
             lines = f.readlines()
             skip_signal = False
             for line in lines:
-                if skip_signal and 'hist' in line: skip_signal = False
-                if 'LFV' in line and has_merged_run3: skip_signal = True
-                if line.startswith('#'): skip_signal = True
+                raw_line = line
+                clean_line = line.strip()
 
-                if 'hist' in line and not line.startswith('#'):
-                    line = line[0] + os.path.join(dest_path, era_dir, line[1:]).lstrip('/')
-                    if '\':\n' in line or '\':' in line:
-                        hist_file_name = line.split('/')[-1]
-                        line = line[0] + os.path.normpath(os.path.join(dest_path, era_dir, hist_file_name)) + '\':\n'
+                if skip_signal and 'hist' in clean_line: skip_signal = False
+                if 'LFV' in clean_line and has_merged_run3: skip_signal = True
+                if clean_line.startswith('#'): skip_signal = True
 
-                    if not any(i in line for i in ['Tau-LFV', 'SingleMuon', 'Egamma', 'EGamma', 'Muon']):
+                if clean_line.startswith("'") and "':" in clean_line and not clean_line.startswith('#'):
+                    fname_with_quotes = clean_line[:clean_line.find("':")]
+                    fname = fname_with_quotes[1:]
+                    basename = os.path.basename(fname)
+
+                    file_entry_path = os.path.normpath(os.path.join(dest_path, era_rel_path, basename))
+                    line = f"'{file_entry_path}':\n"
+
+                    if not any(i in line for i in ['LFV', 'SingleMuon', 'Egamma', 'EGamma', 'Muon', 'WJetsToLNu_HT0To100']):
                         line += '  scale: ' + str(float(lumi) / total_lumi) + '\n'
-                    elif 'Tau-LFV' in line:
-                        line += '  scale: ' + str(1.49 * float(lumi) / total_lumi) + '\n'
+                    elif 'WJetsToLNu_HT0To100' in line:
+                        line += '  scale: ' + str(1.0288 * float(lumi) / total_lumi) + '\n'
+                else:
+                    line = raw_line
 
                 if 'group' in line:
                     if 'yields-group' in line:
@@ -132,9 +138,10 @@ for era_key, era_info in eras.items():
 files_run3_yml = os.path.join(config_path, 'files_Run3.yml')
 with open(files_run3_yml, 'w+') as fnew:
     if has_merged_run3:
+        run3_dir_path = os.path.normpath(os.path.join(dest_path, channel, 'Run3' + postfix)) if os.path.exists(os.path.join(dest_path, channel, 'Run3' + postfix)) else os.path.normpath(os.path.join(dest_path, 'Run3' + postfix))
         if channel == 'electron':
             fnew.write(f"""
-'{dest_path}/Run3{postfix}/hist_TUETau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TUETau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVSTus'
   cross-section: 0.076313
@@ -143,7 +150,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '1ST LFV \\cPqt\\cPqe\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TUETau-LFV-Vector.root':
+'{run3_dir_path}/hist_TUETau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVSTuv'
   cross-section: 0.352889
@@ -152,7 +159,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '1ST LFV \\cPqt\\cPqe\\tau Vector'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TUETau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TUETau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVSTut'
   cross-section: 1.61537
@@ -161,7 +168,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '2ST LFV \\cPqt\\cPqe\\tau Tensor'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TCETau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TCETau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVSTcs'
   cross-section: 0.00488095
@@ -170,7 +177,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '3ST LFV \\cPqt\\cPqc\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TCETau-LFV-Vector.root':
+'{run3_dir_path}/hist_TCETau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVSTcv'
   cross-section: 0.0253796
@@ -179,7 +186,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '3ST LFV \\cPqt\\cPqc\\tau Vector'
   order: 3
 
-'{dest_path}/Run3{postfix}/hist_TCETau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TCETau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVSTct'
   cross-section: 0.125558
@@ -188,7 +195,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '4ST LFV \\cPqt\\cPqc\\tau Tensor'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoUETau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TTtoUETau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVTTus'
   cross-section: 0.00134402
@@ -197,7 +204,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '5TT LFV \\cPqt\\cPqu\\e\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoUETau-LFV-Vector.root':
+'{run3_dir_path}/hist_TTtoUETau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVTTuv'
   cross-section: 0.0106061
@@ -206,7 +213,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '5TT LFV \\cPqt\\cPqu\\e\\tau Vector'
   order: 2
 
-'{dest_path}/Run3{postfix}/hist_TTtoUETau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TTtoUETau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVTTut'
   cross-section: 0.0646215
@@ -215,7 +222,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '6TT LFV \\cPqt\\cPqu\\e\\tau Tensor'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoCETau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TTtoCETau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVTTcs'
   cross-section: 0.00134201
@@ -224,7 +231,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '7TT LFV \\cPqt\\cPqc\\e\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoCETau-LFV-Vector.root':
+'{run3_dir_path}/hist_TTtoCETau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVTTcv'
   cross-section: 0.0107468
@@ -233,7 +240,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '7TT LFV \\cPqt\\cPqc\\e\\tau Vector'
   order: 4
 
-'{dest_path}/Run3{postfix}/hist_TTtoCETau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TTtoCETau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVTTct'
   cross-section: 0.0645612
@@ -244,7 +251,7 @@ with open(files_run3_yml, 'w+') as fnew:
 """)
         else: # muon
             fnew.write(f"""
-'{dest_path}/Run3{postfix}/hist_TUMuTau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TUMuTau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVSTus'
   cross-section: 0.076246
@@ -253,7 +260,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '1ST LFV \\cPqt\\cPqu\\mu\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TUMuTau-LFV-Vector.root':
+'{run3_dir_path}/hist_TUMuTau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVSTuv'
   cross-section: 0.352822
@@ -262,7 +269,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '1ST LFV \\cPqt\\cPqu\\mu\\tau Vector'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TUMuTau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TUMuTau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVSTut'
   cross-section: 1.60867
@@ -271,7 +278,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '2ST LFV \\cPqt\\cPqu\\mu\\tau Tensor'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TCMuTau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TCMuTau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVSTcs'
   cross-section: 0.00488296
@@ -280,7 +287,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '3ST LFV \\cPqt\\cPqc\\mu\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TCMuTau-LFV-Vector.root':
+'{run3_dir_path}/hist_TCMuTau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVSTcv'
   cross-section: 0.0251451
@@ -289,7 +296,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '3ST LFV \\cPqt\\cPqc\\mu\\tau Vector'
   order: 3
 
-'{dest_path}/Run3{postfix}/hist_TCMuTau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TCMuTau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVSTct'
   cross-section: 0.123883
@@ -298,7 +305,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '4ST LFV \\cPqt\\cPqc\\mu\\tau Tensor'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoUMuTau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TTtoUMuTau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVTTus'
   cross-section: 0.00298052
@@ -307,7 +314,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '5TT LFV \\cPqt\\cPqu\\mu\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoUMuTau-LFV-Vector.root':
+'{run3_dir_path}/hist_TTtoUMuTau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVTTuv'
   cross-section: 0.023822
@@ -316,7 +323,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '5TT LFV \\cPqt\\cPqu\\mu\\tau Vector'
   order: 2
 
-'{dest_path}/Run3{postfix}/hist_TTtoUMuTau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TTtoUMuTau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVTTut'
   cross-section: 0.142932
@@ -325,7 +332,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '6TT LFV \\cPqt\\cPqu\\mu\\tau Tensor'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoCMuTau-LFV-Scalar.root':
+'{run3_dir_path}/hist_TTtoCMuTau-LFV-Scalar.root':
   type: signal
   pretty-name: 'LFVTTcs'
   cross-section: 0.00297597
@@ -334,7 +341,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '7TT LFV \\cPqt\\cPqc\\mu\\tau Scalar'
   order: 1
 
-'{dest_path}/Run3{postfix}/hist_TTtoCMuTau-LFV-Vector.root':
+'{run3_dir_path}/hist_TTtoCMuTau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVTTcv'
   cross-section: 0.0241416
@@ -343,7 +350,7 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '7TT LFV \\cPqt\\cPqc\\mu\\tau Vector'
   order: 4
 
-'{dest_path}/Run3{postfix}/hist_TTtoCMuTau-LFV-Tensor.root':
+'{run3_dir_path}/hist_TTtoCMuTau-LFV-Tensor.root':
   type: signal
   pretty-name: 'LFVTTct'
   cross-section: 0.142798
