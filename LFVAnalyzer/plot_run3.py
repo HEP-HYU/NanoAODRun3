@@ -87,7 +87,11 @@ string_for_files = ''
 for era_key, era_info in eras.items():
     lumi = era_info['lumi']
     era_dir = resolved_eras[era_key]
-    files_yml_path = os.path.join(config_path, 'files.yml')
+    files_yml_path=''
+    if '2024' in era_key:
+        files_yml_path = os.path.join(config_path, 'files24.yml')
+    else:
+        files_yml_path = os.path.join(config_path, 'files.yml')
 
     if os.path.exists(files_yml_path):
         with open(files_yml_path) as f:
@@ -104,10 +108,10 @@ for era_key, era_info in eras.items():
                         hist_file_name = line.split('/')[-1]
                         line = line[0] + os.path.normpath(os.path.join(dest_path, era_dir, hist_file_name)) + '\':\n'
 
-                    if not any(i in line for i in ['LFV', 'SingleMuon', 'Egamma', 'EGamma', 'Muon', 'WJetsToLNu_HT0To100']):
+                    if not any(i in line for i in ['Tau-LFV', 'SingleMuon', 'Egamma', 'EGamma', 'Muon']):
                         line += '  scale: ' + str(float(lumi) / total_lumi) + '\n'
-                    elif 'WJetsToLNu_HT0To100' in line:
-                        line += '  scale: ' + str(1.0288 * float(lumi) / total_lumi) + '\n'
+                    elif 'Tau-LFV' in line:
+                        line += '  scale: ' + str(1.49 * float(lumi) / total_lumi) + '\n'
 
                 if 'group' in line:
                     if 'yields-group' in line:
