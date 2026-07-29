@@ -87,16 +87,19 @@ if __name__=='__main__':
     counterhistogramsum.SetDirectory(0)
 
     if syst == "theory":
-        LHEPdfWeightSum = intf.Get("LHEPdfWeightSum")
-        PSWeightSum = intf.Get("PSWeightSum")
-        ScaleWeightSum = intf.Get("ScaleWeightSum")
+        LHEPdfWeightSum  = intf.Get("LHEPdfWeightSum")
+        PSWeightSum      = intf.Get("PSWeightSum")
+        ScaleWeightSum   = intf.Get("ScaleWeightSum")
 
-        LHEPdfWeightSumAll = LHEPdfWeightSum.Clone()
-        LHEPdfWeightSumAll.SetDirectory(0)
-        PSWeightSumAll = PSWeightSum.Clone()
-        PSWeightSumAll.SetDirectory(0)
-        ScaleWeightSumAll = ScaleWeightSum.Clone()
-        ScaleWeightSumAll.SetDirectory(0)
+        if LHEPdfWeightSum is not None:
+            LHEPdfWeightSumAll = LHEPdfWeightSum.Clone()
+            LHEPdfWeightSumAll.SetDirectory(0)
+        if PSWeightSum is not None:
+            PSWeightSumAll = PSWeightSum.Clone()
+            PSWeightSumAll.SetDirectory(0)
+        if ScaleWeightSum is not None:
+            ScaleWeightSumAll = ScaleWeightSum.Clone()
+            ScaleWeightSumAll.SetDirectory(0)
 
     intf.Close()
 

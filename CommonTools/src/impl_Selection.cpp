@@ -100,6 +100,11 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
                 float sf = 1.0;
                 if (pts[i] < 30 || etas[i] > 2.5) {
                     sf = 1.0;
+                } else if (btags[i] < 0.0f) {
+                    // disc < 0 (e.g. btagPNetB=-1): jet is untaggable/masked.
+                    // Correctionlib binning starts at 0; evaluating would throw.
+                    // SF = 1.0 by convention (no correction applied).
+                    sf = 1.0;
                 } else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) {
                     sf = 1.0;
                 } else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) {
@@ -147,17 +152,21 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
     if (!_isData) {
 
         auto selectTES = [syst_unc](floatsVec unc)->floats {
-
             int idx = -1;
-            if (syst_unc.find("tesup") != std::string::npos) idx = 0;
+            if      (syst_unc.find("tesup")   != std::string::npos) idx = 0;
             else if (syst_unc.find("tesdown") != std::string::npos) idx = 1;
+
             floats selected;
             selected.reserve(unc.size());
-
-            for (size_t i=0; i<unc.size(); i++) {
-                if (idx < 0) selected.emplace_back(1.0f);
-                selected.emplace_back(unc[i][idx]);
-                std::cout << idx << " " << unc[i][idx]  << endl;
+            for (size_t i = 0; i < unc.size(); i++) {
+                if (idx < 0) {
+                    // nominal: no TES shift
+                    selected.emplace_back(1.0f);
+                } else {
+                    // shifted: safety guard for vector bounds
+                    float val = (idx < int(unc[i].size())) ? unc[i][idx] : 1.0f;
+                    selected.emplace_back(val);
+                }
             }
             return selected;
         };

@@ -169,15 +169,20 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
 
     if (_syst.find("muonhighscaleup") != std::string::npos) {
         _rlm = _rlm.Define("Muon_pt_scale", muonhighscaleup, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_charge"})
-                   .Redefine("MET_phi", muonhighscalemetphi, {"Muon_pt", "Muon_pt_scale", "Muon_phi", "MET_pt", "MET_phi"})
-                   .Redefine("MET_pt", muonhighscalemet, {"Muon_pt", "Muon_pt_scale", "MET_pt"})
+                   .Redefine("MET_phi",      muonhighscalemetphi, {"Muon_pt", "Muon_pt_scale", "Muon_phi", "MET_pt",      "MET_phi"})
+                   .Redefine("MET_pt",       muonhighscalemet,    {"Muon_pt", "Muon_pt_scale",             "MET_pt"})
+                   .Redefine("PuppiMET_phi", muonhighscalemetphi, {"Muon_pt", "Muon_pt_scale", "Muon_phi", "PuppiMET_pt", "PuppiMET_phi"})
+                   .Redefine("PuppiMET_pt",  muonhighscalemet,    {"Muon_pt", "Muon_pt_scale",             "PuppiMET_pt"})
                    .Redefine("Muon_pt", "Muon_pt_scale"); //order matters
     } else if (_syst.find("muonhighscaledown") != std::string::npos) {
         _rlm = _rlm.Define("Muon_pt_scale", muonhighscaledn, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_charge"})
-                   .Redefine("MET_phi", muonhighscalemetphi, {"Muon_pt", "Muon_pt_scale", "Muon_phi", "MET_pt", "MET_phi"})
-                   .Redefine("MET_pt", muonhighscalemet, {"Muon_pt", "Muon_pt_scale", "MET_pt"})
+                   .Redefine("MET_phi",      muonhighscalemetphi, {"Muon_pt", "Muon_pt_scale", "Muon_phi", "MET_pt",      "MET_phi"})
+                   .Redefine("MET_pt",       muonhighscalemet,    {"Muon_pt", "Muon_pt_scale",             "MET_pt"})
+                   .Redefine("PuppiMET_phi", muonhighscalemetphi, {"Muon_pt", "Muon_pt_scale", "Muon_phi", "PuppiMET_pt", "PuppiMET_phi"})
+                   .Redefine("PuppiMET_pt",  muonhighscalemet,    {"Muon_pt", "Muon_pt_scale",             "PuppiMET_pt"})
                    .Redefine("Muon_pt", "Muon_pt_scale"); //order matters
     }
+
 }
  
 void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYear){
