@@ -1,3 +1,6 @@
+# use (process plots): python plot_run3.py -I inputdir/channel
+# use (DNN plots): python plot_run3.py -I inputdir/channel -D
+
 import sys, os
 import re
 from subprocess import call
@@ -90,7 +93,11 @@ string_for_files = ''
 for era_key, era_info in eras.items():
     lumi = era_info['lumi']
     era_rel_path = resolved_eras[era_key]
-    files_yml_path = os.path.join(config_path, 'files.yml')
+    files_yml_path = ''
+    if '2024' in era_key:
+        files_yml_path = os.path.join(config_path, 'files24.yml')
+    else:
+        files_yml_path = os.path.join(config_path, 'files.yml')
 
     if os.path.exists(files_yml_path):
         with open(files_yml_path) as f:
@@ -134,6 +141,234 @@ for era_key, era_info in eras.items():
                 if not skip_signal:
                     string_for_files += line
 
+## Write files_Run3.yml
+#files_run3_yml = os.path.join(config_path, 'files_Run3.yml')
+#with open(files_run3_yml, 'w+') as fnew:
+#    if has_merged_run3:
+#        run3_dir_path = os.path.normpath(os.path.join(dest_path, channel, 'Run3' + postfix)) if os.path.exists(os.path.join(dest_path, channel, 'Run3' + postfix)) else os.path.normpath(os.path.join(dest_path, 'Run3' + postfix))
+#        if channel == 'electron':
+#            fnew.write(f"""
+#'{run3_dir_path}/hist_TUETau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVSTus'
+#  cross-section: 0.076313
+#  generated-events: 1
+#  group: GLFVSTus
+#  yields-group: '1ST LFV \\cPqt\\cPqe\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TUETau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVSTuv'
+#  cross-section: 0.352889
+#  generated-events: 1
+#  group: GLFVSTuv
+#  yields-group: '1ST LFV \\cPqt\\cPqe\\tau Vector'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TUETau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVSTut'
+#  cross-section: 1.61537
+#  generated-events: 1
+#  group: GLFVSTut
+#  yields-group: '2ST LFV \\cPqt\\cPqe\\tau Tensor'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TCETau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVSTcs'
+#  cross-section: 0.00488095
+#  generated-events: 1
+#  group: GLFVSTcs
+#  yields-group: '3ST LFV \\cPqt\\cPqc\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TCETau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVSTcv'
+#  cross-section: 0.0253796
+#  generated-events: 1
+#  group: GLFVSTcv
+#  yields-group: '3ST LFV \\cPqt\\cPqc\\tau Vector'
+#  order: 3
+#
+#'{run3_dir_path}/hist_TCETau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVSTct'
+#  cross-section: 0.125558
+#  generated-events: 1
+#  group: GLFVSTct
+#  yields-group: '4ST LFV \\cPqt\\cPqc\\tau Tensor'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoUETau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVTTus'
+#  cross-section: 0.00134402
+#  generated-events: 1
+#  group: GLFVTTus
+#  yields-group: '5TT LFV \\cPqt\\cPqu\\e\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoUETau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVTTuv'
+#  cross-section: 0.0106061
+#  generated-events: 1
+#  group: GLFVTTuv
+#  yields-group: '5TT LFV \\cPqt\\cPqu\\e\\tau Vector'
+#  order: 2
+#
+#'{run3_dir_path}/hist_TTtoUETau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVTTut'
+#  cross-section: 0.0646215
+#  generated-events: 1
+#  group: GLFVTTut
+#  yields-group: '6TT LFV \\cPqt\\cPqu\\e\\tau Tensor'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoCETau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVTTcs'
+#  cross-section: 0.00134201
+#  generated-events: 1
+#  group: GLFVTTcs
+#  yields-group: '7TT LFV \\cPqt\\cPqc\\e\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoCETau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVTTcv'
+#  cross-section: 0.0107468
+#  generated-events: 1
+#  group: GLFVTTcv
+#  yields-group: '7TT LFV \\cPqt\\cPqc\\e\\tau Vector'
+#  order: 4
+#
+#'{run3_dir_path}/hist_TTtoCETau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVTTct'
+#  cross-section: 0.0645612
+#  generated-events: 1
+#  group: GLFVTTct
+#  yields-group: '8TT LFV \\cPqt\\cPqc\\e\\tau Tensor'
+#  order: 1
+#""")
+#        else: # muon
+#            fnew.write(f"""
+#'{run3_dir_path}/hist_TUMuTau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVSTus'
+#  cross-section: 0.076246
+#  generated-events: 1
+#  group: GLFVSTus
+#  yields-group: '1ST LFV \\cPqt\\cPqu\\mu\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TUMuTau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVSTuv'
+#  cross-section: 0.352822
+#  generated-events: 1
+#  group: GLFVSTuv
+#  yields-group: '1ST LFV \\cPqt\\cPqu\\mu\\tau Vector'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TUMuTau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVSTut'
+#  cross-section: 1.60867
+#  generated-events: 1
+#  group: GLFVSTut
+#  yields-group: '2ST LFV \\cPqt\\cPqu\\mu\\tau Tensor'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TCMuTau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVSTcs'
+#  cross-section: 0.00488296
+#  generated-events: 1
+#  group: GLFVSTcs
+#  yields-group: '3ST LFV \\cPqt\\cPqc\\mu\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TCMuTau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVSTcv'
+#  cross-section: 0.0251451
+#  generated-events: 1
+#  group: GLFVSTcv
+#  yields-group: '3ST LFV \\cPqt\\cPqc\\mu\\tau Vector'
+#  order: 3
+#
+#'{run3_dir_path}/hist_TCMuTau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVSTct'
+#  cross-section: 0.123883
+#  generated-events: 1
+#  group: GLFVSTct
+#  yields-group: '4ST LFV \\cPqt\\cPqc\\mu\\tau Tensor'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoUMuTau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVTTus'
+#  cross-section: 0.00298052
+#  generated-events: 1
+#  group: GLFVTTus
+#  yields-group: '5TT LFV \\cPqt\\cPqu\\mu\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoUMuTau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVTTuv'
+#  cross-section: 0.023822
+#  generated-events: 1
+#  group: GLFVTTuv
+#  yields-group: '5TT LFV \\cPqt\\cPqu\\mu\\tau Vector'
+#  order: 2
+#
+#'{run3_dir_path}/hist_TTtoUMuTau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVTTut'
+#  cross-section: 0.142932
+#  generated-events: 1
+#  group: GLFVTTut
+#  yields-group: '6TT LFV \\cPqt\\cPqu\\mu\\tau Tensor'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoCMuTau-LFV-Scalar.root':
+#  type: signal
+#  pretty-name: 'LFVTTcs'
+#  cross-section: 0.00297597
+#  generated-events: 1
+#  group: GLFVTTcs
+#  yields-group: '7TT LFV \\cPqt\\cPqc\\mu\\tau Scalar'
+#  order: 1
+#
+#'{run3_dir_path}/hist_TTtoCMuTau-LFV-Vector.root':
+#  type: signal
+#  pretty-name: 'LFVTTcv'
+#  cross-section: 0.0241416
+#  generated-events: 1
+#  group: GLFVTTcv
+#  yields-group: '7TT LFV \\cPqt\\cPqc\\mu\\tau Vector'
+#  order: 4
+#
+#'{run3_dir_path}/hist_TTtoCMuTau-LFV-Tensor.root':
+#  type: signal
+#  pretty-name: 'LFVTTct'
+#  cross-section: 0.142798
+#  generated-events: 1
+#  group: GLFVTTct
+#  yields-group: '8TT LFV \\cPqt\\cPqc\\mu\\tau Tensor'
+#  order: 1
+#""")
+#    fnew.write(string_for_files)
+
+
 # Write files_Run3.yml
 files_run3_yml = os.path.join(config_path, 'files_Run3.yml')
 with open(files_run3_yml, 'w+') as fnew:
@@ -141,42 +376,6 @@ with open(files_run3_yml, 'w+') as fnew:
         run3_dir_path = os.path.normpath(os.path.join(dest_path, channel, 'Run3' + postfix)) if os.path.exists(os.path.join(dest_path, channel, 'Run3' + postfix)) else os.path.normpath(os.path.join(dest_path, 'Run3' + postfix))
         if channel == 'electron':
             fnew.write(f"""
-'{run3_dir_path}/hist_TUETau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVSTus'
-  cross-section: 0.076313
-  generated-events: 1
-  group: GLFVSTus
-  yields-group: '1ST LFV \\cPqt\\cPqe\\tau Scalar'
-  order: 1
-
-'{run3_dir_path}/hist_TUETau-LFV-Vector.root':
-  type: signal
-  pretty-name: 'LFVSTuv'
-  cross-section: 0.352889
-  generated-events: 1
-  group: GLFVSTuv
-  yields-group: '1ST LFV \\cPqt\\cPqe\\tau Vector'
-  order: 1
-
-'{run3_dir_path}/hist_TUETau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVSTut'
-  cross-section: 1.61537
-  generated-events: 1
-  group: GLFVSTut
-  yields-group: '2ST LFV \\cPqt\\cPqe\\tau Tensor'
-  order: 1
-
-'{run3_dir_path}/hist_TCETau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVSTcs'
-  cross-section: 0.00488095
-  generated-events: 1
-  group: GLFVSTcs
-  yields-group: '3ST LFV \\cPqt\\cPqc\\tau Scalar'
-  order: 1
-
 '{run3_dir_path}/hist_TCETau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVSTcv'
@@ -186,51 +385,6 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '3ST LFV \\cPqt\\cPqc\\tau Vector'
   order: 3
 
-'{run3_dir_path}/hist_TCETau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVSTct'
-  cross-section: 0.125558
-  generated-events: 1
-  group: GLFVSTct
-  yields-group: '4ST LFV \\cPqt\\cPqc\\tau Tensor'
-  order: 1
-
-'{run3_dir_path}/hist_TTtoUETau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVTTus'
-  cross-section: 0.00134402
-  generated-events: 1
-  group: GLFVTTus
-  yields-group: '5TT LFV \\cPqt\\cPqu\\e\\tau Scalar'
-  order: 1
-
-'{run3_dir_path}/hist_TTtoUETau-LFV-Vector.root':
-  type: signal
-  pretty-name: 'LFVTTuv'
-  cross-section: 0.0106061
-  generated-events: 1
-  group: GLFVTTuv
-  yields-group: '5TT LFV \\cPqt\\cPqu\\e\\tau Vector'
-  order: 2
-
-'{run3_dir_path}/hist_TTtoUETau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVTTut'
-  cross-section: 0.0646215
-  generated-events: 1
-  group: GLFVTTut
-  yields-group: '6TT LFV \\cPqt\\cPqu\\e\\tau Tensor'
-  order: 1
-
-'{run3_dir_path}/hist_TTtoCETau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVTTcs'
-  cross-section: 0.00134201
-  generated-events: 1
-  group: GLFVTTcs
-  yields-group: '7TT LFV \\cPqt\\cPqc\\e\\tau Scalar'
-  order: 1
-
 '{run3_dir_path}/hist_TTtoCETau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVTTcv'
@@ -239,54 +393,9 @@ with open(files_run3_yml, 'w+') as fnew:
   group: GLFVTTcv
   yields-group: '7TT LFV \\cPqt\\cPqc\\e\\tau Vector'
   order: 4
-
-'{run3_dir_path}/hist_TTtoCETau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVTTct'
-  cross-section: 0.0645612
-  generated-events: 1
-  group: GLFVTTct
-  yields-group: '8TT LFV \\cPqt\\cPqc\\e\\tau Tensor'
-  order: 1
 """)
         else: # muon
             fnew.write(f"""
-'{run3_dir_path}/hist_TUMuTau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVSTus'
-  cross-section: 0.076246
-  generated-events: 1
-  group: GLFVSTus
-  yields-group: '1ST LFV \\cPqt\\cPqu\\mu\\tau Scalar'
-  order: 1
-
-'{run3_dir_path}/hist_TUMuTau-LFV-Vector.root':
-  type: signal
-  pretty-name: 'LFVSTuv'
-  cross-section: 0.352822
-  generated-events: 1
-  group: GLFVSTuv
-  yields-group: '1ST LFV \\cPqt\\cPqu\\mu\\tau Vector'
-  order: 1
-
-'{run3_dir_path}/hist_TUMuTau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVSTut'
-  cross-section: 1.60867
-  generated-events: 1
-  group: GLFVSTut
-  yields-group: '2ST LFV \\cPqt\\cPqu\\mu\\tau Tensor'
-  order: 1
-
-'{run3_dir_path}/hist_TCMuTau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVSTcs'
-  cross-section: 0.00488296
-  generated-events: 1
-  group: GLFVSTcs
-  yields-group: '3ST LFV \\cPqt\\cPqc\\mu\\tau Scalar'
-  order: 1
-
 '{run3_dir_path}/hist_TCMuTau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVSTcv'
@@ -296,51 +405,6 @@ with open(files_run3_yml, 'w+') as fnew:
   yields-group: '3ST LFV \\cPqt\\cPqc\\mu\\tau Vector'
   order: 3
 
-'{run3_dir_path}/hist_TCMuTau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVSTct'
-  cross-section: 0.123883
-  generated-events: 1
-  group: GLFVSTct
-  yields-group: '4ST LFV \\cPqt\\cPqc\\mu\\tau Tensor'
-  order: 1
-
-'{run3_dir_path}/hist_TTtoUMuTau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVTTus'
-  cross-section: 0.00298052
-  generated-events: 1
-  group: GLFVTTus
-  yields-group: '5TT LFV \\cPqt\\cPqu\\mu\\tau Scalar'
-  order: 1
-
-'{run3_dir_path}/hist_TTtoUMuTau-LFV-Vector.root':
-  type: signal
-  pretty-name: 'LFVTTuv'
-  cross-section: 0.023822
-  generated-events: 1
-  group: GLFVTTuv
-  yields-group: '5TT LFV \\cPqt\\cPqu\\mu\\tau Vector'
-  order: 2
-
-'{run3_dir_path}/hist_TTtoUMuTau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVTTut'
-  cross-section: 0.142932
-  generated-events: 1
-  group: GLFVTTut
-  yields-group: '6TT LFV \\cPqt\\cPqu\\mu\\tau Tensor'
-  order: 1
-
-'{run3_dir_path}/hist_TTtoCMuTau-LFV-Scalar.root':
-  type: signal
-  pretty-name: 'LFVTTcs'
-  cross-section: 0.00297597
-  generated-events: 1
-  group: GLFVTTcs
-  yields-group: '7TT LFV \\cPqt\\cPqc\\mu\\tau Scalar'
-  order: 1
-
 '{run3_dir_path}/hist_TTtoCMuTau-LFV-Vector.root':
   type: signal
   pretty-name: 'LFVTTcv'
@@ -349,15 +413,6 @@ with open(files_run3_yml, 'w+') as fnew:
   group: GLFVTTcv
   yields-group: '7TT LFV \\cPqt\\cPqc\\mu\\tau Vector'
   order: 4
-
-'{run3_dir_path}/hist_TTtoCMuTau-LFV-Tensor.root':
-  type: signal
-  pretty-name: 'LFVTTct'
-  cross-section: 0.142798
-  generated-events: 1
-  group: GLFVTTct
-  yields-group: '8TT LFV \\cPqt\\cPqc\\mu\\tau Tensor'
-  order: 1
 """)
     fnew.write(string_for_files)
 
@@ -388,7 +443,7 @@ if os.path.exists(template_yml_path):
                 f1.write("\nplots:\n  include: ['histos_yield.yml']\n")
             else:
                 if os.path.exists(os.path.join(config_path, 'histos_v1.yml')):
-                    f1.write("\nplots:\n  include: ['histos_v1.yml', 'histos_reco.yml']\n")
+                    f1.write("\nplots:\n  include: ['histos_v1.yml', 'histos_v2.yml', 'histos_reco.yml']\n")
                 else:
                     f1.write("\nplots:\n  include: ['histos_yield.yml', 'histos_control.yml', 'histos_reco.yml']\n")
 

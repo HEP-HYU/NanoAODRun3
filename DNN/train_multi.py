@@ -28,7 +28,7 @@ from datetime import datetime
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon")
-parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/", help="Processed NanoAOD histogram base directory")
+parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/anti_NanoAODRun3/LFVAnalyzer/process_0715_v4/", help="Processed NanoAOD histogram base directory")
 parser.add_argument("--seed", dest="seed", type=int, default=42)
 args = parser.parse_args()
 ch = args.ch
@@ -57,7 +57,7 @@ inputvars_st = [ # "Muon1_pt","Muon1_eta",
         "chi2","chi2_SMW_mass","chi2_SMTop_mass",
         "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
         "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-        "PuppiMET_pt"
+        "PuppiMET_pt", "PuppiMET_phi"
         ]
 if ch == "muon": inputvars_st = ["Muon1_pt", "Muon1_eta"] + inputvars_st
 else: inputvars_st = ["Electron1_pt", "Electron1_eta"] + inputvars_st
@@ -80,7 +80,7 @@ else:
     siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
     siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
 
-years = ["v15_2024"]
+years = ["v12_2022", "v12_2022EE", "v12_2023", "v12_2023BPix", "v15_2024"]
 
 df_sig_st_list = []
 df_sig_tt_list = []
@@ -237,6 +237,10 @@ model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
 
 ###############   Hidden Layer 2    ###############
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
+
+###############   Hidden Layer 3    ###############
 model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
 

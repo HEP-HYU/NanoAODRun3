@@ -20,7 +20,7 @@ fi
 
 shopt -s nullglob
 
-missing_file="missing.txt"
+missing_file="missing_${VERSION}.txt"
 > "$missing_file"
 
 for dataset_file in "${DATASET_DIR}"/dataset_*.txt; do

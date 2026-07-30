@@ -1,6 +1,12 @@
 import os
+import argparse
 
-LOG_DIR = "./log"
+parser = argparse.ArgumentParser(description="Find problematic ROOT files")
+parser.add_argument("input_path", help="Base directory to scan")
+
+args = parser.parse_args()
+
+LOG_DIR = args.input_path+"/log"
 
 ERROR_KEYWORDS = [
     "runtime_error",
