@@ -703,47 +703,38 @@ void TopLFVAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 
     std::vector<std::string> init_weight = {""};
-    //std::vector<std::string> init_weight = {"", "_pu", "_mu", "_pumu"};
-
-    std::vector<std::string> sf_weight = {"", "_no", "_nobtag", "_nopu", "_notau", "_notoppt",
-    //               "__puup", "__pudown", "__topptup", "__topptdown", "__prefireup", "__prefiredown",
-    //               "__muidup", "__muiddown", "__muisoup", "__muisodown", "__mutrgup", "__mutrgdown",
-    //               "__muhighptup", "__muhighptdown",
-                   "__btagup", "__btagdown",
-    //               "__btaghfstats1up", "__btaghfstats1down", "__btaghfstats2up", "__btaghfstats2down",
-    //               "__btaglfstats1up", "__btaglfstats1down", "__btaglfstats2up", "__btaglfstats2down",
-    //               "__btagcferr1up", "__btagcferr1down", "__btagcferr2up", "__btagcferr2down",
+    std::vector<std::string> sf_weight = {"", "_nobtag", "_nopu", "_notau", "_notoppt",
+                   "__puup", "__pudown", "__topptup", "__topptdown", "__prefireup", "__prefiredown",
+                   "__muidup", "__muiddown", "__muisoup", "__muisodown", "__mutrgup", "__mutrgdown",
+                   "__muhighptup", "__muhighptdown",
+                   "__btaghfup", "__btaghfdown", "__btaglfup", "__btaglfdown",
+                   "__btaghfstats1up", "__btaghfstats1down", "__btaghfstats2up", "__btaghfstats2down",
+                   "__btaglfstats1up", "__btaglfstats1down", "__btaglfstats2up", "__btaglfstats2down",
+                   "__btagcferr1up", "__btagcferr1down", "__btagcferr2up", "__btagcferr2down",
                    };
 
-    //std::vector<std::string> sf_weight = {};
 
-    //std::vector<std::string> sf_weight_tau = {"__tauidjetUncert0up", "__tauidjetUncert0down",
-    //                                          "__tauidjetUncert1up", "__tauidjetUncert1down",
-    //                                          "__tauidjetSystallerasup", "__tauidjetSystallerasdown",
-    //                                          "__tauidjetSyst"+tauYear+"up", "__tauidjetSyst"+tauYear+"down",
-    //                                          "__tauidjetSystdm0"+tauYear+"up", "__tauidjetSystdm0"+tauYear+"down",
-    //                                          "__tauidjetSystdm1"+tauYear+"up", "__tauidjetSystdm1"+tauYear+"down",
-    //                                          "__tauidjetSystdm10"+tauYear+"up", "__tauidjetSystdm10"+tauYear+"down",
-    //                                          "__tauidjetSystdm11"+tauYear+"up", "__tauidjetSystdm11"+tauYear+"down",
-    //                                          "__tauidjetHighptstatup", "__tauidjetHighptstatdown",
-    //                                          "__tauidjetHighptstat_bin1up", "__tauidjetHighptstat_bin1down",
-    //                                          "__tauidjetHighptstat_bin2up", "__tauidjetHighptstat_bin2down",
-    //                                          "__tauidjetHighptsystup", "__tauidjetHighptsystdown",
-    //                                          "__tauidjetHighptextrapup", "__tauidjetHighptextrapdown",
-    //                                          "__tauidelup", "__tauideldown", "__tauidmuup", "__tauidmudown"};
-    std::vector<std::string> sf_weight_tau = {};
+    std::vector<std::string> sf_weight_tau = {"__tauidjetUncert0up", "__tauidjetUncert0down",
+                                              "__tauidjetUncert1up", "__tauidjetUncert1down",
+                                              "__tauidjetSystallerasup", "__tauidjetSystallerasdown",
+                                              "__tauidjetSyst"+tauYear+"up", "__tauidjetSyst"+tauYear+"down",
+                                              "__tauidjetSystdm0"+tauYear+"up", "__tauidjetSystdm0"+tauYear+"down",
+                                              "__tauidjetSystdm1"+tauYear+"up", "__tauidjetSystdm1"+tauYear+"down",
+                                              "__tauidjetSystdm10"+tauYear+"up", "__tauidjetSystdm10"+tauYear+"down",
+                                              "__tauidjetSystdm11"+tauYear+"up", "__tauidjetSystdm11"+tauYear+"down",
+                                              "__tauidjetHighptstatup", "__tauidjetHighptstatdown",
+                                              "__tauidjetHighptstat_bin1up", "__tauidjetHighptstat_bin1down",
+                                              "__tauidjetHighptstat_bin2up", "__tauidjetHighptstat_bin2down",
+                                              "__tauidjetHighptsystup", "__tauidjetHighptsystdown",
+                                              "__tauidjetHighptextrapup", "__tauidjetHighptextrapdown",
+                                              "__tauidelup", "__tauideldown", "__tauidmuup", "__tauidmudown"};
 
-    //std::vector<std::string> sf_weight_FF ={"__tauFFstatup", "__tauFFstatdown", "__tauFFsystup", "__tauFFsystdown"};
-    //std::vector<std::string> sf_weight_FF ={"__tauFFstatup", "__tauFFstatdown", "__tauFFsystup", "__tauFFsystdown", "__tauFFptdepup", "__tauFFptdepdown"};
-    std::vector<std::string> sf_weight_FF = {};
+    std::vector<std::string> sf_weight_FF ={"__tauFFstatup", "__tauFFstatdown", "__tauFFsystup", "__tauFFsystdown"};
 
-    //std::vector<std::string> theory_weight = {"__isrup", "__fsrup", "__isrdown", "__fsrdown",
-    //               "__mescaleup", "__mescaledown", "__renscaleup", "__renscaledown", "__facscaleup", "__facscaledown",
-    //               "__pdfalphasup", "__pdfalphasdown"};
+    std::vector<std::string> theory_weight = {"__isrup", "__fsrup", "__isrdown", "__fsrdown",
+                   "__mescaleup", "__mescaledown", "__renscaleup", "__renscaledown", "__facscaleup", "__facscaledown",
+                   "__pdfalphasup", "__pdfalphasdown"};
                    //Not including pdf eigenvectors for plots
-    std::vector<std::string> theory_weight = {};
-
-   
 
     //Step definition. To replace for tauFF
     //This implies histos w/o FF must be drawn, for bSF and other weights renormalization
@@ -753,7 +744,6 @@ void TopLFVAnalyzer::bookHists() {
     std::string minstep_S4 = "0000";
     std::string minstep_S5 = "00000";
 
-    /*
     if (_applytauFF) {
         minstep_S1 = "00000";
         minstep_S2 = "00000";
@@ -761,7 +751,6 @@ void TopLFVAnalyzer::bookHists() {
         minstep_S4 = "00000";
         minstep_S5 = "00000";
     }
-    */
 
     // TODO refine this. Too heavy? we will see.
     std::vector<std::string> syst_weight;
@@ -788,9 +777,6 @@ void TopLFVAnalyzer::bookHists() {
         add1DHist({"h_nevents_notausf", ";Number of events;Events", 2, -0.5, 1.5}, "one", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_nvtx_notausf", ";Number of primary vertex;Events", 70, 0.0, 70.0}, "PV_npvsGood", "eventWeight_notau", weightstr, minstep_S1, maxstep);
 
-        //add1DHist({"h_met_pt_notausf", ";MET (GeV);Events", 20, 0, 400}, "MET_pt", "eventWeight_notau", weightstr, minstep_S1, maxstep);
-        //add1DHist({"h_sum_et_notausf", ";Sum ET;Events", 50, 0.0, 5000.0}, "MET_sumEt", "eventWeight_notau", weightstr, minstep_S1, maxstep);
-        //add1DHist({"h_met_phi_notausf", ";MET #phi;Events", 20, -3.2, 3.2}, "MET_phi", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_puppimet_pt_notausf", ";PuppiMET (GeV);Events", 20, 0, 400}, "PuppiMET_pt", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_puppisum_et_notausf", ";Sum ET;Events", 50, 0.0, 5000.0}, "PuppiMET_sumEt", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_puppimet_phi_notausf", ";PuppiMET #phi;Events", 20, -3.2, 3.2}, "PuppiMET_phi", "eventWeight_notau", weightstr, minstep_S1, maxstep);
@@ -829,20 +815,11 @@ void TopLFVAnalyzer::bookHists() {
 
     maxstep = "";
 
-    //TODO: This part is just for test
-    if (_syst!="data"){
-        syst_weight.insert(syst_weight.end(), sf_weight.begin(), sf_weight.end());
-    } else{
-        syst_weight = {"", "_nobtag"};
-    }
     for (std::string weightstr : syst_weight) {
         if (weightstr.find("notoppt") != std::string::npos) continue;
 
         add1DHist({"h_nevents", ";Number of events;Events", 2, -0.5, 1.5}, "one", "eventWeight", weightstr, minstep_S1, maxstep);
         add1DHist({"h_nvtx", ";Number of primary vertex;Events", 70, 0.0, 70.0}, "PV_npvsGood", "eventWeight", weightstr, minstep_S1, maxstep);
-        //add1DHist({"h_met_pt", ";MET (GeV);Events", 20, 0, 400}, "MET_pt", "eventWeight", weightstr, minstep_S1, maxstep);
-        //add1DHist({"h_sum_et", ";Sum ET;Events", 50, 0.0, 5000.0}, "MET_sumEt", "eventWeight", weightstr, minstep_S1, maxstep);
-        //add1DHist({"h_met_phi", ";MET #phi;Events", 20, -3.2, 3.2}, "MET_phi", "eventWeight", weightstr, minstep_S1, maxstep);
         add1DHist({"h_puppimet_pt", ";PuppiMET (GeV);Events", 20, 0, 400}, "PuppiMET_pt", "eventWeight", weightstr, minstep_S1, maxstep);
         add1DHist({"h_puppisum_et", ";Sum ET;Events", 50, 0.0, 5000.0}, "PuppiMET_sumEt", "eventWeight", weightstr, minstep_S1, maxstep);
         add1DHist({"h_puppimet_phi", ";PuppiMET #phi;Events", 20, -3.2, 3.2}, "PuppiMET_phi", "eventWeight", weightstr, minstep_S1, maxstep);

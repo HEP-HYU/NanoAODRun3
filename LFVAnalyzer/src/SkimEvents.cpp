@@ -235,8 +235,11 @@ void SkimEvents::defineMoreVars()
         addVartoStore("Tau_mass");
         addVartoStore("Tau_phi");
         addVartoStore("Tau_pt");
-        addVartoStore("Tau_pt_unc");
         addVartoStore("Tau_pt_uncor");
+        addVartoStore("Tau_ES_nom");
+        addVartoStore("Tau_ES_up");
+        addVartoStore("Tau_ES_down");
+
         addVartoStore("Tau_puCorr");
         addVartoStore("Tau_rawDeep.*");
         addVartoStore("Tau_rawIso.*");

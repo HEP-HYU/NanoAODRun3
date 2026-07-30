@@ -150,33 +150,51 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
 
     //TES var.
     if (!_isData) {
-
-        auto selectTES = [syst_unc](floatsVec unc)->floats {
-            int idx = -1;
-            if      (syst_unc.find("tesup")   != std::string::npos) idx = 0;
-            else if (syst_unc.find("tesdown") != std::string::npos) idx = 1;
-
-            floats selected;
-            selected.reserve(unc.size());
-            for (size_t i = 0; i < unc.size(); i++) {
-                if (idx < 0) {
-                    // nominal: no TES shift
-                    selected.emplace_back(1.0f);
-                } else {
-                    // shifted: safety guard for vector bounds
-                    float val = (idx < int(unc[i].size())) ? unc[i][idx] : 1.0f;
-                    selected.emplace_back(val);
-                }
-            }
-            return selected;
-        };
-
-        if (_syst.find("tes") != std::string::npos) {
-          _rlm = _rlm.Define("Tau_pt_unc_toapply", selectTES, {"Tau_pt_unc"})
-                     .Redefine("Tau_pt", "Tau_pt * Tau_pt_unc_toapply")
-                     .Redefine("Tau_mass", "Tau_mass * Tau_pt_unc_toapply");
+        // In the Process stage, Tau_pt has already been corrected by Tau_ES_nom in the skim.
+        // Tau_ES_up and Tau_ES_down are stored as flat float vectors in the skim tree.
+        // To apply the up/down variation: rescale by Tau_ES_up/Tau_ES_nom or Tau_ES_down/Tau_ES_nom.
+        // Guard against Tau_ES_nom == 0 (unshifted jet) and against old skim files that
+        // pre-date Tau_ES_* columns.
+        const bool hasTauES = isDefined("Tau_ES_nom");
+        if (!hasTauES && _syst.find("tes") != std::string::npos) {
+            std::cerr << "[WARN] selectTaus: syst=" << _syst
+                      << " but Tau_ES_nom not found in input — skim may be outdated. "
+                      << "TES variation will NOT be applied.\n";
         }
+        if (hasTauES && _syst.find("tesup") != std::string::npos) {
+            _rlm = _rlm.Define("Tau_pt_unc_toapply",
+                               [](floats &es_nom, floats &es_up) -> floats {
+                                   floats out;
+                                   out.reserve(es_nom.size());
+                                   for (size_t i = 0; i < es_nom.size(); i++) {
+                                       float ratio = (es_nom[i] > 0.f) ? (es_up[i] / es_nom[i]) : 1.f;
+                                       out.emplace_back(ratio);
+                                   }
+                                   return out;
+                               },
+                               {"Tau_ES_nom", "Tau_ES_up"})
+                       .Redefine("Tau_pt",   "Tau_pt   * Tau_pt_unc_toapply")
+                       .Redefine("Tau_mass", "Tau_mass * Tau_pt_unc_toapply");
+            std::cout << "[TES] Applied Tau_ES_up/Tau_ES_nom rescaling (tesup)\n";
+        } else if (hasTauES && _syst.find("tesdown") != std::string::npos) {
+            _rlm = _rlm.Define("Tau_pt_unc_toapply",
+                               [](floats &es_nom, floats &es_dn) -> floats {
+                                   floats out;
+                                   out.reserve(es_nom.size());
+                                   for (size_t i = 0; i < es_nom.size(); i++) {
+                                       float ratio = (es_nom[i] > 0.f) ? (es_dn[i] / es_nom[i]) : 1.f;
+                                       out.emplace_back(ratio);
+                                   }
+                                   return out;
+                               },
+                               {"Tau_ES_nom", "Tau_ES_down"})
+                       .Redefine("Tau_pt",   "Tau_pt   * Tau_pt_unc_toapply")
+                       .Redefine("Tau_mass", "Tau_mass * Tau_pt_unc_toapply");
+            std::cout << "[TES] Applied Tau_ES_down/Tau_ES_nom rescaling (tesdown)\n";
+        }
+        // nominal: Tau_pt already includes Tau_ES_nom from the skim — no further action needed.
     }
+
 
     auto overlap_removal_leptau = [](FourVectorVec &lep4vecs, FourVectorVec &tau4vecs) {
         ints out;
