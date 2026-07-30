@@ -5,8 +5,7 @@
 import os
 import sys
 
-#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 import uproot
 import pandas as pd
@@ -179,7 +178,8 @@ pd_sig_tt = pd_data[pd_data['category'] == 1]
 pd_bkg = pd_data[pd_data['category'] == 0]
 
 print("N MC events after shuffle ====  "  )
-print("N MC events  year 2024 : " ,   len(pd_sig_st[pd_sig_st['year'] == 0]),len(pd_sig_tt[pd_sig_tt['year'] == 0]),len(pd_bkg[pd_bkg['year'] == 0]) )
+for eny, y_name in enumerate(years):
+    print("N MC events year %s : ST=%d, TT=%d, BKG=%d" % (y_name, len(pd_sig_st[pd_sig_st['year'] == eny]), len(pd_sig_tt[pd_sig_tt['year'] == eny]), len(pd_bkg[pd_bkg['year'] == eny])))
 print("Plotting corr_matrix total")
 plot_corrMatrix(pd_data,train_outdir,"total")
 print("Plotting corr_matrix ST")
@@ -218,7 +218,7 @@ with open(os.path.join(train_outdir, 'scaler.pkl'), 'wb') as f:
 patience_epoch = 30
 # Early Stopping with Validation Loss for Best Model
 es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=patience_epoch)
-mc = ModelCheckpoint(train_outdir+'/best_model.keras', monitor='val_loss', mode='min', save_best_only=True)
+mc = ModelCheckpoint(train_outdir+'/best_model.h5', monitor='val_loss', mode='min', save_best_only=True)
 print("xtrain shape:",x_train.shape)
 ###################################################
 #                      Model                      #

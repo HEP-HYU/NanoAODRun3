@@ -26,6 +26,7 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
+default_proj_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "process_0715_v4")
 parser = argparse.ArgumentParser(usage="%prog [options]")
 parser.add_argument("-O", "--outdir", dest="outdir", type=str, default="DNN_", help="Evaluation folder in your working directory")
 parser.add_argument("-I", "--indir", dest="indir", type=str, default="top_lfv_0715_v4", help="Training folder in your working directory")
@@ -82,7 +83,9 @@ def run(inputs):
     if "ob" in discriminator_key : binedges = [0,0.01,1,2,5,10,30,100]
     #binedges = [i for i in frange(0.0, 100.01, 0.01)]
 
-    model_dir = os.path.join(training_path, ch+"_nom/best_model.keras")
+    model_dir = os.path.join(training_path, ch+"_nom/best_model.h5")
+    if not os.path.exists(model_dir):
+        model_dir = os.path.join(training_path, ch+"_nom/best_model.keras")
     print ("model: ", model_dir)
     model = tf.keras.models.load_model(model_dir)
 

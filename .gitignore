@@ -1,55 +1,51 @@
-DNN/utils/__pycache__/*.pyc
-*.pyc
-nanoaodframe_*TLFV/src/*.o
-*.pcm
-JetMETObjects_dict.C
-rootdict.C
-*.swp
-# Prerequisites
-*.d
-*/topPtReweight/*txt
-*/topPtReweight/*pdf
+# NanoAODRun3 — git ignore rules
+# Physics source code and config files ARE tracked.
+# Build artifacts, analysis outputs, and temp files are NOT tracked.
 
-
-#temporary files that are generated when running codes
-syst_all_*.yml
-*_forSyst.yml
-config_Run2.yml
-files_Run2.yml
-
-#plotit
-plotIt
-
-# Compiled Object files
-*.slo
-*.lo
+# ── C++ build artifacts ────────────────────────────────────────────
 *.o
-*.obj
-JetMETObjects_dict_rdict.pcm
-rootdict_rdict.pcm
-libnanoaodrdframe.so
-nanoaodrdataframe
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
 *.so
-*.dylib
-*.dll
+*.d
+# ROOT dictionary generated files (recreated by rootcint during make)
+rootdict*.C
+rootdict*_rdict.pcm
+JetMETObjects_dict*.C
+JetMETObjects_dict*_rdict.pcm
+*_dictContent.h
+*_dictUmbrella.h
+*.C_tmp_*
 
-# Fortran module files
-*.mod
-*.smod
+# ── Python cache ───────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# ── ROOT analysis output ───────────────────────────────────────────
+# Processed histograms and skimmed NanoAODs are stored separately
+*.root
 
-# Executables
-*.exe
-*.out
-*.app
+# ── DNN training artifacts ─────────────────────────────────────────
+*.h5
+*.keras
+*.pkl
+scaler_*.pickle
+feature_importance.csv
+dnn_model/
+training_history/
+
+# ── Editor / OS temp files ─────────────────────────────────────────
+*.swp
+*~
+.DS_Store
+.vscode/
+.idea/
+ttHH*
+
+# ── SLURM job logs ─────────────────────────────────────────────────
+slurm-*.out
+slurm_output/
+*.log
+
+# ── Plotting output ────────────────────────────────────────────────
+*.pdf
+*.png

@@ -7,7 +7,7 @@ import optparse
 from optparse import OptionParser
 
 # Set Runs
-years = ['2016pre', '2016post', '2017', '2018']
+years = ['v12_2022', 'v12_2022EE', 'v12_2023', 'v12_2023BPix', 'v15_2024']
 
 parser = OptionParser(usage="%prog [options]")
 parser.add_option("-I", "--input",  dest="input", type="string", default="", help="Input file name")
@@ -17,7 +17,7 @@ base_path = options.input
 def collect_systhists(inpath, outfile, fname, year):
     fileList_wt_syst = [i for i in os.listdir(inpath) if fname in i]
     for sysfile in fileList_wt_syst:
-        if 'SingleMuon' in sysfile and sysfile != 'hist_SingleMuon.root': continue
+        if ('SingleMuon' in sysfile or 'Muon' in sysfile) and sysfile not in ['hist_SingleMuon.root', 'hist_Muon.root']: continue
         tmpf = TFile.Open(os.path.join(inpath, sysfile), 'READ')
         hlists = [ h.GetName() for h in tmpf.GetListOfKeys() \
                    if any(i in h.GetName() for i in ['dnn_pred_S5', 'counter', 'muon1_pt', 'tau1_pt', 'jet1_pt', 'jet2_pt', 'mutau_mass', 'mutau_dr']) ]
