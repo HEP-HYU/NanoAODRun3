@@ -480,17 +480,14 @@ void TopLFVAnalyzer::defineWeightVars() {
         addVar({"eventWeight_notoppt", "unitGenWeight * puWeight[0] * eventWeight_lep * eventWeight_tau * btagWeightNorm[0]"});
 
         //TODO
-        // eventWeight, eventWeight_notau, eventWeight__btagup/down are unconditionally
+        // eventWeight, eventWeight_notau
         // defined here for ALL non-data modes (nosyst, all, theory, ext_syst).
         // The if-else branches below only add ADDITIONAL syst-specific variations.
         addVar({"eventWeight",         "eventWeight_nobtag * btagWeightNorm[0]"});
         addVar({"eventWeight_notau",   "eventWeight_genpumu * btagWeightNorm[0]"});
-        addVar({"eventWeight__btagup",   "eventWeight_nobtag * btagWeightNorm[1]"});
-        addVar({"eventWeight__btagdown", "eventWeight_nobtag * btagWeightNorm[2]"});
 
         if (_syst == "" or _syst == "nosyst" or ext_syst) {
             // nosyst / ext_syst: only nominal weights needed, no additional weight variations.
-            // btag syst: already covered by eventWeight__btagup/down above.
             // No additional addVar calls needed here.
         } else {
 
@@ -710,8 +707,8 @@ void TopLFVAnalyzer::bookHists() {
         "__puup",   "__pudown",
         "__topptup", "__topptdown",
         // btag shape variations (all 16 components)
-        "__btagup",       "__btagdown",      // = btaghf (always defined)
-        "__btaglfup",     "__btaglfdown",
+        "__btaghfup",       "__btaghfdown",      // = btaghf (always defined)
+        "__btaglfup",       "__btaglfdown",
         "__btaghfstats1up",  "__btaghfstats1down",
         "__btaghfstats2up",  "__btaghfstats2down",
         "__btaglfstats1up",  "__btaglfstats1down",
