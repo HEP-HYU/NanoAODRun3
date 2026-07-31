@@ -704,7 +704,7 @@ void TopLFVAnalyzer::bookHists() {
     if (_isMuonCh) lep = "#mu"; 
     std::vector<std::string> init_weight = {""};
     std::vector<std::string> sf_weight = {"", "_nobtag", "_nopu", "_notau", "_notoppt",
-                   "__puup", "__pudown", "__topptup", "__topptdown", "__prefireup", "__prefiredown",
+                   "__puup", "__pudown", "__topptup", "__topptdown",
                    "__muidup", "__muiddown", "__muisoup", "__muisodown", "__mutrgup", "__mutrgdown",
                    "__muhighptup", "__muhighptdown",
                    "__btaghfup", "__btaghfdown", "__btaglfup", "__btaglfdown",
