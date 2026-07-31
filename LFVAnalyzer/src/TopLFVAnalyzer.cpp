@@ -703,15 +703,38 @@ void TopLFVAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 
     std::vector<std::string> init_weight = {""};
-    std::vector<std::string> sf_weight = {"", "_nobtag", "_nopu", "_notau", "_notoppt",
-                   "__puup", "__pudown", "__topptup", "__topptdown",
-                   "__muidup", "__muiddown", "__muisoup", "__muisodown", "__mutrgup", "__mutrgdown",
-                   "__muhighptup", "__muhighptdown",
-                   "__btaghfup", "__btaghfdown", "__btaglfup", "__btaglfdown",
-                   "__btaghfstats1up", "__btaghfstats1down", "__btaghfstats2up", "__btaghfstats2down",
-                   "__btaglfstats1up", "__btaglfstats1down", "__btaglfstats2up", "__btaglfstats2down",
-                   "__btagcferr1up", "__btagcferr1down", "__btagcferr2up", "__btagcferr2down",
-                   };
+    // Base weight suffixes common to both channels
+    std::vector<std::string> sf_weight = {
+        "",
+        "_nobtag", "_nopu", "_notau", "_notoppt",
+        "__puup",   "__pudown",
+        "__topptup", "__topptdown",
+        // btag shape variations (all 16 components)
+        "__btagup",       "__btagdown",      // = btaghf (always defined)
+        "__btaglfup",     "__btaglfdown",
+        "__btaghfstats1up",  "__btaghfstats1down",
+        "__btaghfstats2up",  "__btaghfstats2down",
+        "__btaglfstats1up",  "__btaglfstats1down",
+        "__btaglfstats2up",  "__btaglfstats2down",
+        "__btagcferr1up", "__btagcferr1down",
+        "__btagcferr2up", "__btagcferr2down",
+    };
+    // Channel-dependent lepton SF suffixes
+    if (_isMuonCh) {
+        sf_weight.insert(sf_weight.end(), {
+            "__muidup",   "__muiddown",
+            "__muisoup",  "__muisodown",
+            "__mutrgup",  "__mutrgdown",
+            // Note: __muhighptup/down removed — no official Run3 high-pT muon prescription
+        });
+    } else {
+        sf_weight.insert(sf_weight.end(), {
+            "__elecrecoup",  "__elecrecodown",
+            "__elecidup",    "__eleciddown",
+            "__electrgup",   "__electrgdown",
+        });
+    }
+
 
 
     std::vector<std::string> sf_weight_tau = {"__tauidjetUncert0up", "__tauidjetUncert0down",
