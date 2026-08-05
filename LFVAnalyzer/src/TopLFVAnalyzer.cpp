@@ -318,11 +318,11 @@ void TopLFVAnalyzer::defineKinematicVars() {
         addVar({"tauFFsystup",  "1.0", ""});
         addVar({"tauFFsystdown","1.0", ""});
     } else {
-        auto tauFF_nom      = tauFFfunctor(_year, "nom",  0);
-        auto tauFF_statup   = tauFFfunctor(_year, "stat", 1);
-        auto tauFF_statdown = tauFFfunctor(_year, "stat",-1);
-        auto tauFF_systup   = tauFFfunctor(_year, "syst", 1);
-        auto tauFF_systdown = tauFFfunctor(_year, "syst",-1);
+        auto tauFF_nom      = tauFFfunctor(tauYear, "nom",  0);
+        auto tauFF_statup   = tauFFfunctor(tauYear, "stat", 1);
+        auto tauFF_statdown = tauFFfunctor(tauYear, "stat",-1);
+        auto tauFF_systup   = tauFFfunctor(tauYear, "syst", 1);
+        auto tauFF_systdown = tauFFfunctor(tauYear, "syst",-1);
         defineVar("tauFF",        tauFF_nom,      {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
         defineVar("tauFFstatup",  tauFF_statup,   {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
         defineVar("tauFFstatdown",tauFF_statdown, {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
@@ -1021,16 +1021,24 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string unc_, int direction_
         return 1.0;
     }
 
+    // ── Era key normalization ──────────────────────────────────
+    std::string yrKey = year_;
+    if      (year_ == "2022_Summer22"    || year_ == "2022")      yrKey = "2022_preEE";
+    else if (year_ == "2022_Summer22EE"  || year_ == "2022EE")    yrKey = "2022_postEE";
+    else if (year_ == "2023_Summer23"    || year_ == "2023")      yrKey = "2023_preBPix";
+    else if (year_ == "2023_Summer23BPix"|| year_ == "2023BPix")  yrKey = "2023_postBPix";
+    else if (year_ == "2024_Summer24")                          yrKey = "2024";
+
     // Guard for years with null (Run 3) entries
     if (map_ff.find(dmKey) == map_ff.end() ||
-        map_ff.at(dmKey).find(year_) == map_ff.at(dmKey).end()) {
+        map_ff.at(dmKey).find(yrKey) == map_ff.at(dmKey).end()) {
         std::cout << "tauFF: no entry for dm=" << dmKey
-                  << " year=" << year_ << " — returning 1.0" << std::endl;
+                  << " year=" << yrKey << " — returning 1.0" << std::endl;
         return 1.0;
     }
 
-    // ── Return value (same formula as before) ─────────────────────
-    const auto &entry = map_ff.at(dmKey).at(year_);
+    // ── Return value ──────────────────────────────────────────────
+    const auto &entry = map_ff.at(dmKey).at(yrKey);
     if (unc_ == "nom") {
         return entry.at("nom");
     } else {
