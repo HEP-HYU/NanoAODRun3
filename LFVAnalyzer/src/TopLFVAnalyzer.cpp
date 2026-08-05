@@ -536,34 +536,57 @@ void TopLFVAnalyzer::defineWeightVars() {
             }
             // muonHighPtAddUncUp/Dn removed: no official Run3 high-pT muon additional uncertainty prescription.
 
-            //addVar({"eventWeight__tauidjetup", "eventWeight_notau * tauWeightIdVsJet[0][1] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            //addVar({"eventWeight__tauidjetdown", "eventWeight_notau * tauWeightIdVsJet[0][2] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetUncert0up", "eventWeight_notau * tauWeightIdVsJet[0][1] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetUncert0down", "eventWeight_notau * tauWeightIdVsJet[0][2] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetUncert1up", "eventWeight_notau * tauWeightIdVsJet[0][3] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetUncert1down", "eventWeight_notau * tauWeightIdVsJet[0][4] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystallerasup", "eventWeight_notau * tauWeightIdVsJet[0][5] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystallerasdown", "eventWeight_notau * tauWeightIdVsJet[0][6] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSyst"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][7] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSyst"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][8] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm0"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][9] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm0"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][10] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm1"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][11] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm1"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][12] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm10"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][13] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm10"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][14] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm11"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][15] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetSystdm11"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][16] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstatup", "eventWeight_notau * tauWeightIdVsJet[0][17] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstatdown", "eventWeight_notau * tauWeightIdVsJet[0][18] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin1up", "eventWeight_notau * tauWeightIdVsJet[0][19] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin1down", "eventWeight_notau * tauWeightIdVsJet[0][20] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin2up", "eventWeight_notau * tauWeightIdVsJet[0][21] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin2down", "eventWeight_notau * tauWeightIdVsJet[0][22] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptsystup", "eventWeight_notau * tauWeightIdVsJet[0][23] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptsystdown", "eventWeight_notau * tauWeightIdVsJet[0][24] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptextrapup", "eventWeight_notau * tauWeightIdVsJet[0][25] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptextrapdown", "eventWeight_notau * tauWeightIdVsJet[0][26] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetup", "eventWeight_notau * tauWeightIdVsJet[0][1] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetdown", "eventWeight_notau * tauWeightIdVsJet[0][2] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm0"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][3] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm0"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][4] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm1"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][5] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm1"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][6] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm10"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][7] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm10"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][8] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm11"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][9] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat1dm11"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][10] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm0"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][11] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm0"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][12] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm1"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][13] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm1"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][14] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm10"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][15] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm10"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][16] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm11"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][17] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetStat2dm11"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][18] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystallerasup", "eventWeight_notau * tauWeightIdVsJet[0][19] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystallerasdown", "eventWeight_notau * tauWeightIdVsJet[0][20] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSyst"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][21] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSyst"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][22] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm0"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][23] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm0"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][24] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm1"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][25] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm1"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][26] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm10"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][27] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm10"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][28] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm11"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][29] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetSystTESdm11"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][30] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptstat_bin1up", "eventWeight_notau * tauWeightIdVsJet[0][31] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptstat_bin1down", "eventWeight_notau * tauWeightIdVsJet[0][32] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptstat_bin2up", "eventWeight_notau * tauWeightIdVsJet[0][33] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptstat_bin2down", "eventWeight_notau * tauWeightIdVsJet[0][34] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptsystup", "eventWeight_notau * tauWeightIdVsJet[0][35] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptsystdown", "eventWeight_notau * tauWeightIdVsJet[0][36] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptextrapup", "eventWeight_notau * tauWeightIdVsJet[0][37] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight__tauidjetHighptextrapdown", "eventWeight_notau * tauWeightIdVsJet[0][38] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            // Legacy aliases for backward compatibility
+            addVar({"eventWeight__tauidjetUncert0up", "eventWeight__tauidjetStat1dm0"+tauYear+"up"});
+            addVar({"eventWeight__tauidjetUncert0down", "eventWeight__tauidjetStat1dm0"+tauYear+"down"});
+            addVar({"eventWeight__tauidjetUncert1up", "eventWeight__tauidjetStat1dm1"+tauYear+"up"});
+            addVar({"eventWeight__tauidjetUncert1down", "eventWeight__tauidjetStat1dm1"+tauYear+"down"});
+            addVar({"eventWeight__tauidjetSystdm0"+tauYear+"up", "eventWeight__tauidjetStat1dm0"+tauYear+"up"});
+            addVar({"eventWeight__tauidjetSystdm0"+tauYear+"down", "eventWeight__tauidjetStat1dm0"+tauYear+"down"});
+            addVar({"eventWeight__tauidjetSystdm1"+tauYear+"up", "eventWeight__tauidjetStat1dm1"+tauYear+"up"});
+            addVar({"eventWeight__tauidjetSystdm1"+tauYear+"down", "eventWeight__tauidjetStat1dm1"+tauYear+"down"});
+            addVar({"eventWeight__tauidjetSystdm10"+tauYear+"up", "eventWeight__tauidjetStat1dm10"+tauYear+"up"});
+            addVar({"eventWeight__tauidjetSystdm10"+tauYear+"down", "eventWeight__tauidjetStat1dm10"+tauYear+"down"});
+            addVar({"eventWeight__tauidjetSystdm11"+tauYear+"up", "eventWeight__tauidjetStat1dm11"+tauYear+"up"});
+            addVar({"eventWeight__tauidjetSystdm11"+tauYear+"down", "eventWeight__tauidjetStat1dm11"+tauYear+"down"});
             addVar({"eventWeight__tauidelup", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][1] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauideldown", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][2] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidmuup", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][1]"});
@@ -756,7 +779,16 @@ void TopLFVAnalyzer::bookHists() {
 
 
 
-    std::vector<std::string> sf_weight_tau = {"__tauidjetUncert0up", "__tauidjetUncert0down",
+    std::vector<std::string> sf_weight_tau = {"__tauidjetup", "__tauidjetdown",
+                                              "__tauidjetStat1dm0"+tauYear+"up", "__tauidjetStat1dm0"+tauYear+"down",
+                                              "__tauidjetStat1dm1"+tauYear+"up", "__tauidjetStat1dm1"+tauYear+"down",
+                                              "__tauidjetStat1dm10"+tauYear+"up", "__tauidjetStat1dm10"+tauYear+"down",
+                                              "__tauidjetStat1dm11"+tauYear+"up", "__tauidjetStat1dm11"+tauYear+"down",
+                                              "__tauidjetStat2dm0"+tauYear+"up", "__tauidjetStat2dm0"+tauYear+"down",
+                                              "__tauidjetStat2dm1"+tauYear+"up", "__tauidjetStat2dm1"+tauYear+"down",
+                                              "__tauidjetStat2dm10"+tauYear+"up", "__tauidjetStat2dm10"+tauYear+"down",
+                                              "__tauidjetStat2dm11"+tauYear+"up", "__tauidjetStat2dm11"+tauYear+"down",
+                                              "__tauidjetUncert0up", "__tauidjetUncert0down",
                                               "__tauidjetUncert1up", "__tauidjetUncert1down",
                                               "__tauidjetSystallerasup", "__tauidjetSystallerasdown",
                                               "__tauidjetSyst"+tauYear+"up", "__tauidjetSyst"+tauYear+"down",
@@ -764,6 +796,10 @@ void TopLFVAnalyzer::bookHists() {
                                               "__tauidjetSystdm1"+tauYear+"up", "__tauidjetSystdm1"+tauYear+"down",
                                               "__tauidjetSystdm10"+tauYear+"up", "__tauidjetSystdm10"+tauYear+"down",
                                               "__tauidjetSystdm11"+tauYear+"up", "__tauidjetSystdm11"+tauYear+"down",
+                                              "__tauidjetSystTESdm0"+tauYear+"up", "__tauidjetSystTESdm0"+tauYear+"down",
+                                              "__tauidjetSystTESdm1"+tauYear+"up", "__tauidjetSystTESdm1"+tauYear+"down",
+                                              "__tauidjetSystTESdm10"+tauYear+"up", "__tauidjetSystTESdm10"+tauYear+"down",
+                                              "__tauidjetSystTESdm11"+tauYear+"up", "__tauidjetSystTESdm11"+tauYear+"down",
                                               "__tauidjetHighptstatup", "__tauidjetHighptstatdown",
                                               "__tauidjetHighptstat_bin1up", "__tauidjetHighptstat_bin1down",
                                               "__tauidjetHighptstat_bin2up", "__tauidjetHighptstat_bin2down",

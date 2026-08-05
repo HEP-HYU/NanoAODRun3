@@ -20,35 +20,32 @@ using namespace std;
 void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, string muonhlt){
     //// Muon SF
     cout<<"Loading Muon SF"<<endl;
-    std::string muonFile = _year;
+    std::string muonEraFolder = "";
 
     if (_isRun22) {
-        muonFile = "2022";
+        muonEraFolder = "2022_Summer22";
     } else if (_isRun22EE) {
-        muonFile = "2022_EE";
+        muonEraFolder = "2022_Summer22EE";
     } else if (_isRun23) {
-        muonFile = "2023";
+        muonEraFolder = "2023_Summer23";
     } else if (_isRun23BPix) {
-        muonFile = "2023_BPix";
+        muonEraFolder = "2023_Summer23BPix";
     } else if (_isRun24){
-        muonFile = "2024";
+        muonEraFolder = "2024_Summer24";
     }
 
-    auto muonSFreader = loadCorrectionSet("data/MuonSF/ScaleFactors_Muon_Z_ID_ISO_"+muonFile+"_schemaV2.json");
+    auto muonSFreader = loadCorrectionSet("data/MuonSF/" + muonEraFolder + "/muon_Z.json.gz");
     auto _muonid = muonSFreader->at(muonid);
     auto _muoniso = muonSFreader->at(muoniso);
-    if (_isRun24) muonFile = "2023_BPix";
-    auto muonHltSFreader = loadCorrectionSet("data/MuonSF/ScaleFactors_Muon_Z_HLT_"+muonFile+"_eta_pt_schemaV2.json");
-    auto _muontrg = muonHltSFreader->at(muonhlt);
+    auto _muontrg = muonSFreader->at(muonhlt);
 
     // We have only one muon!
-    auto muonSFId = [this, _muonid, muonFile](floats &pt, floats &eta)->floats {
+    auto muonSFId = [this, _muonid, muonEraFolder](floats &pt, floats &eta)->floats {
         floats wVec;
         wVec.reserve(3); //cent, up, down
 
-        float tmp_eta = -1000;
         if (pt.size() == 1){
-            tmp_eta = (muonFile.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
+            float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
             float sf = _muonid->evaluate({tmp_eta, pt[0], "nominal"});
             float sf_up = _muonid->evaluate({tmp_eta, pt[0], "systup"});
             float sf_down = _muonid->evaluate({tmp_eta, pt[0], "systdown"});
@@ -60,12 +57,12 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
     };
 
     // We have only one muon!
-    auto muonSFIso = [this, _muoniso, muonFile](floats &pt, floats &eta)->floats {
+    auto muonSFIso = [this, _muoniso, muonEraFolder](floats &pt, floats &eta)->floats {
         floats wVec;
         wVec.reserve(3); //cent, up, down
 
         if (pt.size() == 1){
-            float tmp_eta = (muonFile.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
+            float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
             float sf = _muoniso->evaluate({tmp_eta, pt[0], "nominal"});
             float sf_up = _muoniso->evaluate({tmp_eta, pt[0], "systup"});
             float sf_down = _muoniso->evaluate({tmp_eta, pt[0], "systdown"});
@@ -76,15 +73,15 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
         return wVec;
     };
 
-    auto muonSFTrg = [this, _muontrg](floats &pt, floats &eta)->floats {
-
+    auto muonSFTrg = [this, _muontrg, muonEraFolder](floats &pt, floats &eta)->floats {
         floats wVec;
         wVec.reserve(3); //cent, up, down
 
         if (pt.size() == 1) {
-            float sf = _muontrg->evaluate({eta[0], pt[0], "nominal"});
-            float sf_up = _muontrg->evaluate({eta[0], pt[0], "systup"});
-            float sf_down = _muontrg->evaluate({eta[0], pt[0], "systdown"});
+            float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
+            float sf = _muontrg->evaluate({tmp_eta, pt[0], "nominal"});
+            float sf_up = _muontrg->evaluate({tmp_eta, pt[0], "systup"});
+            float sf_down = _muontrg->evaluate({tmp_eta, pt[0], "systdown"});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
@@ -94,13 +91,8 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
     };
 
     _rlm = _rlm.Define("muonWeightId", muonSFId, {"Muon_pt","Muon_eta"})
-               .Define("muonWeightIso", muonSFIso, {"Muon_pt","Muon_eta"});
-    if (_isRun24){
-        _rlm = _rlm.Define("muonWeightTrg", "std::vector<double>{1.0, 1.0, 1.0}");
-    }
-    else{
-        _rlm = _rlm.Define("muonWeightTrg", muonSFTrg, {"Muon_pt","Muon_eta"});
-    }
+               .Define("muonWeightIso", muonSFIso, {"Muon_pt","Muon_eta"})
+               .Define("muonWeightTrg", muonSFTrg, {"Muon_pt","Muon_eta"});
     
     // GEScaleSyst only has data for Run 2 UL eras (2016_UL_HIPM/2016_UL/2017_UL/2018_UL).
     // For Run 3, no official high-pT recommendation exists yet — return identity.

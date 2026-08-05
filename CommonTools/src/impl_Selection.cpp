@@ -220,7 +220,10 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             if (cut[i] > 0) out.emplace_back(toSkim[i]);
         }
         if (out.size() > 0) return out;
-        else return {{1.0f, 1.0f, 1.0f}};
+        else {
+            size_t vec_len = (toSkim.size() > 0 && toSkim[0].size() > 0) ? toSkim[0].size() : 39;
+            return {floats(vec_len, 1.0f)};
+        }
     };
 
     // Fake factor study - loose but not tight
@@ -267,17 +270,46 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         cout << "Tau ID WP vsMuon : " << tauid_vsmu << endl;
         cout << "Tau ID WP vsElectron : " << tauid_vse << endl;
 
-        auto tauSFreader = loadCorrectionSet("data/TauIDSFs/tau_DeepTau2018v2p5_" + tauYear + ".json.gz");
+        std::string tauFolder = tauYear;
+        if (tauYear == "2022_preEE")       tauFolder = "2022_Summer22";
+        else if (tauYear == "2022_postEE")  tauFolder = "2022_Summer22EE";
+        else if (tauYear == "2023_preBPix") tauFolder = "2023_Summer23";
+        else if (tauYear == "2023_postBPix")tauFolder = "2023_Summer23BPix";
+        else if (tauYear == "2024")        tauFolder = "2024_Summer24";
+
+        auto tauSFreader = loadCorrectionSet("data/TauIDSFs/" + tauFolder + "/tau.json.gz");
         auto _tauidSFjet = tauSFreader->at("DeepTau2018v2p5VSjet");
         auto _tauidSFele = tauSFreader->at("DeepTau2018v2p5VSe");
         auto _tauidSFmu  = tauSFreader->at("DeepTau2018v2p5VSmu");
 
-        auto tauSFIdVsJet = [this, _tauidSFjet, tauid_vsjet, tauid_vse](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
+        std::vector<std::string> systNamesVsJet = {
+            "nom",                                     // 0
+            "up", "down",                              // 1, 2
+            "stat1_dm0_up", "stat1_dm0_down",          // 3, 4
+            "stat1_dm1_up", "stat1_dm1_down",          // 5, 6
+            "stat1_dm10_up", "stat1_dm10_down",        // 7, 8
+            "stat1_dm11_up", "stat1_dm11_down",        // 9, 10
+            "stat2_dm0_up", "stat2_dm0_down",          // 11, 12
+            "stat2_dm1_up", "stat2_dm1_down",          // 13, 14
+            "stat2_dm10_up", "stat2_dm10_down",        // 15, 16
+            "stat2_dm11_up", "stat2_dm11_down",        // 17, 18
+            "syst_alleras_up", "syst_alleras_down",    // 19, 20
+            "syst_" + tauYear + "_up", "syst_" + tauYear + "_down", // 21, 22
+            "syst_TES_" + tauYear + "_dm0_up", "syst_TES_" + tauYear + "_dm0_down",   // 23, 24
+            "syst_TES_" + tauYear + "_dm1_up", "syst_TES_" + tauYear + "_dm1_down",   // 25, 26
+            "syst_TES_" + tauYear + "_dm10_up", "syst_TES_" + tauYear + "_dm10_down", // 27, 28
+            "syst_TES_" + tauYear + "_dm11_up", "syst_TES_" + tauYear + "_dm11_down", // 29, 30
+            "stat_highpT_bin1_up", "stat_highpT_bin1_down", // 31, 32
+            "stat_highpT_bin2_up", "stat_highpT_bin2_down", // 33, 34
+            "syst_highpT_up", "syst_highpT_down",           // 35, 36
+            "syst_highpT_extrap_up", "syst_highpT_extrap_down" // 37, 38
+        };
+        const size_t nSystVsJet = systNamesVsJet.size(); // 39
+
+        auto tauSFIdVsJet = [this, _tauidSFjet, tauid_vsjet, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
             // CMS tau POG: DeepTauVSjet SF applies ONLY to real hadronic taus (genmatch==5).
-            // Calling evaluate() for other genmatch values (fake/electron/muon) is unsupported
-            // in the JSON and throws a correctionlib exception → ROOT heap corruption.
             floats uncSources;
-            uncSources.reserve(3);
+            uncSources.reserve(nSystVsJet);
             floatsVec wVec;
             wVec.reserve(pt.size());
 
@@ -285,18 +317,23 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                 for (size_t i=0; i<pt.size(); i++) {
                     int gm = int(genmatch[i]);
                     if (gm == 5) {  // real hadronic tau only
+                        float nom_sf = 1.0f;
                         try {
-                            uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "nom", "dm"}));
-                            uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "up",  "dm"}));
-                            uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "down","dm"}));
-                        } catch (const std::exception &e) {
-                            std::cerr << "[WARN] tauSFIdVsJet evaluate failed (pt=" << pt[i]
-                                      << " dm=" << int(dm[i]) << " gm=" << gm << "): " << e.what() << "\n";
-                            uncSources.assign(3, 1.0f);
+                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "nom", "dm"});
+                        } catch (...) {
+                            nom_sf = 1.0f;
+                        }
+                        for (const auto &sname : systNamesVsJet) {
+                            try {
+                                float val = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, sname, "dm"});
+                                uncSources.emplace_back(val);
+                            } catch (...) {
+                                uncSources.emplace_back(nom_sf);
+                            }
                         }
                     } else {
                         // SF = 1.0 for non-real-tau objects (jets, electrons, muons faking tau)
-                        uncSources.assign(3, 1.0f);
+                        uncSources.assign(nSystVsJet, 1.0f);
                     }
                     wVec.emplace_back(uncSources);
                     uncSources.clear();
