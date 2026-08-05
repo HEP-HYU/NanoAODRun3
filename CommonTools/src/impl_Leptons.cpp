@@ -191,7 +191,11 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
             std::string wp = var;
             if (pt.size() == 1){
                 float sf=1.0; float sf_up=1.0; float sf_down=1.0;
-                if (pt[0] >= 20 && pt[0] < 75 && wp.find("Reco")!=std::string::npos) wp = "Reco20to75";
+                if (wp.find("Reco") != std::string::npos) {
+                    if (pt[0] < 20) wp = "RecoBelow20";
+                    else if (pt[0] < 75) wp = "Reco20to75";
+                    else wp = "RecoAbove75";
+                }
                 if (elecYear.find("2022")!=std::string::npos || elecYear.find("2024")!=std::string::npos){
                     sf = _elecid->evaluate({elecYear, "sf", wp, eta[0], pt[0]});
                     sf_up = _elecid->evaluate({elecYear, "sfup", wp, eta[0], pt[0]});
