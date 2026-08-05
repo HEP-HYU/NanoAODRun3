@@ -142,7 +142,7 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
     static std::string s_vetomuon, s_vetoelec, s_jetcut, s_taucut;
     static std::string s_mu_vsjet, s_mu_vsmu, s_mu_vse;
     static std::string s_el_vsjet, s_el_vsmu, s_el_vse;
-    static float s_btagcut;
+    static std::map<std::string, float> s_btagcut_map;
     static std::string s_btagMap, s_btagMapLight;
 
     if (!cfg_loaded) {
@@ -170,7 +170,11 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
         s_el_vsjet     = dtau["electron_ch"]["vsjet"].asString();
         s_el_vsmu      = dtau["electron_ch"]["vsmu"].asString();
         s_el_vse       = dtau["electron_ch"]["vse"].asString();
-        s_btagcut      = bt["wp_medium"].asFloat();
+        if (bt["wp_medium"].isObject()) {
+            for (auto const& id : bt["wp_medium"].getMemberNames()) {
+                s_btagcut_map[id] = bt["wp_medium"][id].asFloat();
+            }
+        }
         s_btagMap      = bt["tagger_run3"].asString();
         s_btagMapLight = bt["tagger_light_run3"].asString();
         cfg_loaded = true;
@@ -179,32 +183,38 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
     std::string cut  = "onlyveto";
 
     std::string btagYear = "";
+    std::string btagEra  = "";
     std::string btagMap      = s_btagMap;
     std::string btagMapLight = s_btagMapLight;
-    float btagcut = s_btagcut;
     if (_isRun22) {
         tauYear  = "2022_preEE";
         btagYear = "2022_Summer22";
+        btagEra  = "2022_Summer22";
     } else if (_isRun22EE) {
         tauYear  = "2022_postEE";
         btagYear = "2022_Summer22EE";
+        btagEra  = "2022_Summer22EE";
     } else if (_isRun23) {
         tauYear  = "2023_preBPix";
         btagYear = "2023_Summer23";
+        btagEra  = "2023_Summer23";
     } else if (_isRun23BPix) {
         tauYear  = "2023_postBPix";
         btagYear = "2023_Summer23BPix";
+        btagEra  = "2023_Summer23BPix";
     } else if (_isRun24){
         tauYear  = "2024";
         // TODO: Run3Summer24 UParTAK4 shape SF not yet available.
         // Temporarily use 2023BPix particleNet_shape correction.
         btagYear = "2023_Summer23BPix";
+        btagEra  = "2024_Summer24";
         // btagMap stays "particleNet_shape" (default from config)
     }
     // NanoAODv12 btag JSONs do not have "UParTAK4_light".
     // Use "particleNet_shape" for all eras (exists in all v12 JSONs and in the
     // 2023BPix JSON used as the 2024 temporary fallback).
     btagMapLight = "particleNet_shape";
+    float btagcut = s_btagcut_map.count(btagEra) ? s_btagcut_map[btagEra] : 0.1272f;
 
     // MET unclustered energy variation:
     // NanoAOD pre-computes PuppiMET_ptUnclusteredUp/Down and PuppiMET_phiUnclusteredUp/Down.
@@ -368,18 +378,30 @@ void TopLFVAnalyzer::defineKinematicVars() {
     const std::string bTagColCvB = _isRun24 ? "Jet_btagUParTAK4CvB" : "Jet_btagPNetCvB";
     const std::string bTagColCvL = _isRun24 ? "Jet_btagUParTAK4CvL" : "Jet_btagPNetCvL";
 
-    // Read btag medium WP from config (static cache; defineObjectSelection has already loaded it)
-    static float _btagcutKin = -1.f;
-    if (_btagcutKin < 0.f) {
+    // Read btag medium WP from config per era
+    std::string btagEra = "";
+    if (_isRun22) btagEra = "2022_Summer22";
+    else if (_isRun22EE) btagEra = "2022_Summer22EE";
+    else if (_isRun23) btagEra = "2023_Summer23";
+    else if (_isRun23BPix) btagEra = "2023_Summer23BPix";
+    else if (_isRun24) btagEra = "2024_Summer24";
+
+    static std::map<std::string, float> s_btagcut_kin_map;
+    static bool btagkin_loaded = false;
+    if (!btagkin_loaded) {
         const std::string cfgPath = "data/config/analysis_config.json";
         std::ifstream fin(cfgPath);
         if (fin.good()) {
             Json::Value root; fin >> root;
-            _btagcutKin = root["btag"]["wp_medium"].asFloat();
-        } else {
-            _btagcutKin = 0.1272f;
+            if (root["btag"]["wp_medium"].isObject()) {
+                for (auto const& id : root["btag"]["wp_medium"].getMemberNames()) {
+                    s_btagcut_kin_map[id] = root["btag"]["wp_medium"][id].asFloat();
+                }
+            }
         }
+        btagkin_loaded = true;
     }
+    float _btagcutKin = s_btagcut_kin_map.count(btagEra) ? s_btagcut_kin_map[btagEra] : 0.1272f;
     const std::string bWP = std::to_string(_btagcutKin);
 
     // Safe boolean index helper: "(col.size()>n) ? (col[n] op thr) : false"
