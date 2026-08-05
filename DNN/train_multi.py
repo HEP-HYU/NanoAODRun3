@@ -114,6 +114,7 @@ for eny,year in enumerate(years):
    df_bkg1_tt["year"] = eny
    df_bkg2_tt["year"] = eny
    n_bkg2 = len(df_bkg2_tt)
+   print ("n_bkg1 (ll): ", len(df_bkg1_tt), " n_bkg2 (lj): ", len(df_bkg2_tt))
    df_bkg1_tt = df_bkg1_tt.sample(n = 7*n_bkg2)
    df_bkg_tt_list.append(df_bkg1_tt)
    df_bkg_tt_list.append(df_bkg2_tt)
@@ -218,7 +219,7 @@ with open(os.path.join(train_outdir, 'scaler.pkl'), 'wb') as f:
 patience_epoch = 30
 # Early Stopping with Validation Loss for Best Model
 es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=patience_epoch)
-mc = ModelCheckpoint(train_outdir+'/best_model.h5', monitor='val_loss', mode='min', save_best_only=True)
+mc = ModelCheckpoint(train_outdir+'/best_model.keras', monitor='val_loss', mode='min', save_best_only=True)
 print("xtrain shape:",x_train.shape)
 ###################################################
 #                      Model                      #

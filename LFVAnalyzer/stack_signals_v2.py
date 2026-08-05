@@ -1,4 +1,4 @@
-from ROOT import *
+from ROOT import TFile
 import ROOT
 import sys, os
 from subprocess import check_call
@@ -13,12 +13,15 @@ parser.add_argument('-I', '--input', dest='input', type=str, default="test")
 parser.add_argument("--postfix", dest="postfix", type=str, default="", help="Add postfix to output here, to have rebinning for histograms")
 args = parser.parse_args()
 input = args.input
+channel = "electron"
+if "muon" in args.input: channel = "muon"
 
 lumi_dict = {'2016pre': 19502, '2016post': 16812, '2017': 41480, '2018':59832}#16: 36314, run2:137625
+lumi_dict = {'2022': 7980.4, '2022EE': 26671.7, '2023': 17794.0, '2023BPix': 9451.0, '2024':109000.0}
 file_names = collections.OrderedDict()
 
-if not os.path.exists(os.path.join(input, 'Run2' + args.postfix)):
-    try: os.makedirs(os.path.join(input, 'Run2' + args.postfix))
+if not os.path.exists(os.path.join(input, 'Run3' + args.postfix)):
+    try: os.makedirs(os.path.join(input, 'Run3' + args.postfix))
     except: pass
 
 def store_file(it):
@@ -37,7 +40,7 @@ def store_file(it):
 
         ntmp = ftmp.Get("hcounter").GetBinContent(2)
 
-        dest_name = os.path.join(input, 'Run2' + args.postfix, f)
+        dest_name = os.path.join(input, 'Run3' + args.postfix, f)
         print("destination :", dest_name)
         dest = TFile.Open(dest_name, 'RECREATE')
         dest.cd()
@@ -51,7 +54,7 @@ def store_file(it):
             if "hcounter" in hist:
                 htmp.Write()
             else:
-                htmp.Scale((lumi_dict[path.split('/')[-1].split('_')[0]]/137625.)/ntmp)
+                htmp.Scale((lumi_dict[path.split('/')[-1].split('_')[1]]/170897.1)/ntmp)
                 dest.cd()
                 htmp.Write()
         dest.Write()
@@ -60,11 +63,12 @@ def store_file(it):
 
 if __name__ == '__main__':
 
-    for era in ['2016pre', '2016post', '2017', '2018']:
-        dir_path = os.path.join(input, era+'_postprocess' + args.postfix)
+    for era in ['2022', '2022EE', '2023', '2023BPix', '2024']:
+        dir_path = os.path.join(input, "v12_"+era+'_postprocess' + args.postfix)
+        if era == "2024": dir_path = os.path.join(input, "v15_"+era+'_postprocess' + args.postfix)
         dirs = os.listdir(dir_path)
         print("POST process path: " , dir_path)
-        dirs[:] = [item.replace('.root', '_' + era + '.root') for item in dirs if any(i in item for i in ['LFV']) if '__' not in item]
+        dirs[:] = [item.replace('.root', "_"+era+'.root') for item in dirs if any(i in item for i in ['LFV']) if '__' not in item]
         print("EDITED DIRS: " , dirs)
         file_names[dir_path] = dirs
 
@@ -73,11 +77,18 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
 
-    chs = ['ST_LFV_TCMuTau_Scalar', 'ST_LFV_TCMuTau_Tensor', 'ST_LFV_TCMuTau_Vector',
-           'ST_LFV_TUMuTau_Scalar', 'ST_LFV_TUMuTau_Tensor', 'ST_LFV_TUMuTau_Vector',
-           'TT_LFV_TCMuTau_Scalar', 'TT_LFV_TCMuTau_Tensor', 'TT_LFV_TCMuTau_Vector',
-           'TT_LFV_TUMuTau_Scalar', 'TT_LFV_TUMuTau_Tensor', 'TT_LFV_TUMuTau_Vector']
+    chs = []
+    if channel == "muon":
+        chs = ['TCMuTau-LFV-Scalar', 'TCMuTau-LFV-Tensor', 'TCMuTau-LFV-Vector',
+               'TUMuTau-LFV-Scalar', 'TUMuTau-LFV-Tensor', 'TUMuTau-LFV-Vector',
+               'TTtoCMuTau-LFV-Scalar', 'TTtoCMuTau-LFV-Tensor', 'TTtoCMuTau-LFV-Vector',
+               'TTtoUMuTau-LFV-Scalar', 'TTtoUMuTau-LFV-Tensor', 'TTtoUMuTau-LFV-Vector']
+    else:
+        chs = ['TCETau-LFV-Scalar', 'TCETau-LFV-Tensor', 'TCETau-LFV-Vector',
+               'TUETau-LFV-Scalar', 'TUETau-LFV-Tensor', 'TUETau-LFV-Vector',
+               'TTtoCETau-LFV-Scalar', 'TTtoCETau-LFV-Tensor', 'TTtoCETau-LFV-Vector',
+               'TTtoUETau-LFV-Scalar', 'TTtoUETau-LFV-Tensor', 'TTtoUETau-LFV-Vector']
 
     for ch in chs:
-        print(os.path.join(input, 'Run2' + args.postfix, 'hist_' + ch + '_201*.root'))
-        check_call(['hadd','-f', os.path.join(input, 'Run2' + args.postfix, 'hist_' + ch + '.root')] +  glob.glob(os.path.join(input, 'Run2' + args.postfix, 'hist_' + ch + '_201*.root')))
+        print(os.path.join(input, 'Run3' + args.postfix, 'hist_' + ch + '.root'))
+        check_call(['hadd','-f', os.path.join(input, 'Run3' + args.postfix, 'hist_' + ch + '.root')] +  glob.glob(os.path.join(input, 'Run3' + args.postfix, 'hist_' + ch + '_202*.root')))

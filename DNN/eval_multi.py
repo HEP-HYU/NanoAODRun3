@@ -119,7 +119,7 @@ def run(inputs):
     hist_nevents_S5_dict = {}
     syst_extend = []
 
-    if not "Muon" in input_file :
+    if (not "Muon" in input_file) and (not "egamma" in input_file.lower()):
         infile_forS = uproot.open(input_file.replace("_FF", ""))
         h_nevents_S4_nobtag = infile_forS["h_nevents_S4_nobtag"]  ### get it from removed FF 
         h_nevents_S4 = infile_forS["h_nevents_S4"]
@@ -333,7 +333,7 @@ def run(inputs):
         #outf["h_dnn_entries_bkg_S5"] = dnnhist_entries_bkg
         outf["hcounter"] = hcounter
 
-        if not "Muon" in input_file:
+        if (not "Muon" in input_file) and (not "egamma" in input_file.lower()):
             outf["h_nevents_S4_nobtag"] = h_nevents_S4_nobtag
             outf["h_nevents_S4"] = h_nevents_S4
             outf["h_nevents_S2_nobtag"] = h_nevents_S2_nobtag

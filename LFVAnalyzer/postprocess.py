@@ -1,6 +1,7 @@
 import os, sys, glob, re
 import ROOT
-from ROOT import *
+from ROOT import TFile
+from math import sqrt
 import numpy as np
 import subprocess
 import optparse
@@ -10,7 +11,7 @@ import re
 from optparse import OptionParser
 parser = OptionParser(usage="%prog [options]")
 parser.add_option("-I", "--infile", dest="infile", type="string", default="", help="Input file name")
-parser.add_option("-Y", "--year", dest="year", type="string", default="", help="Select v2022, v2022EE, v2023, or v2023_BPix  for years")
+parser.add_option("-Y", "--year", dest="year", type="string", default="", help="Select 2022, 2022EE, 2023, 2023BPix, or 2024  for years")
 parser.add_option("--postfix", dest="postfix", type="string", default="", help="Add postfix to output here, to have rebinning for histograms")
 parser.add_option("-F", "--forceHadd", dest="forceHadd", action="store_true", default=False, help="Force hadd split files")
 parser.add_option("-N", "--noHadd", dest="noHadd", action="store_true", default=False, help="Skip hadd split files")
@@ -23,6 +24,7 @@ forceHadd = options.forceHadd
 # starting bin -> 0.01, trick for logX
 #rebin_arr = array.array('d', [0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0, 2.0, 5.0, 10.0, 30, 100.0])
 rebin_arr = array.array('d', [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.12, 0.16, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.5, 2.0, 5.0, 10.0, 30, 100.0])
+rebin_arr = array.array('d', [0.01, 1.0, 2.0, 5.0, 10.0, 30, 100.0])
 rebin_pt = array.array('d', [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 600])
 
 # Set to pre-approval binning if postfix is set, for histogramming
@@ -30,7 +32,7 @@ if len(options.postfix) > 0:
     rebin_arr = array.array('d', [0.01, 1.0, 2.0, 5.0, 10.0, 30, 100.0])
 
 #if year not in ['2016pre', '2016post', '2017', '2018']:
-if year not in ['v2022', 'v2022EE', 'v2023', 'v2023_BPix']:
+if year not in ['v12_2022', 'v12_2022EE', 'v12_2023', 'v12_2023BPix', 'v15_2024']:
     print('Wrong year, check again')
     sys.exit()
 if forceHadd: print("Hadd all split MC!!")
@@ -342,7 +344,9 @@ for fname in file_list:
     for hname in hlists:
         if "__" not in hname: nominal_list.append(hname)
         if run_on_syst: continue
+        print ("hname: ", hname)
         h = infile.Get(hname)
+        print ("h: ", h)
         if 'dnn_pred' in hname:
             h.SetBinContent(2, h.GetBinContent(1) + h.GetBinContent(2))
             h.SetBinError(2, sqrt(pow(h.GetBinError(1), 2) + pow(h.GetBinError(2), 2)))
@@ -354,14 +358,15 @@ for fname in file_list:
             h1.SetName(hname.replace(yield_name, yield_name + '_yield'))
             if "__" not in h1.GetName():
                 nominal_list.append(h1.GetName())
-            if '201' not in fname or 'jes' in fname: h1.Scale(get_bSFratio(bSFfile, hname))
+            #if ('Muon' not in fname and 'egamma' not in fname.lower()) or 'jes' in fname: h1.Scale(get_bSFratio(bSFfile, hname))
             h1.Write()
         if any(i in hname for i in ['event', 'counter', '_nobtag', 'LHEPdfWeightSum', 'PSWeightSum', 'ScaleWeightSum']): pass
         elif any(i in hname for i in ['__mescale', '__renscale', '__facscale', '__isr', '__fsr', '__pdfalphas']): continue
-        elif '201' in fname and 'jes' not in fname: pass
+        elif ('Muon' in fname or 'egamma' in fname.lower()) and 'jes' not in fname: pass
         else:
-            ratio = get_bSFratio(bSFfile, hname)
-            h.Scale(ratio)
+            print ("bSFfile: ", bSFfile, hname)
+            #ratio = get_bSFratio(bSFfile, hname)
+            #h.Scale(ratio)
         h.Write()
 
     hcounter = infile.Get('hcounter')
@@ -370,35 +375,35 @@ for fname in file_list:
     LHEPdfWeightSum = infile.Get('LHEPdfWeightSum')
     nominal_list = list(set(nominal_list))
 
-    for hname2 in nominal_list:
+    #for hname2 in nominal_list:
 
-      if isMEScale:
-          write_envelope(hname2, infile, bSFfile, "mescale", 2, hcounter, ScaleWeightSum, do_renorm)
-          if "dnn_pred" in hname2:
-              write_envelope(hname2, infile, bSFfile, "mescalemu1ta1", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "mescalemu1ta2", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "mescalemu2ta1", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "mescalemu2ta2", 2, hcounter, ScaleWeightSum, do_renorm)
-      if isRenScale:
-          write_envelope(hname2, infile, bSFfile, "renscale", 2, hcounter, ScaleWeightSum, do_renorm)
-          if "dnn_pred" in hname2:
-              write_envelope(hname2, infile, bSFfile, "renscalemu1ta1", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "renscalemu1ta2", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "renscalemu2ta1", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "renscalemu2ta2", 2, hcounter, ScaleWeightSum, do_renorm)
-      if isFacScale:
-          write_envelope(hname2, infile, bSFfile, "facscale", 2, hcounter, ScaleWeightSum, do_renorm)
-          if "dnn_pred" in hname2:
-              write_envelope(hname2, infile, bSFfile, "facscalemu1ta1", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "facscalemu1ta2", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "facscalemu2ta1", 2, hcounter, ScaleWeightSum, do_renorm)
-              write_envelope(hname2, infile, bSFfile, "facscalemu2ta2", 2, hcounter, ScaleWeightSum, do_renorm)
-      if isISR: write_envelope(hname2, infile, bSFfile, "isr", 2, hcounter, PSWeightSum, do_renorm)
-      if isFSR: write_envelope(hname2, infile, bSFfile, "fsr", 2, hcounter, PSWeightSum, do_renorm)
-      #For PDF: we take 101-102 only for control plots from ttbar
-      #if isPDF: write_envelope(hname2, infile, bSFfile, "pdf", 101, hcounter, LHEPdfWeightSum, do_renorm) #sig: 101 / bkg: 101 + 2 (as)
-      if isPDFas: write_envelope(hname2, infile, bSFfile, "pdfalphas", 2, hcounter, LHEPdfWeightSum, do_renorm)
-      if run_on_syst: rescale(hname2, infile, bSFfile, hcounter, hcounter_nom) #placeholder for hdamp and tune
+    #  if isMEScale:
+    #      write_envelope(hname2, infile, bSFfile, "mescale", 2, hcounter, ScaleWeightSum, do_renorm)
+    #      if "dnn_pred" in hname2:
+    #          write_envelope(hname2, infile, bSFfile, "mescalemu1ta1", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "mescalemu1ta2", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "mescalemu2ta1", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "mescalemu2ta2", 2, hcounter, ScaleWeightSum, do_renorm)
+    #  if isRenScale:
+    #      write_envelope(hname2, infile, bSFfile, "renscale", 2, hcounter, ScaleWeightSum, do_renorm)
+    #      if "dnn_pred" in hname2:
+    #          write_envelope(hname2, infile, bSFfile, "renscalemu1ta1", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "renscalemu1ta2", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "renscalemu2ta1", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "renscalemu2ta2", 2, hcounter, ScaleWeightSum, do_renorm)
+    #  if isFacScale:
+    #      write_envelope(hname2, infile, bSFfile, "facscale", 2, hcounter, ScaleWeightSum, do_renorm)
+    #      if "dnn_pred" in hname2:
+    #          write_envelope(hname2, infile, bSFfile, "facscalemu1ta1", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "facscalemu1ta2", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "facscalemu2ta1", 2, hcounter, ScaleWeightSum, do_renorm)
+    #          write_envelope(hname2, infile, bSFfile, "facscalemu2ta2", 2, hcounter, ScaleWeightSum, do_renorm)
+    #  if isISR: write_envelope(hname2, infile, bSFfile, "isr", 2, hcounter, PSWeightSum, do_renorm)
+    #  if isFSR: write_envelope(hname2, infile, bSFfile, "fsr", 2, hcounter, PSWeightSum, do_renorm)
+    #  #For PDF: we take 101-102 only for control plots from ttbar
+    #  #if isPDF: write_envelope(hname2, infile, bSFfile, "pdf", 101, hcounter, LHEPdfWeightSum, do_renorm) #sig: 101 / bkg: 101 + 2 (as)
+    #  if isPDFas: write_envelope(hname2, infile, bSFfile, "pdfalphas", 2, hcounter, LHEPdfWeightSum, do_renorm)
+    #  if run_on_syst: rescale(hname2, infile, bSFfile, hcounter, hcounter_nom) #placeholder for hdamp and tune
 
 
     infile.Close()

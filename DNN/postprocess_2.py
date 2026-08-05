@@ -1,7 +1,7 @@
 import os
 import sys
 import ROOT
-from ROOT import *
+from ROOT import TFile
 import numpy as np
 import optparse
 from optparse import OptionParser
@@ -17,10 +17,11 @@ base_path = options.input
 def collect_systhists(inpath, outfile, fname, year):
     fileList_wt_syst = [i for i in os.listdir(inpath) if fname in i]
     for sysfile in fileList_wt_syst:
-        if ('SingleMuon' in sysfile or 'Muon' in sysfile) and sysfile not in ['hist_SingleMuon.root', 'hist_Muon.root']: continue
+        if ('SingleMuon' in sysfile or 'Muon' in sysfile) and sysfile not in ['hist_Muon.root']: continue
+        if ('Egamma' in sysfile or 'EGamma' in sysfile) and sysfile not in ['hist_Egamma.root']: continue
         tmpf = TFile.Open(os.path.join(inpath, sysfile), 'READ')
         hlists = [ h.GetName() for h in tmpf.GetListOfKeys() \
-                   if any(i in h.GetName() for i in ['dnn_pred_S5', 'counter', 'muon1_pt', 'tau1_pt', 'jet1_pt', 'jet2_pt', 'mutau_mass', 'mutau_dr']) ]
+                   if any(i in h.GetName() for i in ['dnn_pred_S5', 'counter', 'muon1_pt', 'tau1_pt', 'jet1_pt', 'jet2_pt', 'leptau_mass', 'leptau_dr']) ]
         for histname in hlists:
             tmpf.cd()
             tmphist = tmpf.Get(histname)
@@ -29,7 +30,7 @@ def collect_systhists(inpath, outfile, fname, year):
             if not "__" in sysfile:
                 tmphist.Write()
             if "__" in sysfile:
-                syst = sysfile.split("__")[1].split(".root")[0] 
+                syst = sysfile.split("__")[1].split(".root")[0]
                 tmphist.Write(histname+"__"+syst)
         tmpf.Close()
     return

@@ -1,4 +1,4 @@
-from ROOT import *
+from ROOT import TFile
 import ROOT
 import sys, os
 from subprocess import check_call
@@ -10,10 +10,13 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-I', '--input', dest='input', type=str, default="test")
+parser.add_argument('-C', '--channel', dest='channel', type=str, default="")
 args = parser.parse_args()
 input = args.input
+channel = args.channel
 
 lumi_dict = {'2016pre': 19502, '2016post': 16812, '2017': 41480, '2018':59832}#16: 36314, run2:137625
+lumi_dict = {'2022': 7980.4, '2022EE': 26671.7, '2023': 17794.0, '2023BPix': 9451.0, '2024':109000.0}
 file_names = collections.OrderedDict()
 
 syst = ["","jesAbsoluteup","jesAbsolutedown", "jesAbsolute_ERAup", "jesAbsolute_ERAdown",
@@ -33,8 +36,8 @@ for sy in syst:
 
 syst2 = list(set(syst2))
 
-if not os.path.exists(input + "/Run2"):
-    try: os.makedirs(input + "/Run2")
+if not os.path.exists(input + "/Run3"):
+    try: os.makedirs(input + "/Run3")
     except: pass
 
 def store_file(it):
@@ -51,7 +54,7 @@ def store_file(it):
 
         ntmp = ftmp.Get("hcounter").GetBinContent(2)
 
-        dest_name = path.split('/')[0] + '/Run2/' + f
+        dest_name = path.split('/')[0] + '/Run3/' + f
         dest = TFile.Open(dest_name, 'RECREATE')
 
         print('Writing scaled histogram to ' + dest_name)
@@ -71,7 +74,7 @@ def store_file(it):
 
 if __name__ == '__main__':
 
-    for era in ['2016pre', '2016post', '2017', '2018']:
+    for era in ['v12_2022', 'v12_2022EE', 'v12_2023', 'v12_2023BPix', 'v15_2024']:
         dir_path = os.path.join(input, era+'_postprocess')
         dirs = os.listdir(dir_path)
         print("POST process path: " , dir_path)
@@ -84,12 +87,19 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
 
-    chs = ['ST_LFV_TCMuTau_Scalar', 'ST_LFV_TCMuTau_Tensor', 'ST_LFV_TCMuTau_Vector',
-           'ST_LFV_TUMuTau_Scalar', 'ST_LFV_TUMuTau_Tensor', 'ST_LFV_TUMuTau_Vector',
-           'TT_LFV_TCMuTau_Scalar', 'TT_LFV_TCMuTau_Tensor', 'TT_LFV_TCMuTau_Vector',
-           'TT_LFV_TUMuTau_Scalar', 'TT_LFV_TUMuTau_Tensor', 'TT_LFV_TUMuTau_Vector']
+    chs = []
+    if channel == "muon":
+        chs = ['TCMuTau-LFV-Scalar', 'TCMuTau-LFV-Tensor', 'TCMuTau-LFV-Vector',
+               'TUMuTau-LFV-Scalar', 'TUMuTau-LFV-Tensor', 'TUMuTau-LFV-Vector',
+               'TTtoCMuTau-LFV-Scalar', 'TTtoCMuTau-LFV-Tensor', 'TTtoCMuTau-LFV-Vector',
+               'TTtoUMuTau-LFV-Scalar', 'TTtoUMuTau-LFV-Tensor', 'TTtoUMuTau-LFV-Vector']
+    else:
+        chs = ['TCETau-LFV-Scalar', 'TCETau-LFV-Tensor', 'TCETau-LFV-Vector',
+               'TUETau-LFV-Scalar', 'TUETau-LFV-Tensor', 'TUETau-LFV-Vector',
+               'TTtoCETau-LFV-Scalar', 'TTtoCETau-LFV-Tensor', 'TTtoCETau-LFV-Vector',
+               'TTtoUETau-LFV-Scalar', 'TTtoUETau-LFV-Tensor', 'TTtoUETau-LFV-Vector']
 
     for ch in chs:
         for syst in syst2:
-            print(input + '/Run2/hist_' + ch + syst + '_201*.root')
-            check_call(['hadd','-f', input + '/Run2/hist_' + ch + syst + '.root'] +  glob.glob(input + '/Run2/hist_' + ch + syst + '_201*.root'))
+            print(input + '/Run3/hist_' + ch + syst + '_202*.root')
+            check_call(['hadd','-f', input + '/Run3/hist_' + ch + syst + '.root'] +  glob.glob(input + '/Run3/hist_' + ch + syst + '_202*.root'))
