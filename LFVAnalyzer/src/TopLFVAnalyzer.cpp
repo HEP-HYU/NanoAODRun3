@@ -11,6 +11,17 @@
 #include <algorithm>
 #include <fstream>
 
+namespace {
+    // Safe-index helper: "(col.size()>n) ? float(col[n]) : fallback"
+    // Prevents UB / heap corruption when the vector is empty at early cut levels.
+    inline std::string si(const std::string& c, int n, const std::string& fb="-1.f") {
+        return "(" + c + ".size()>" + std::to_string(n) + ") ? float(" + c + "[" + std::to_string(n) + "]) : " + fb;
+    }
+    inline std::string sii(const std::string& c, int n, const std::string& fb="-1") {
+        return "(" + c + ".size()>" + std::to_string(n) + ") ? int(" + c + "[" + std::to_string(n) + "]) : " + fb;
+    }
+}
+
 TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads)
 :NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads), _applytauFF(applytauFF)
 {
@@ -333,15 +344,6 @@ void TopLFVAnalyzer::defineKinematicVars() {
     // unitGenWeightFF: generator weight including the tau fake factor.
     // Note: UFO_reweight was removed — no Run3 UFO reweighting prescription.
     addVar({"unitGenWeightFF", "unitGenWeight * tauFF", ""});
-
-    // Safe-index helper: "(col.size()>n) ? float(col[n]) : fallback"
-    // Prevents UB / heap corruption when the vector is empty at early cut levels.
-    auto si  = [](const std::string& c, int n, const std::string& fb="-1.f") -> std::string {
-        return "(" + c + ".size()>" + std::to_string(n) + ") ? float(" + c + "[" + std::to_string(n) + "]) : " + fb;
-    };
-    auto sii = [](const std::string& c, int n, const std::string& fb="-1") -> std::string {
-        return "(" + c + ".size()>" + std::to_string(n) + ") ? int(" + c + "[" + std::to_string(n) + "]) : " + fb;
-    };
 
     if (_isMuonCh) {
         addVar({"Muon1_pt",     si("Muon_pt",     0),        ""});
