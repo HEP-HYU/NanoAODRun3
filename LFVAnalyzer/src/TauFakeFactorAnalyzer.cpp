@@ -51,6 +51,8 @@ void TauFakeFactorAnalyzer::defineCuts() {
 
 void TauFakeFactorAnalyzer::defineMoreVars() {
 
+    defineBTagNormalization();
+
     addVar({"Tau1_pt", "Tau_pt[0]", ""});
     addVar({"Tau1_pt_gen", "(Tau_pt_gen.size()>0) ? Tau_pt_gen[0] : -1", ""});
     addVar({"Tau1_charge", "Tau_charge[0]", ""});
