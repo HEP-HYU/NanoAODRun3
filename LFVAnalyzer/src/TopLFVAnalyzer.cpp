@@ -800,7 +800,6 @@ void TopLFVAnalyzer::bookHists() {
                                               "__tauidjetSystTESdm1"+tauYear+"up", "__tauidjetSystTESdm1"+tauYear+"down",
                                               "__tauidjetSystTESdm10"+tauYear+"up", "__tauidjetSystTESdm10"+tauYear+"down",
                                               "__tauidjetSystTESdm11"+tauYear+"up", "__tauidjetSystTESdm11"+tauYear+"down",
-                                              "__tauidjetHighptstatup", "__tauidjetHighptstatdown",
                                               "__tauidjetHighptstat_bin1up", "__tauidjetHighptstat_bin1down",
                                               "__tauidjetHighptstat_bin2up", "__tauidjetHighptstat_bin2down",
                                               "__tauidjetHighptsystup", "__tauidjetHighptsystdown",

@@ -51,6 +51,12 @@ void TauFakeFactorAnalyzer::defineCuts() {
 
 void TauFakeFactorAnalyzer::defineMoreVars() {
 
+    addVar({"Tau1_pt", "Tau_pt[0]", ""});
+    addVar({"Tau1_pt_gen", "(Tau_pt_gen.size()>0) ? Tau_pt_gen[0] : -1", ""});
+    addVar({"Tau1_charge", "Tau_charge[0]", ""});
+    addVar({"Tau1_decayMode", "Tau_decayMode[0]", ""});
+    addVar({"Tau1_decayMode_gen", "(Tau_pt_gen.size()>0) ? Tau_decayMode[0] : -1", ""});
+
     if (_isMuonCh) {
         addVar({"Muon1_charge", "Muon_charge[0]", ""});
         addVar({"mutau_charge", "Muon1_charge * Tau1_charge", ""});
@@ -60,12 +66,6 @@ void TauFakeFactorAnalyzer::defineMoreVars() {
         addVar({"etau_charge", "Electron1_charge * Tau1_charge", ""});
         addVartoStore("Electron1.*");
     }
-
-    addVar({"Tau1_pt", "Tau_pt[0]", ""});
-    addVar({"Tau1_pt_gen", "(Tau_pt_gen.size()>0) ? Tau_pt_gen[0] : -1", ""});
-    addVar({"Tau1_charge", "Tau_charge[0]", ""});
-    addVar({"Tau1_decayMode", "Tau_decayMode[0]", ""});
-    addVar({"Tau1_decayMode_gen", "(Tau_pt_gen.size()>0) ? Tau_decayMode[0] : -1", ""});
 
     if (_mode == "lss" or _mode == "los") {
         addVar({"Tau1_pt_loose", "Tau_pt_loose[0]", ""});
