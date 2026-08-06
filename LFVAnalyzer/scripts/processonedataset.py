@@ -112,17 +112,25 @@ if __name__=='__main__':
             PSWeightSum = intf.Get("PSWeightSum")
             ScaleWeightSum = intf.Get("ScaleWeightSum")
 
-            if LHEPdfWeightSum != None:
-                if LHEPdfWeightSumAll == None:
+            if LHEPdfWeightSum is not None:
+                if LHEPdfWeightSumAll is None:
                     LHEPdfWeightSumAll = LHEPdfWeightSum.Clone()
                     LHEPdfWeightSumAll.SetDirectory(0)
+                else:
+                    LHEPdfWeightSumAll.Add(LHEPdfWeightSum)
+
+            if PSWeightSum is not None:
+                if PSWeightSumAll is None:
                     PSWeightSumAll = PSWeightSum.Clone()
                     PSWeightSumAll.SetDirectory(0)
+                else:
+                    PSWeightSumAll.Add(PSWeightSum)
+
+            if ScaleWeightSum is not None:
+                if ScaleWeightSumAll is None:
                     ScaleWeightSumAll = ScaleWeightSum.Clone()
                     ScaleWeightSumAll.SetDirectory(0)
                 else:
-                    LHEPdfWeightSumAll.Add(LHEPdfWeightSum)
-                    PSWeightSumAll.Add(PSWeightSum)
                     ScaleWeightSumAll.Add(ScaleWeightSum)
         intf.Close()
 
@@ -135,12 +143,12 @@ if __name__=='__main__':
     else:
         print("counter histogram not found")
 
-    if LHEPdfWeightSumAll != None:
+    if LHEPdfWeightSumAll is not None or PSWeightSumAll is not None or ScaleWeightSumAll is not None:
         print("Updating with theory weight sum histograms")
         outf = ROOT.TFile(outputroot, "UPDATE")
-        LHEPdfWeightSumAll.Write()
-        PSWeightSumAll.Write()
-        ScaleWeightSumAll.Write()
+        if LHEPdfWeightSumAll is not None: LHEPdfWeightSumAll.Write()
+        if PSWeightSumAll is not None: PSWeightSumAll.Write()
+        if ScaleWeightSumAll is not None: ScaleWeightSumAll.Write()
         outf.Write("", ROOT.TObject.kOverwrite)
         outf.Close()
     else:

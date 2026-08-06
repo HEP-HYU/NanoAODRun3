@@ -664,39 +664,38 @@ void TopLFVAnalyzer::defineWeightVars() {
             if (_syst == "theory") {
                 // ME: [0] is renscfact=0.5d0 facscfact=0.5d0 ; [1] is renscfact=0.5d0 facscfact=1d0 ; [3] is renscfact=1d0 facscfact=0.5d0 ;
                 //     [5] is renscfact=1d0 facscfact=2d0 ; [7] is renscfact=2d0 facscfact=1d0 ; [8] is renscfact=2d0 facscfact=2d0
-                addVar({"eventWeight__mescaledown", "eventWeight * LHEScaleWeight[0]"});
-                addVar({"eventWeight__renscaledown", "eventWeight * LHEScaleWeight[1]"});
-                addVar({"eventWeight__facscaledown", "eventWeight * LHEScaleWeight[3]"});
-                addVar({"eventWeight__facscaleup", "eventWeight * LHEScaleWeight[5]"});
-                addVar({"eventWeight__renscaleup", "eventWeight * LHEScaleWeight[7]"});
-                addVar({"eventWeight__mescaleup", "eventWeight * LHEScaleWeight[8]"});
+                addVar({"eventWeight__mescaledown", "eventWeight * " + si("LHEScaleWeight", 0, "1.f")});
+                addVar({"eventWeight__renscaledown", "eventWeight * " + si("LHEScaleWeight", 1, "1.f")});
+                addVar({"eventWeight__facscaledown", "eventWeight * " + si("LHEScaleWeight", 3, "1.f")});
+                addVar({"eventWeight__facscaleup",   "eventWeight * " + si("LHEScaleWeight", 5, "1.f")});
+                addVar({"eventWeight__renscaleup",   "eventWeight * " + si("LHEScaleWeight", 7, "1.f")});
+                addVar({"eventWeight__mescaleup",     "eventWeight * " + si("LHEScaleWeight", 8, "1.f")});
                 // notau
-                addVar({"eventWeight_notau__mescaledown", "eventWeight_notau * LHEScaleWeight[0]"});
-                addVar({"eventWeight_notau__renscaledown", "eventWeight_notau * LHEScaleWeight[1]"});
-                addVar({"eventWeight_notau__facscaledown", "eventWeight_notau * LHEScaleWeight[3]"});
-                addVar({"eventWeight_notau__facscaleup", "eventWeight_notau * LHEScaleWeight[5]"});
-                addVar({"eventWeight_notau__renscaleup", "eventWeight_notau * LHEScaleWeight[7]"});
-                addVar({"eventWeight_notau__mescaleup", "eventWeight_notau * LHEScaleWeight[8]"});
+                addVar({"eventWeight_notau__mescaledown", "eventWeight_notau * " + si("LHEScaleWeight", 0, "1.f")});
+                addVar({"eventWeight_notau__renscaledown", "eventWeight_notau * " + si("LHEScaleWeight", 1, "1.f")});
+                addVar({"eventWeight_notau__facscaledown", "eventWeight_notau * " + si("LHEScaleWeight", 3, "1.f")});
+                addVar({"eventWeight_notau__facscaleup",   "eventWeight_notau * " + si("LHEScaleWeight", 5, "1.f")});
+                addVar({"eventWeight_notau__renscaleup",   "eventWeight_notau * " + si("LHEScaleWeight", 7, "1.f")});
+                addVar({"eventWeight_notau__mescaleup",     "eventWeight_notau * " + si("LHEScaleWeight", 8, "1.f")});
                 // PS: [0] is ISR=2 FSR=1; [1] is ISR=1 FSR=2; [2] is ISR=0.5 FSR=1; [3] is ISR=1 FSR=0.5;
-                addVar({"eventWeight__isrup", "eventWeight * PSWeight[0]"});
-                addVar({"eventWeight__fsrup", "eventWeight * PSWeight[1]"});
-                addVar({"eventWeight__isrdown", "eventWeight * PSWeight[2]"});
-                addVar({"eventWeight__fsrdown", "eventWeight * PSWeight[3]"});
+                addVar({"eventWeight__isrup",   "eventWeight * " + si("PSWeight", 0, "1.f")});
+                addVar({"eventWeight__fsrup",   "eventWeight * " + si("PSWeight", 1, "1.f")});
+                addVar({"eventWeight__isrdown", "eventWeight * " + si("PSWeight", 2, "1.f")});
+                addVar({"eventWeight__fsrdown", "eventWeight * " + si("PSWeight", 3, "1.f")});
                 // notau
-                addVar({"eventWeight_notau__isrup", "eventWeight_notau * PSWeight[0]"});
-                addVar({"eventWeight_notau__fsrup", "eventWeight_notau * PSWeight[1]"});
-                addVar({"eventWeight_notau__isrdown", "eventWeight_notau * PSWeight[2]"});
-                addVar({"eventWeight_notau__fsrdown", "eventWeight_notau * PSWeight[3]"});
+                addVar({"eventWeight_notau__isrup",   "eventWeight_notau * " + si("PSWeight", 0, "1.f")});
+                addVar({"eventWeight_notau__fsrup",   "eventWeight_notau * " + si("PSWeight", 1, "1.f")});
+                addVar({"eventWeight_notau__isrdown", "eventWeight_notau * " + si("PSWeight", 2, "1.f")});
+                addVar({"eventWeight_notau__fsrdown", "eventWeight_notau * " + si("PSWeight", 3, "1.f")});
                 // PDF: LHA IDs 306000 - 306102. 306000 = nominal.
-                // TODO Check if always 103 entries are stored. unless code will crash.
                 for (int i=1; i<=102; i++) {
-                    addVar({"eventWeight__pdf" + std::to_string(i), "eventWeight * LHEPdfWeight[" + std::to_string(i) + "]"});
-                    addVar({"eventWeight_notau__pdf" + std::to_string(i), "eventWeight_notau * LHEPdfWeight[" + std::to_string(i) + "]"});
+                    addVar({"eventWeight__pdf" + std::to_string(i), "eventWeight * " + si("LHEPdfWeight", i, "1.f")});
+                    addVar({"eventWeight_notau__pdf" + std::to_string(i), "eventWeight_notau * " + si("LHEPdfWeight", i, "1.f")});
                 }
-                addVar({"eventWeight__pdfalphasup", "eventWeight * LHEPdfWeight[102]"}); //approx.
-                addVar({"eventWeight__pdfalphasdown", "eventWeight * LHEPdfWeight[101]"});
-                addVar({"eventWeight_notau__pdfalphasup", "eventWeight_notau * LHEPdfWeight[102]"});
-                addVar({"eventWeight_notau__pdfalphasdown", "eventWeight_notau * LHEPdfWeight[101]"});
+                addVar({"eventWeight__pdfalphasup",     "eventWeight * " + si("LHEPdfWeight", 102, "1.f")});
+                addVar({"eventWeight__pdfalphasdown",   "eventWeight * " + si("LHEPdfWeight", 101, "1.f")});
+                addVar({"eventWeight_notau__pdfalphasup",   "eventWeight_notau * " + si("LHEPdfWeight", 102, "1.f")});
+                addVar({"eventWeight_notau__pdfalphasdown", "eventWeight_notau * " + si("LHEPdfWeight", 101, "1.f")});
             }
         }
     }

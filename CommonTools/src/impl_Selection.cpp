@@ -338,6 +338,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                     wVec.emplace_back(uncSources);
                     uncSources.clear();
                 }
+            } else {
+                wVec.emplace_back(floats(nSystVsJet, 1.0f));
             }
             return wVec;
         };
@@ -372,6 +374,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                     wVec.emplace_back(uncSources);
                     uncSources.clear();
                 }
+            } else {
+                wVec.emplace_back(floats(3, 1.0f));
             }
             return wVec;
         };
@@ -414,6 +418,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                     wVec.emplace_back(uncSources);
                     uncSources.clear();
                 }
+            } else {
+                wVec.emplace_back(floats(3, 1.0f));
             }
             return wVec;
         };
