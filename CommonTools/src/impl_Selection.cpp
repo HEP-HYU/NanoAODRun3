@@ -262,13 +262,37 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
     if (!_isData) {
         // Tau SF
         cout << "Loading Tau SF" << endl;
-        std::string tauid_vsjet = "VTight";
-        std::string tauid_vse   = "Tight";
-        std::string tauid_vsmu  = "Tight";
 
-        cout << "Tau ID WP vsJet : " << tauid_vsjet << endl;
-        cout << "Tau ID WP vsMuon : " << tauid_vsmu << endl;
-        cout << "Tau ID WP vsElectron : " << tauid_vse << endl;
+        // Convert WP integer strings ("1".."8" / "1".."4") to CorrectionLib string WPs:
+        // VSjet and VSe (1-8): 1=VVVLoose, 2=VVLoose, 3=VLoose, 4=Loose, 5=Medium, 6=Tight, 7=VTight, 8=VVTight
+        // VSmu (1-4):          1=VLoose, 2=Loose, 3=Medium, 4=Tight
+        auto wpToNameVSjetOrEle = [](const std::string& wp) -> std::string {
+            if (wp == "1" || wp == "VVVLoose") return "VVVLoose";
+            if (wp == "2" || wp == "VVLoose")  return "VVLoose";
+            if (wp == "3" || wp == "VLoose")   return "VLoose";
+            if (wp == "4" || wp == "Loose")    return "Loose";
+            if (wp == "5" || wp == "Medium")   return "Medium";
+            if (wp == "6" || wp == "Tight")    return "Tight";
+            if (wp == "7" || wp == "VTight")   return "VTight";
+            if (wp == "8" || wp == "VVTight")  return "VVTight";
+            return wp;
+        };
+
+        auto wpToNameVSmu = [](const std::string& wp) -> std::string {
+            if (wp == "1" || wp == "VLoose")  return "VLoose";
+            if (wp == "2" || wp == "Loose")   return "Loose";
+            if (wp == "3" || wp == "Medium")  return "Medium";
+            if (wp == "4" || wp == "Tight")   return "Tight";
+            return wp;
+        };
+
+        std::string tauid_vsjet = wpToNameVSjetOrEle(vsjet);
+        std::string tauid_vsmu  = wpToNameVSmu(vsmu);
+        std::string tauid_vse   = wpToNameVSjetOrEle(vse);
+
+        cout << "Tau ID SF WP vsJet : " << tauid_vsjet << endl;
+        cout << "Tau ID SF WP vsMuon : " << tauid_vsmu << endl;
+        cout << "Tau ID SF WP vsElectron : " << tauid_vse << endl;
 
         std::string tauFolder = tauYear;
         if (tauYear == "2022_preEE")       tauFolder = "2022_Summer22";

@@ -18,42 +18,17 @@
 using namespace std;
 
 void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, string tauid_vsmu, string tauid_vse) {
-    // Tau SF
-    cout << "Loading Tau SF" << endl;
+    cout << "Loading Tau Energy Scale (TES)" << endl;
 
-    cout << "Tau ID WP vsJet : " << tauid_vsjet << endl;
-    cout << "Tau ID WP vsMuon : " << tauid_vsmu << endl;
-    cout << "Tau ID WP vsElectron : " << tauid_vse << endl;
+    std::string tauFolder = tauYear;
+    if (tauYear == "2022_preEE")       tauFolder = "2022_Summer22";
+    else if (tauYear == "2022_postEE")  tauFolder = "2022_Summer22EE";
+    else if (tauYear == "2023_preBPix") tauFolder = "2023_Summer23";
+    else if (tauYear == "2023_postBPix")tauFolder = "2023_Summer23BPix";
+    else if (tauYear == "2024")        tauFolder = "2024_Summer24";
 
-
-    auto tauSFreader = loadCorrectionSet("data/TauIDSFs/tau_DeepTau2018v2p5_" + tauYear + ".json.gz");
+    auto tauSFreader = loadCorrectionSet("data/TauIDSFs/" + tauFolder + "/tau.json.gz");
     auto _testool  = tauSFreader->at("tau_energy_scale");
-    auto _tauVsJet = tauSFreader->at("DeepTau2018v2p5VSjet");
-    auto _tauVsEle = tauSFreader->at("DeepTau2018v2p5VSe");
-    auto _tauVsMu  = tauSFreader->at("DeepTau2018v2p5VSmu");
-
-    // Tau ID SF
-    cout << "Applying Tau ID SF" << endl;
-    auto tauIdSF = [this, _tauVsJet, _tauVsEle, _tauVsMu, tauid_vsjet, tauid_vse, tauid_vsmu](floats &pts, floats &etas, uchars &dms, uchars &genids)->floats{
-        floats xout;
-        xout.reserve(pts.size());
-        for (size_t i=0; i<pts.size(); i++){
-            float sf = 1.0;
-            if (int(dms[i]) != 5 && int(dms[i]) != 6) {
-                if (int(genids[i]) == 5) { //genuine tau
-                    string flag = "dm";
-                    if (pts[i] > 140.) flag = "pt";
-                    sf = _tauVsJet->evaluate({pts[i], int(dms[i]), int(genids[i]), tauid_vsjet, tauid_vse, "nom", flag});
-                } else if (int(genids[i]) == 1 || int(genids[i]) == 3){ //genuine electron
-                    sf = _tauVsEle->evaluate({etas[i], int(dms[i]), int(genids[i]), tauid_vse, "nom"});
-                } else if (int(genids[i]) == 2 || int(genids[i]) == 4) { //genuine muon
-                    sf = _tauVsMu->evaluate({etas[i], int(genids[i]), tauid_vsmu, tauid_vse, tauid_vsjet, "nom"});
-                }
-            }
-            xout.emplace_back(sf);
-        }
-        return xout;
-    };
 
     // Tau ES
     cout<<"Applying TauES on Genuine taus"<<endl;
