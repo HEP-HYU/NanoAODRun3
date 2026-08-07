@@ -12,13 +12,13 @@
 #include <fstream>
 
 namespace {
-    // Safe-index helper: "(col.size()>n) ? float(col[n]) : fallback"
-    // Prevents UB / heap corruption when the vector is empty at early cut levels.
+    // Safe-index helper: "((col.size()>n) ? float(col[n]) : fallback)"
+    // Outer parens prevent ?:-vs-* precedence warnings when used as "eventWeight * si(...)".
     inline std::string si(const std::string& c, int n, const std::string& fb="-1.f") {
-        return "(" + c + ".size()>" + std::to_string(n) + ") ? float(" + c + "[" + std::to_string(n) + "]) : " + fb;
+        return "(((" + c + ").size()>" + std::to_string(n) + ") ? float((" + c + ")[" + std::to_string(n) + "]) : " + fb + ")";
     }
     inline std::string sii(const std::string& c, int n, const std::string& fb="-1") {
-        return "(" + c + ".size()>" + std::to_string(n) + ") ? int(" + c + "[" + std::to_string(n) + "]) : " + fb;
+        return "(((" + c + ").size()>" + std::to_string(n) + ") ? int((" + c + ")[" + std::to_string(n) + "]) : " + fb + ")";
     }
 }
 

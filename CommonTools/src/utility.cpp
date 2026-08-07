@@ -151,10 +151,10 @@ floats top_reconstruction_STLFV(FourVectorVec &jets, FourVectorVec &bjets, FourV
         float X_min=-1, X_min_SMW_mass=-1, X_min_SMtop_mass=-1, X_min_SMtop_pt = -1;;
         float X_min_SMW=999999999999, X_min_SMtop=999999999999;
         float wj1_idx=-1, wj2_idx=-1;
-        const float MT = 173.95;
-        const float MW = 84.19;
-        const float WT = 17.07;
-        const float WW = 9.91;	
+        const float MT = 172.43;
+        const float MW = 82.41;
+        const float WT = 19.14;
+        const float WW = 10.02;
         
         // Jets from W-1
         for(int j1 = 0; j1<int(jets.size()); j1++){
