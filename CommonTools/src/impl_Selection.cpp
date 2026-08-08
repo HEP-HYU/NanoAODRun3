@@ -409,7 +409,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         // pre-2024: [eta, genmatch, wp, syst]                      → 4 inputs
         // 2024:     [eta, genmatch, wp, wp_VSe, wp_VSjet, syst]    → 6 inputs
         const bool isVsMuSchema6 = (_tauidSFmu->inputs().size() == 6);
-        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet, isVsMuSchema6](floats &eta, uchars &genmatch)->floatsVec {
+        std::string tauid_vsjet_for_vsmu = (tauid_vsjet == "VTight" || tauid_vsjet == "VVTight") ? "Tight" : tauid_vsjet;
+        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet_for_vsmu, isVsMuSchema6](floats &eta, uchars &genmatch)->floatsVec {
             // CMS tau POG: DeepTauVSmu SF applies to muons faking tau:
             //   genmatch=2 (prompt μ), genmatch=4 (tau→μ).
             // Other genmatch values are not in the JSON → exception.
@@ -424,9 +425,9 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                     if (gm == 2 || gm == 4) {  // prompt μ or tau→μ
                         try {
                             if (isVsMuSchema6) {
-                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "nom"}));
-                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "up"}));
-                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "down"}));
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet_for_vsmu, "nom"}));
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet_for_vsmu, "up"}));
+                                uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet_for_vsmu, "down"}));
                             } else {
                                 uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, "nom"}));
                                 uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, "up"}));
