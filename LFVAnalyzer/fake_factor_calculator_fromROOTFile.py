@@ -1,16 +1,18 @@
 import os
 from uncertainties import ufloat
 import ctypes
-from ROOT import *
+from ROOT import TFile
 
 import sys, argparse
 
 parser = argparse.ArgumentParser(description="Calculate Fake Factors from ROOT files")
-parser.add_argument("-V", "--version", dest="version", type=str, default="v12_0715_fake", help="Input folder prefix")
-parser.add_argument("-Y", "--years", dest="years", nargs="+", default=['2022_preEE', '2022_postEE', '2023_preBPix', '2023_postBPix', '2024'], help="Years/Eras list")
+parser.add_argument("-V", "--version", dest="version", type=str, default="process_0715_fake", help="Input folder prefix")
+parser.add_argument("-C", "--channel", dest="channel", type=str, default="")
+parser.add_argument("-Y", "--years", dest="years", nargs="+", default=['2022', '2022EE', '2023', '2023BPix', '2024'], help="Years/Eras list")
 options, _ = parser.parse_known_args()
 
 input_ver = options.version
+channel = options.channel
 year_list = options.years
 isQcd = False
 
@@ -57,7 +59,7 @@ for year in year_list:
 
         for region, nevents in nevents_region.items():
 
-            plot_file_path = os.path.join(input_ver + '_' + region, 'figure_'+year, 'plots.root')
+            plot_file_path = os.path.join(input_ver + '_' + region + '_v2', channel, 'figure_'+year, 'plots.root')
             if no_clean and (region == 'los' or region == 'lss'):
                 plot_file_path = os.path.join(input_ver + '_' + region + '_org', 'figure_'+year, 'plots.root')
             plot_file = TFile.Open(plot_file_path)

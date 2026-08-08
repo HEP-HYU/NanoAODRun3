@@ -18,6 +18,7 @@ ERROR_KEYWORDS = [
 ]
 
 SUCCESS_KEYWORD = "Job Done"
+NOEVENT_KEYWORD = "There is NO EVENT to process, ending the processing!!"
 
 
 def analyze_logs(base_dir):
@@ -44,7 +45,7 @@ def analyze_logs(base_dir):
                     if has_error and SUCCESS_KEYWORD in content:
                         error_but_done_files.append(filepath)
 
-                    if SUCCESS_KEYWORD not in content:
+                    if SUCCESS_KEYWORD not in content and NOEVENT_KEYWORD not in content:
                         no_done_files.append(filepath)
 
                 except Exception as e:
