@@ -408,7 +408,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         // 2024 DeepTau2018v2p5VSmu schema adds wp_VSe and wp_VSjet inputs:
         // pre-2024: [eta, genmatch, wp, syst]                      → 4 inputs
         // 2024:     [eta, genmatch, wp, wp_VSe, wp_VSjet, syst]    → 6 inputs
-        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet](floats &eta, uchars &genmatch)->floatsVec {
+        const bool isVsMuSchema6 = (_tauidSFmu->inputs().size() == 6);
+        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet, isVsMuSchema6](floats &eta, uchars &genmatch)->floatsVec {
             // CMS tau POG: DeepTauVSmu SF applies to muons faking tau:
             //   genmatch=2 (prompt μ), genmatch=4 (tau→μ).
             // Other genmatch values are not in the JSON → exception.
@@ -422,7 +423,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                     int gm = int(genmatch[i]);
                     if (gm == 2 || gm == 4) {  // prompt μ or tau→μ
                         try {
-                            if (_isRun24) {
+                            if (isVsMuSchema6) {
                                 uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "nom"}));
                                 uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "up"}));
                                 uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, tauid_vse, tauid_vsjet, "down"}));
