@@ -1,0 +1,65 @@
+{
+  "_comment": "Tau fake factors for LFV analysis (Run 3, channel-separated).",
+  "_comment_unc": "nom=absolute FF, stat/syst=absolute value of fractional uncertainty.",
+  "_comment_formula": "FF_up = nom * (1 + |unc|), FF_down = nom * (1 - |unc|)",
+  "electron_ch": {
+    "dm0": {
+      "2022_preEE": { "nom": 0.06713, "stat": 0.8975, "syst": 0.9799 },
+      "2022_postEE": { "nom": 0.5508, "stat": 0.3099, "syst": 0.9355 },
+      "2023_preBPix": { "nom": 1.938, "stat": 1.172,  "syst": 2.832  },
+      "2023_postBPix": { "nom": 0.7333, "stat": 0.6782, "syst": 0.08711 },
+      "2024": { "nom": 0.3093, "stat": 0.4252, "syst": 0.1842 }
+    },
+    "dm1": {
+      "2022_preEE": { "nom": 0.6497, "stat": 0.4103, "syst": 0.2219 },
+      "2022_postEE": { "nom": 0.691, "stat": 0.1554, "syst": 0.03197 },
+      "2023_preBPix": { "nom": 0.9383, "stat": 0.2885, "syst": 0.5884 },
+      "2023_postBPix": { "nom": 0.8325, "stat": 0.4251, "syst": 0.3816 },
+      "2024": { "nom": 0.7195, "stat": 0.08123, "syst": 0.3461 }
+    },
+    "dm10": {
+      "2022_preEE": { "nom": 1.667, "stat": 0.4797, "syst": 1.876 },
+      "2022_postEE": { "nom": 0.444, "stat": 0.2779, "syst": 0.0504 },
+      "2023_preBPix": { "nom": 0.6842, "stat": 0.365, "syst": 1.951 },
+      "2023_postBPix": { "nom": 0.3963, "stat": 0.5323, "syst": 0.4045 },
+      "2024": { "nom": 0.5954, "stat": 0.1287, "syst": 0.1809 }
+    },
+    "dm11": {
+      "2022_preEE": { "nom": -0.1658, "stat": 0.5638, "syst": 0.2182 },
+      "2022_postEE": { "nom": 0.5972, "stat": 0.2763, "syst": 0.2406 },
+      "2023_preBPix": { "nom": 0.5292, "stat": 0.742, "syst": 0.7618 },
+      "2023_postBPix": { "nom": 0.6693, "stat": 0.802, "syst": 0.9627 },
+      "2024": { "nom": 0.7641, "stat": 0.1424, "syst": 0.1363 }
+    }
+  },
+  "muon_ch": {
+    "dm0": {
+      "2022_preEE": { "nom": 1.361, "stat": 0.2619, "syst": 0.6224 },
+      "2022_postEE": { "nom": 0.7477, "stat": 0.1539, "syst": 0.6508 },
+      "2023_preBPix": { "nom": -0.04834, "stat": 2.762, "syst": 0.1722 },
+      "2023_postBPix": { "nom": 0.5175, "stat": 0.2692, "syst": 2.544 },
+      "2024": { "nom": 0.2886, "stat": 0.104, "syst": 0.4375 }
+    },
+    "dm1": {
+      "2022_preEE": { "nom": 0.4626, "stat": 0.199, "syst": 0.6725 },
+      "2022_postEE": { "nom": 0.3147, "stat": 0.1209, "syst": 0.3574 },
+      "2023_preBPix": { "nom": 0.5994, "stat": 0.1646, "syst": 0.1019 },
+      "2023_postBPix": { "nom": 0.9211, "stat": 0.2437, "syst": 0.6174 },
+      "2024": { "nom": 0.4858, "stat": 0.065, "syst": 0.3937 }
+    },
+    "dm10": {
+      "2022_preEE": { "nom": 1.285, "stat": 0.438, "syst": 0.06676 },
+      "2022_postEE": { "nom": 1.044, "stat": 0.2306, "syst": 0.3216 },
+      "2023_preBPix": { "nom": 0.8899, "stat": 0.2782, "syst": 0.4784 },
+      "2023_postBPix": { "nom": 0.4015,  "stat": 0.7294, "syst": 0.2627 },
+      "2024": { "nom": 0.7404, "stat": 0.1342, "syst": 0.2352 }
+    },
+    "dm11": {
+      "2022_preEE": { "nom": 0.7175, "stat": 0.4429, "syst": 0.2066 },
+      "2022_postEE": { "nom": 0.2185, "stat": 0.4255, "syst": 0.4857 },
+      "2023_preBPix": { "nom": 0.8157, "stat": 0.3966, "syst": 0.3419 },
+      "2023_postBPix": { "nom": 0.9804, "stat": 0.3991, "syst": 0.3347 },
+      "2024": { "nom": 0.7199, "stat": 0.3131, "syst": 0.09276 }
+    }
+  }
+}

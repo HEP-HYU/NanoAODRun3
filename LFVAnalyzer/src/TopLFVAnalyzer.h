@@ -31,18 +31,19 @@ protected:
     void defineWeightVars();        ///< nominal and systematic eventWeight definitions
     void storeOutputBranches();     ///< addVartoStore calls (flat ntuple branch list)
     ///@}
-    static double tauFF(std::string year_, std::string unc_, int direction_, floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_);
+    static double tauFF(std::string year_, std::string ch_, std::string unc_, int direction_, floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_);
 
     struct tauFFfunctor {
         std::string year_;
+        std::string ch_;  // "muon" or "electron"
         std::string unc_; // "nom", "stat", or "syst"
         int direction_ = 0;
 
-        tauFFfunctor(std::string year_tmp, std::string unc_tmp, int direction_tmp):
-            year_(year_tmp), unc_(unc_tmp), direction_(direction_tmp) {}
+        tauFFfunctor(std::string year_tmp, std::string ch_tmp, std::string unc_tmp, int direction_tmp):
+            year_(year_tmp), ch_(ch_tmp), unc_(unc_tmp), direction_(direction_tmp) {}
 
         double operator()(floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_) {
-           return TopLFVAnalyzer::tauFF(year_, unc_, direction_, tau_pt_, tau_gen_pt_, tau_dm_);
+           return TopLFVAnalyzer::tauFF(year_, ch_, unc_, direction_, tau_pt_, tau_gen_pt_, tau_dm_);
         }
     };
 };

@@ -329,11 +329,11 @@ void TopLFVAnalyzer::defineKinematicVars() {
         addVar({"tauFFsystup",  "1.0", ""});
         addVar({"tauFFsystdown","1.0", ""});
     } else {
-        auto tauFF_nom      = tauFFfunctor(tauYear, "nom",  0);
-        auto tauFF_statup   = tauFFfunctor(tauYear, "stat", 1);
-        auto tauFF_statdown = tauFFfunctor(tauYear, "stat",-1);
-        auto tauFF_systup   = tauFFfunctor(tauYear, "syst", 1);
-        auto tauFF_systdown = tauFFfunctor(tauYear, "syst",-1);
+        auto tauFF_nom      = tauFFfunctor(tauYear, _ch, "nom",  0);
+        auto tauFF_statup   = tauFFfunctor(tauYear, _ch, "stat", 1);
+        auto tauFF_statdown = tauFFfunctor(tauYear, _ch, "stat",-1);
+        auto tauFF_systup   = tauFFfunctor(tauYear, _ch, "syst", 1);
+        auto tauFF_systdown = tauFFfunctor(tauYear, _ch, "syst",-1);
         defineVar("tauFF",        tauFF_nom,      {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
         defineVar("tauFFstatup",  tauFF_statup,   {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
         defineVar("tauFFstatdown",tauFF_statdown, {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
@@ -970,7 +970,7 @@ void TopLFVAnalyzer::bookHists() {
     }
 }
 
-double TopLFVAnalyzer::tauFF(std::string year_, std::string unc_, int direction_,
+double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc_, int direction_,
                               floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_) {
     // For genuine tau: FF and uncertainty are always 1.0.
     if (tau_gen_pt_.size() > 0) return 1.0;
@@ -978,15 +978,15 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string unc_, int direction_
     if (abs(direction_) != 1 && direction_ != 0) return 1.0;
 
     // ── Static JSON-backed cache (loaded once per process) ────────
-    // Values are identical to the previous hardcoded table; the JSON
-    // at data/TauFF/tau_fake_factors.json is the authoritative source.
-    // Key layout: map_ff[dm_key][year][unc] where unc ∈ {nom, stat, syst}.
+    // Key layout: map_ff[ch_key][dm_key][year][unc]
+    // ch_key ∈ {"electron_ch", "muon_ch"}
+    // unc ∈ {"nom", "stat", "syst"} — stat/syst stored as absolute fractional values.
     using YearMap = std::map<std::string, std::map<std::string, double>>;
-    static std::map<std::string, YearMap> map_ff;
+    static std::map<std::string, std::map<std::string, YearMap>> map_ff;
     static bool loaded = false;
 
     if (!loaded) {
-        const std::string ffPath = "data/TauFF/tau_fake_factors.json";
+        const std::string ffPath = "data/TauFF/tau_fake_factors_run3.json";
         std::ifstream fin(ffPath);
         if (!fin.good()) {
             std::cerr << "ERROR tauFF: cannot open " << ffPath
@@ -995,18 +995,33 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string unc_, int direction_
         }
         Json::Value root;
         fin >> root;
-        for (const auto &dmKey : root.getMemberNames()) {
-            if (dmKey.rfind("_comment", 0) == 0) continue; // skip comments
-            const Json::Value &dmNode = root[dmKey];
-            for (const auto &yr : dmNode.getMemberNames()) {
-                const Json::Value &yrNode = dmNode[yr];
-                if (yrNode.isNull()) continue; // Run 3 placeholder
-                for (const auto &unc : yrNode.getMemberNames()) {
-                    map_ff[dmKey][yr][unc] = yrNode[unc].asDouble();
+        // Traverse: root[ch_key][dm_key][yr][unc]
+        for (const auto &chKey : root.getMemberNames()) {
+            if (chKey.rfind("_comment", 0) == 0) continue;
+            const Json::Value &chNode = root[chKey];
+            for (const auto &dmKey : chNode.getMemberNames()) {
+                if (dmKey.rfind("_comment", 0) == 0) continue;
+                const Json::Value &dmNode = chNode[dmKey];
+                for (const auto &yr : dmNode.getMemberNames()) {
+                    const Json::Value &yrNode = dmNode[yr];
+                    if (yrNode.isNull()) continue;
+                    for (const auto &unc : yrNode.getMemberNames()) {
+                        map_ff[chKey][dmKey][yr][unc] = yrNode[unc].asDouble();
+                    }
                 }
             }
         }
         loaded = true;
+    }
+
+    // ── Channel key ───────────────────────────────────────────────
+    // ch_ contains the full channel string (e.g. "muon", "electron").
+    std::string chKey;
+    if      (ch_.find("muon")     != std::string::npos) chKey = "muon_ch";
+    else if (ch_.find("electron") != std::string::npos) chKey = "electron_ch";
+    else {
+        std::cout << "tauFF: unknown channel " << ch_ << " — returning 1.0" << std::endl;
+        return 1.0;
     }
 
     // ── Decay-mode key ────────────────────────────────────────────
@@ -1021,30 +1036,33 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string unc_, int direction_
         return 1.0;
     }
 
-    // ── Era key normalization ──────────────────────────────────
+    // ── Era key normalization ──────────────────────────────────────
+    // Input year_ strings come from the analysis config / tauYear variable.
+    // Map them to the keys used in tau_fake_factors_run3.json.
     std::string yrKey = year_;
-    if      (year_ == "2022_Summer22"    || year_ == "2022")      yrKey = "2022_preEE";
-    else if (year_ == "2022_Summer22EE"  || year_ == "2022EE")    yrKey = "2022_postEE";
-    else if (year_ == "2023_Summer23"    || year_ == "2023")      yrKey = "2023_preBPix";
-    else if (year_ == "2023_Summer23BPix"|| year_ == "2023BPix")  yrKey = "2023_postBPix";
-    else if (year_ == "2024_Summer24")                          yrKey = "2024";
+    if      (year_ == "2022_Summer22"     || year_ == "2022")       yrKey = "2022_preEE";
+    else if (year_ == "2022_Summer22EE"   || year_ == "2022EE")     yrKey = "2022_postEE";
+    else if (year_ == "2023_Summer23"     || year_ == "2023")       yrKey = "2023_preBPix";
+    else if (year_ == "2023_Summer23BPix" || year_ == "2023BPix")   yrKey = "2023_postBPix";
+    else if (year_ == "2024_Summer24")                              yrKey = "2024";
 
-    // Guard for years with null (Run 3) entries
-    if (map_ff.find(dmKey) == map_ff.end() ||
-        map_ff.at(dmKey).find(yrKey) == map_ff.at(dmKey).end()) {
-        std::cout << "tauFF: no entry for dm=" << dmKey
-                  << " year=" << yrKey << " — returning 1.0" << std::endl;
+    // Guard for missing entries
+    if (map_ff.find(chKey) == map_ff.end() ||
+        map_ff.at(chKey).find(dmKey) == map_ff.at(chKey).end() ||
+        map_ff.at(chKey).at(dmKey).find(yrKey) == map_ff.at(chKey).at(dmKey).end()) {
+        std::cout << "tauFF: no entry for ch=" << chKey
+                  << " dm=" << dmKey << " year=" << yrKey << " — returning 1.0" << std::endl;
         return 1.0;
     }
 
     // ── Return value ──────────────────────────────────────────────
-    const auto &entry = map_ff.at(dmKey).at(yrKey);
+    const auto &entry = map_ff.at(chKey).at(dmKey).at(yrKey);
     if (unc_ == "nom") {
         return entry.at("nom");
     } else {
-        const double frac = entry.at(unc_);          // fractional uncertainty
-        if (direction_ ==  1) return 1.0 + frac;
-        if (direction_ == -1) return 1.0 - frac;
+        const double frac = entry.at(unc_);   // absolute fractional uncertainty (always >= 0)
+        if (direction_ ==  1) return entry.at("nom") * (1.0 + frac);
+        if (direction_ == -1) return entry.at("nom") * (1.0 - frac);
     }
     return 1.0;
 }
