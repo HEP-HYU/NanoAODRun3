@@ -971,7 +971,7 @@ void TopLFVAnalyzer::bookHists() {
 }
 
 double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc_, int direction_,
-                              floats &tau_pt_, floats &tau_gen_pt_, ints &tau_dm_) {
+                              floats &tau_pt_, floats &tau_gen_pt_, uchars &tau_dm_) {
     // For genuine tau: FF and uncertainty are always 1.0.
     if (tau_gen_pt_.size() > 0) return 1.0;
 
@@ -1026,7 +1026,7 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
 
     // ── Decay-mode key ────────────────────────────────────────────
     std::string dmKey;
-    const int dm = tau_dm_[0];
+    const int dm = static_cast<int>(tau_dm_[0]);
     if      (dm == 0)  dmKey = "dm0";
     else if (dm == 1)  dmKey = "dm1";
     else if (dm == 10) dmKey = "dm10";
