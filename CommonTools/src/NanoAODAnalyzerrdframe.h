@@ -200,7 +200,7 @@ protected:
   bool isDefined(string v);
 
   void noiseFilter();
-  void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, std::string jecVersion="_V2_", bool dataMc=false, std::string jecYearData="");
+  void setupJetMETCorrection(std::string jecFile, std::string jecYear, std::string jerMap, std::string jecVersion="_V2_", bool dataMc=false, std::string jecYearData="", std::string jerVersion="JRV1");
 
   /// @brief Load a correctionlib CorrectionSet and keep it alive for the
   /// lifetime of this object.  All lambdas that capture corrections from the

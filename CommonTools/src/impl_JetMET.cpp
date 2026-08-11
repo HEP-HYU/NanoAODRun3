@@ -17,7 +17,7 @@
 #include "Math/GenVector/VectorUtil.h"
 using namespace std;
 
-void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc, string jecYearData){
+void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc, string jecYearData, string jerVersion){
     auto jercReader = loadCorrectionSet("data/JME/"+jecFile+"/jet_jerc.json.gz");
     string datamcflag = "";
     if (dataMc) datamcflag = "DATA";
@@ -74,8 +74,8 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
     // JER: only for MC. jercReader is a local unique_ptr; _jerReso/_jerSF are raw pointers
     // into jercReader's memory. On data this block is skipped so the pointers never dangle.
     if (!_isData) {
-        auto _jerReso = jercReader->at(jerMap + "_JRV1_MC_PtResolution_AK4PFPuppi");
-        auto _jerSF   = jercReader->at(jerMap + "_JRV1_MC_ScaleFactor_AK4PFPuppi");
+        auto _jerReso = jercReader->at(jerMap + "_" + jerVersion + "_MC_PtResolution_AK4PFPuppi");
+        auto _jerSF   = jercReader->at(jerMap + "_" + jerVersion + "_MC_ScaleFactor_AK4PFPuppi");
         auto jerReader = loadCorrectionSet("data/JME/jer_smear.json.gz");
         auto _jerSmear = jerReader->at("JERSmear");
 

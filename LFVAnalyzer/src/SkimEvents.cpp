@@ -47,6 +47,7 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     std::string elecFile = "";
     std::string elecYear = "";
     std::string jecVersion = "_V2_";
+    std::string jerVersion  = "JRV1";  // JER version tag: JRV1 for all eras, JRV2 for 2024
     if (_isRun22) {
         pileFile = "2022_Summer22";
         pileMap = "Collisions2022_355100_357900_eraBCD_GoldenJson";
@@ -114,10 +115,11 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         jecFile = "2024_Summer24";
         jecYear = "Summer24Prompt24";   // MC
         // DATA: Summer24Prompt24 keys have NO run-era label — same prefix as MC
-        // e.g. Summer24Prompt24_V3_DATA_L1FastJet_AK4PFPuppi
+        // e.g. Summer24Prompt24_V5_DATA_L1FastJet_AK4PFPuppi
         jecYearData = "Summer24Prompt24";
         jerMap = "Summer24Prompt24";
-        jecVersion = "_V3_";
+        jecVersion = "_V5_";  // jet_jerc.json.gz updated to V5 (fixed L2L3Residual bug)
+        jerVersion  = "JRV2"; // jet_jerc.json.gz updated to JRV2
     }
 
     std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
@@ -133,7 +135,7 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     if (_isData){
         noiseFilter();
     }
-    setupJetMETCorrection(jecFile, jecYear, jerMap, jecVersion, _isData, jecYearData);
+    setupJetMETCorrection(jecFile, jecYear, jerMap, jecVersion, _isData, jecYearData, jerVersion);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
     if (_ch.find("muon") != std::string::npos){
