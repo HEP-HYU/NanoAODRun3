@@ -122,10 +122,25 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         jerVersion  = "JRV2"; // jet_jerc.json.gz updated to JRV2
     }
 
+    // MET XY correction epoch: maps era to the epoch string used inside the JSON.
+    // 2022 -> "2022", 2022EE -> "2022EE", 2023 -> "2023", 2023BPix -> "2023BPix", 2024 -> "" (no file).
+    std::string metEpoch = "";
+    if      (_isRun22)     metEpoch = "2022";
+    else if (_isRun22EE)   metEpoch = "2022EE";
+    else if (_isRun23)     metEpoch = "2023";
+    else if (_isRun23BPix) metEpoch = "2023BPix";
+    // 2024: no met_xyCorrections file available yet, metEpoch left empty.
+
+    // Electron cut: CMS EGM Run3 recommendation
+    //   - MVA-based WP90 isolation ID (mvaIso_WP90)
+    //   - Exclude ECAL gap (1.4442 < |eta_SC| < 1.566) where reconstruction degrades
+    //   - Electron_eta here is the supercluster eta (Electron_eta in NanoAOD = SC eta)
     std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
     std::string vetomuon = "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
-    std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && Electron_mvaIso_WP90";
-    std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1";
+    // Signal electron: WP90iso + pt>50 + |eta|<2.5 + ECAL gap exclusion
+    std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && !(abs(Electron_eta)>1.4442 && abs(Electron_eta)<1.566) && Electron_mvaIso_WP90";
+    // Veto electron: loose cutBased + |eta|<2.5 + ECAL gap exclusion
+    std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && !(abs(Electron_eta)>1.4442 && abs(Electron_eta)<1.566) && Electron_cutBased == 1";
     std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.5 && (Jet_passJetIdTightLepVeto==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
 
     std::string muonid = "NUM_TightID_DEN_TrackerMuons";
@@ -136,6 +151,9 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         noiseFilter();
     }
     setupJetMETCorrection(jecFile, jecYear, jerMap, jecVersion, _isData, jecYearData, jerVersion);
+    // Apply MET XY-shift correction (PuppiMET + PFMET) after JEC but before object selection.
+    // Skipped automatically for 2024 (no correction file available).
+    if (!metEpoch.empty()) applyMETXYCorrection(jecFile, metEpoch);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
     if (_ch.find("muon") != std::string::npos){

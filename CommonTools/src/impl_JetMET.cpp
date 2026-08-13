@@ -15,6 +15,7 @@
 #include "TCanvas.h"
 #include "ROOT/RDFHelpers.hxx"
 #include "Math/GenVector/VectorUtil.h"
+#include <sys/stat.h>
 using namespace std;
 
 void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYear, string jerMap, string jecVersion, bool dataMc, string jecYearData, string jerVersion){
@@ -190,3 +191,70 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     }
 }
 
+// Apply MET XY-shift corrections using correctionlib.
+// The met_xyCorrections JSON provides linear corrections to PuppiMET (and PFMET)
+// to remove the azimuthal modulation caused by detector non-uniformities.
+// Inputs: met_pt, met_phi, npvGood, data/MC flag, era epoch.
+// The corrected pt and phi are obtained by evaluating the correction twice
+// (once for 'pt', once for 'phi'), then redefining the MET branches.
+// NOTE: 2024_Summer24 has no met_xyCorrections file yet — correction is skipped.
+void NanoAODAnalyzerrdframe::applyMETXYCorrection(const std::string &jecFile, const std::string &epoch) {
+    // Only 2022 and 2023 eras have correction files available.
+    const std::string metXYFile = "data/JME/" + jecFile + "/met_xyCorrections_" +
+                                   epoch.substr(0, 4) + "_" + epoch + ".json.gz";
+
+    // Check file exists before loading (2024 has no correction file).
+    struct stat buf;
+    if (::stat(metXYFile.c_str(), &buf) != 0) {
+        std::cout << "[MET XY] No correction file for " << jecFile
+                  << " (‘" << metXYFile << "' not found). Skipping XY correction." << std::endl;
+        return;
+    }
+
+    std::cout << "[MET XY] Applying XY correction from " << metXYFile << std::endl;
+    auto metXYreader = loadCorrectionSet(metXYFile);
+    auto _metXY = metXYreader->at("met_xy_corrections");
+
+    const std::string dtmc    = _isData ? "DATA" : "MC";
+    const std::string ep      = epoch;   // e.g. "2022", "2022EE", "2023", "2023BPix"
+
+    // Lambda: evaluate corrected PuppiMET pt/phi.
+    // The correction returns the corrected value directly (pt or phi).
+    // PV_npvsGood is Int_t in NanoAOD — accept as int and cast to float for correctionlib.
+    auto applyXY = [this, _metXY, dtmc, ep](float met_pt, float met_phi, int npvGood) -> std::pair<float,float> {
+        float npv = float(npvGood);
+        float new_pt  = _metXY->evaluate({"pt",  "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
+        float new_phi = _metXY->evaluate({"phi", "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
+        return {new_pt, new_phi};
+    };
+
+    auto getCorr_pt = [applyXY](float met_pt, float met_phi, int npvGood) -> float {
+        return applyXY(met_pt, met_phi, npvGood).first;
+    };
+    auto getCorr_phi = [applyXY](float met_pt, float met_phi, int npvGood) -> float {
+        return applyXY(met_pt, met_phi, npvGood).second;
+    };
+
+    // Redefine PuppiMET branches with XY-corrected values.
+    // MET_phi must be redefined before MET_pt because phi depends on old pt.
+    _rlm = _rlm
+        .Define("PuppiMET_phi_xyCorr", getCorr_phi, {"PuppiMET_pt", "PuppiMET_phi", "PV_npvsGood"})
+        .Define("PuppiMET_pt_xyCorr",  getCorr_pt,  {"PuppiMET_pt", "PuppiMET_phi", "PV_npvsGood"})
+        .Redefine("PuppiMET_phi", "PuppiMET_phi_xyCorr")
+        .Redefine("PuppiMET_pt",  "PuppiMET_pt_xyCorr");
+
+    // Also apply to PFMET for completeness.
+    auto getCorr_pfpt = [this, _metXY, dtmc, ep](float met_pt, float met_phi, int npvGood) -> float {
+        float npv = float(npvGood);
+        return _metXY->evaluate({"pt",  "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
+    };
+    auto getCorr_pfphi = [this, _metXY, dtmc, ep](float met_pt, float met_phi, int npvGood) -> float {
+        float npv = float(npvGood);
+        return _metXY->evaluate({"phi", "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
+    };
+    _rlm = _rlm
+        .Define("MET_phi_xyCorr", getCorr_pfphi, {"MET_pt", "MET_phi", "PV_npvsGood"})
+        .Define("MET_pt_xyCorr",  getCorr_pfpt,  {"MET_pt", "MET_phi", "PV_npvsGood"})
+        .Redefine("MET_phi", "MET_phi_xyCorr")
+        .Redefine("MET_pt",  "MET_pt_xyCorr");
+}
