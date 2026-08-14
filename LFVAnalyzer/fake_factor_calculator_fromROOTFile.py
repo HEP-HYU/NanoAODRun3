@@ -91,6 +91,14 @@ for year in year_list:
             nevents['nsub_data'] = nevents['ndata'] - nevents['gentau_total']
 
         #print(nevents_region)
+        #decay_mode_map = {1: "DM 0 (1-prong)", 2: "DM 1 (1-prong+pi0)", 11: "DM 10 (3-prong)", 12: "DM 11 (3-prong+pi0)"}
+        #dm_title = decay_mode_map.get(bin_edge[0], f"Bin {bin_edge}")
+
+        #print(f"\n================ [{year}] {dm_title} N_event ================")
+        #for reg in ['los', 'lss', 'tos', 'tss']:
+        #    info = nevents_region[reg]
+        #    print(f"[{reg.upper()}] Data: {info['ndata']:<8} | MC Total: {info['mc_total']} | GenTau: {info['gentau_total']}")
+        #    print(f"      └─ Data Fake (nsub_data): {info['nsub_data']} | MC Fake (nsub_mc): {info['nsub_mc']}")
 
         FF = nevents_region['tss']['nsub_data'] / nevents_region['lss']['nsub_data']
         print('FF: {:.5f}'.format(FF.n), 'pm {:.6f}'.format(FF.std_dev), '-> ' + str(round(100*FF.std_dev/FF.n, 3)) + '%')

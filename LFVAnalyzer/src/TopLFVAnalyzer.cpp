@@ -1039,12 +1039,12 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
     // ── Era key normalization ──────────────────────────────────────
     // Input year_ strings come from the analysis config / tauYear variable.
     // Map them to the keys used in tau_fake_factors_run3.json.
-    std::string yrKey = year_;
-    if      (year_ == "2022_Summer22"     || year_ == "2022")       yrKey = "2022_preEE";
-    else if (year_ == "2022_Summer22EE"   || year_ == "2022EE")     yrKey = "2022_postEE";
-    else if (year_ == "2023_Summer23"     || year_ == "2023")       yrKey = "2023_preBPix";
-    else if (year_ == "2023_Summer23BPix" || year_ == "2023BPix")   yrKey = "2023_postBPix";
-    else if (year_ == "2024_Summer24")                              yrKey = "2024";
+    std::string yrKey = "Run3";
+    //if      (year_ == "2022_Summer22"     || year_ == "2022")       yrKey = "2022_preEE";
+    //else if (year_ == "2022_Summer22EE"   || year_ == "2022EE")     yrKey = "2022_postEE";
+    //else if (year_ == "2023_Summer23"     || year_ == "2023")       yrKey = "2023_preBPix";
+    //else if (year_ == "2023_Summer23BPix" || year_ == "2023BPix")   yrKey = "2023_postBPix";
+    //else if (year_ == "2024_Summer24")                              yrKey = "2024";
 
     // Guard for missing entries
     if (map_ff.find(chKey) == map_ff.end() ||
