@@ -132,6 +132,24 @@ float calculate_MT( FourVectorVec &muons, float met, float metphi);
 
 FourVector sum_4vec( FourVector &p1, FourVector &p2);
 
+/// @name DNN input kinematic variables
+/// Scalar quantities derived from reconstructed objects for DNN training.
+///@{
+
+/// |Δφ| between a leading-lepton vector and MET
+float dPhi_lep_MET(FourVector &lep, float metphi);
+
+/// |Δφ| between a tau vector and MET
+float dPhi_tau_MET(FourVector &tau, float metphi);
+
+/// ΔR between two single four-vectors
+float dR_two_vecs(FourVector &p1, FourVector &p2);
+
+/// Invariant mass of three four-vectors (lep + tau + bjet)
+float invMass3(FourVector &p1, FourVector &p2, FourVector &p3);
+
+///@}
+
 floats sort_discriminant( floats discr, floats obj );
 
 ints find_element(ints vec, int a);

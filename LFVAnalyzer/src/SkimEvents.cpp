@@ -58,8 +58,10 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         tauYear = "2022_preEE";
         jecFile = "2022_Summer22";
         jecYear = "Summer22_22Sep2023";         // MC
-        jecYearData = "Summer22_22Sep2023_RunCD"; // DATA
+        jecYearData = "Summer22_22Sep2023";     // DATA
         jerMap = "Summer22_22Sep2023";
+        jecVersion = "_V4_";
+        jerVersion  = "JRV2";
     } else if (_isRun22EE) {
         pileFile = "2022_Summer22EE";
         pileMap = "Collisions2022_359022_362760_eraEFG_GoldenJson";
@@ -69,14 +71,11 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2022Re-recoE+PromptFG";
         tauYear = "2022_postEE";
         jecFile = "2022_Summer22EE";
-        jecYear = "Summer22EE_22Sep2023";  // MC
-        // DATA: Run E/F/G have separate keys. Derive from globaltag set by skimonefile.py.
-        // e.g. _globaltag="Summer22EE_22Sep2023_RunE" → jecYearData="Summer22EE_22Sep2023_RunE"
-        // Fall back to RunF (most common) if not determinable.
-        if      (_globaltag.find("RunE") != std::string::npos) jecYearData = "Summer22EE_22Sep2023_RunE";
-        else if (_globaltag.find("RunG") != std::string::npos) jecYearData = "Summer22EE_22Sep2023_RunG";
-        else                                                    jecYearData = "Summer22EE_22Sep2023_RunF";
+        jecYear = "Summer22EE_22Sep2023";       // MC
+        jecYearData = "Summer22EE_22Sep2023";   // DATA
         jerMap = "Summer22EE_22Sep2023";
+        jecVersion = "_V4_";
+        jerVersion  = "JRV2";
     } else if (_isRun23) {
         pileFile = "2023_Summer23";
         pileMap = "Collisions2023_366403_369802_eraBC_GoldenJson";
@@ -87,9 +86,10 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         tauYear = "2023_preBPix";
         jecFile = "2023_Summer23";
         jecYear = "Summer23Prompt23";           // MC
-        jecYearData = "Summer23Prompt23_RunCv4"; // DATA
+        jecYearData = "Summer23Prompt23";        // DATA
         jerMap = "Summer23Prompt23_RunCv1234";
-        jecVersion = "_V1_";  // 2023 jet_jerc.json only has _V1_ keys
+        jecVersion = "_V4_";
+        jerVersion  = "JRV3";
     } else if (_isRun23BPix) {
         pileFile = "2023_Summer23BPix";
         pileMap = "Collisions2023_369803_370790_eraD_GoldenJson";
@@ -99,10 +99,11 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         elecYear = "2023PromptD";
         tauYear = "2023_postBPix";
         jecFile = "2023_Summer23BPix";
-        jecYear = "Summer23BPixPrompt23";           // MC
-        jecYearData = "Summer23BPixPrompt23_RunD";  // DATA
+        jecYear = "Summer23BPixPrompt23";       // MC
+        jecYearData = "Summer23BPixPrompt23";   // DATA
         jerMap = "Summer23BPixPrompt23_RunD";
-        jecVersion = "_V1_";  // 2023BPix jet_jerc.json only has _V1_ keys
+        jecVersion = "_V4_";
+        jerVersion  = "JRV3";
     } else if (_isRun24) {
         //TODO
         pileFile = "2024_Summer24";

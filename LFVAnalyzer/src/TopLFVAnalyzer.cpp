@@ -437,7 +437,17 @@ void TopLFVAnalyzer::defineKinematicVars() {
     addVar({"bJet1_pt",   si("bJet_pt",   0), ""});
     addVar({"bJet1_eta",  si("bJet_eta",  0, "-99.f"), ""});
     addVar({"bJet1_mass", si("bJet_mass", 0), ""});
+    // Additional angular/btag branches for DNN
+    addVar({"bJet1_phi",       si("bJet_phi", 0, "-99.f"), ""});
+    addVar({"bJet1_btagScore", si(bTagCol, 0, "0.f"),      ""});
 
+    // Lepton and tau phi (angular inputs for DNN)
+    if (_isMuonCh) {
+        addVar({"Lep1_phi", si("Muon_phi",     0, "-99.f"), ""});
+    } else {
+        addVar({"Lep1_phi", si("Electron_phi", 0, "-99.f"), ""});
+    }
+    addVar({"Tau1_phi", si("Tau_phi", 0, "-99.f"), ""});
 
     //if (_syst == "data") {
     //    defineVar("tauWeightIdVsJetFIX", ::fixtausf, {"tauWeightIdVsJet", "Tau_pt"});
@@ -458,6 +468,29 @@ void TopLFVAnalyzer::defineKinematicVars() {
     addVar({"chi2_wqq_dEta","top_reco_prod[0]",""});
     addVar({"chi2_wqq_dPhi","top_reco_prod[1]",""});
     addVar({"chi2_wqq_dR","top_reco_prod[2]",""});
+
+    // ─── DNN kinematic variables ────────────────────────────────────────────
+    // Defined after top_reco so that lepvec/tauvec/bjetvec are available.
+    // bjetvec: select leading b-jet four-vector (same as tauvec pattern).
+    defineVar("bjetvec", ::select_leadingvec, {"cleanbjet4vecs"});
+
+    // |Δφ(lep, MET)| — small for signal (W-like lep) vs. QCD/fake MET backgrounds
+    defineVar("dPhi_lep_MET", ::dPhi_lep_MET, {"lepvec", "PuppiMET_phi"});
+
+    // |Δφ(τ, MET)| — genuine τ tends to be back-to-back with neutrino (large |Δφ|)
+    defineVar("dPhi_tau_MET", ::dPhi_tau_MET, {"tauvec", "PuppiMET_phi"});
+
+    // ΔR(lep, b-jet) — in LFV top (t→qℓτ) lep comes from the LFV vertex;
+    // in tt̄ (t→Wb→lνb) lep+b tend to be closer (ΔR ~ 1–2).
+    defineVar("dR_lep_bjet", ::dR_two_vecs, {"lepvec", "bjetvec"});
+
+    // ΔR(τ, b-jet) — in LFV top the τ shares the vertex with b and lep;
+    // in tt̄ fake-τ is uncorrelated with b.
+    defineVar("dR_tau_bjet", ::dR_two_vecs, {"tauvec", "bjetvec"});
+
+    // Invariant mass m(lep+τ+b) — peaks near m_top (173 GeV) for LFV signal;
+    // broad or off-peak for SM tt̄ combinatorial background.
+    defineVar("LFV_top_mass", ::invMass3, {"lepvec", "tauvec", "bjetvec"});
 
     // S_T^MET: in EXO-19-016, defined by pt1+pt2+ptj1+met where pt1,2 come from taus
     if (_isMuonCh){
@@ -726,6 +759,8 @@ void TopLFVAnalyzer::storeOutputBranches() {
     } else {
         addVartoStore("Electron1.*");
     }
+    addVartoStore("Lep1_phi");
+    addVartoStore("Tau1_phi");   // already covered by Tau1.*, but explicit is clear
     addVartoStore("leptau.*");
     //addVartoStore("MET_pt");
     //addVartoStore("MET_phi");
@@ -733,6 +768,12 @@ void TopLFVAnalyzer::storeOutputBranches() {
     addVartoStore("PuppiMET_phi");
     addVartoStore("chi2.*");
     addVartoStore("btag.*");
+    addVartoStore("Jet_HT");           // scalar HT of all selected jets
+    addVartoStore("dPhi_lep_MET");     // DNN: |Δφ(lep, MET)|
+    addVartoStore("dPhi_tau_MET");     // DNN: |Δφ(τ, MET)|
+    addVartoStore("dR_lep_bjet");      // DNN: ΔR(lep, b-jet)
+    addVartoStore("dR_tau_bjet");      // DNN: ΔR(τ, b-jet)
+    addVartoStore("LFV_top_mass");     // DNN: m(lep+τ+b)
     addVartoStore("GenPart_top_pt");
     addVartoStore("TopPtWeight");
     addVartoStore("LHEPart_pt");
@@ -879,6 +920,8 @@ void TopLFVAnalyzer::bookHists() {
         add1DHist({"h_jet1_eta_notausf", ";Leading jet #eta;Events", 20, -2.4, 2.4}, "Jet1_eta", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_jet1_mass_notausf", ";Leading jet mass (GeV);Events", 20, 0, 100}, "Jet1_mass", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_jet1_btag_notausf",";PNet score of leading jet;Events", 20, 0, 1.0}, "Jet1_btagPNetB", "eventWeight_notau", weightstr, minstep_S1, maxstep);
+        // DNN variables (no tau SF)
+        add1DHist({"h_dphi_lep_met_notausf", ";|#Delta#phi(lep, MET)|;Events", 16, 0, 3.2}, "dPhi_lep_MET", "eventWeight_notau", weightstr, minstep_S1, maxstep);
     }
 
     //for all the other nominal histograms with tauSF
@@ -958,6 +1001,17 @@ void TopLFVAnalyzer::bookHists() {
         // Fiilld with the same st_met, to be drawn with "WIDTH" option.
         add1DHist({"h_st_met_binwidth", ";S_{T}^{MET};Events / GeV", 28, 100, 1500}, "st_met", "eventWeight", weightstr, minstep_S4, maxstep);
 
+        // ─── DNN kinematic variable histograms ──────────────────────────────
+        // Angular variables (available from S2, after tau selection)
+        add1DHist({"h_dphi_lep_met", ";|#Delta#phi(lep, MET)|;Events",    16, 0, 3.2}, "dPhi_lep_MET", "eventWeight", weightstr, minstep_S2, maxstep);
+        add1DHist({"h_dphi_tau_met", ";|#Delta#phi(#tau_{h}, MET)|;Events",16, 0, 3.2}, "dPhi_tau_MET", "eventWeight", weightstr, minstep_S2, maxstep);
+
+        // b-jet topology variables (available from S5, after b-tagging)
+        add1DHist({"h_dr_lep_bjet",  ";#DeltaR(lep, b-jet);Events",    20, 0, 5.0}, "dR_lep_bjet",  "eventWeight", weightstr, minstep_S5, maxstep);
+        add1DHist({"h_dr_tau_bjet",  ";#DeltaR(#tau_{h}, b-jet);Events",20, 0, 5.0}, "dR_tau_bjet",  "eventWeight", weightstr, minstep_S5, maxstep);
+        add1DHist({"h_lfv_top_mass", ";m(lep+#tau_{h}+b) (GeV);Events", 30, 0, 600}, "LFV_top_mass", "eventWeight", weightstr, minstep_S5, maxstep);
+        add1DHist({"h_bjet1_btag",   ";b-tag score of b-jet;Events",    20, 0, 1.0}, "bJet1_btagScore","eventWeight",weightstr, minstep_S5, maxstep);
+
         // Histogram of Top mass reconstruction
         add1DHist({"h_chi2", ";Minimum #chi^{2};Events", 20, 0, 1000}, "chi2", "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_chi2_SMTop_mass", ";SM top quark mass (GeV);Events", 20, 80, 880}, "chi2_SMTop_mass", "eventWeight", weightstr, minstep_S5, maxstep);
@@ -974,6 +1028,13 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
                               floats &tau_pt_, floats &tau_gen_pt_, uchars &tau_dm_) {
     // For genuine tau: FF and uncertainty are always 1.0.
     if (tau_gen_pt_.size() > 0) return 1.0;
+
+    // Guard: must have at least one selected tau (decay mode is mandatory).
+    // In practice selectTaus guarantees this, but be defensive.
+    if (tau_dm_.size() == 0) {
+        std::cout << "tauFF: tau_dm_ is empty — returning 1.0" << std::endl;
+        return 1.0;
+    }
 
     if (abs(direction_) != 1 && direction_ != 0) return 1.0;
 
@@ -1037,14 +1098,17 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
     }
 
     // ── Era key normalization ──────────────────────────────────────
-    // Input year_ strings come from the analysis config / tauYear variable.
-    // Map them to the keys used in tau_fake_factors_run3.json.
+    // Run3-combined mode: year_ parameter is INTENTIONALLY IGNORED.
+    // All eras share a single combined Run3 fake factor.
+    // year_ is kept in the signature for forward-compatibility (per-era mode can be
+    // re-enabled by uncommenting the lines below).
+    (void)year_;  // suppress unused-parameter warning
     std::string yrKey = "Run3";
-    //if      (year_ == "2022_Summer22"     || year_ == "2022")       yrKey = "2022_preEE";
-    //else if (year_ == "2022_Summer22EE"   || year_ == "2022EE")     yrKey = "2022_postEE";
-    //else if (year_ == "2023_Summer23"     || year_ == "2023")       yrKey = "2023_preBPix";
-    //else if (year_ == "2023_Summer23BPix" || year_ == "2023BPix")   yrKey = "2023_postBPix";
-    //else if (year_ == "2024_Summer24")                              yrKey = "2024";
+    //if      (year_ == "2022_preEE")    yrKey = "2022_preEE";
+    //else if (year_ == "2022_postEE")   yrKey = "2022_postEE";
+    //else if (year_ == "2023_preBPix")  yrKey = "2023_preBPix";
+    //else if (year_ == "2023_postBPix") yrKey = "2023_postBPix";
+    //else if (year_ == "2024")          yrKey = "2024";
 
     // Guard for missing entries
     if (map_ff.find(chKey) == map_ff.end() ||
@@ -1057,12 +1121,22 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
 
     // ── Return value ──────────────────────────────────────────────
     const auto &entry = map_ff.at(chKey).at(dmKey).at(yrKey);
+    const double nom = entry.at("nom");
     if (unc_ == "nom") {
-        return entry.at("nom");
+        // Clamp unphysical negative FF to 0 (can arise from fit fluctuations in low-stats eras)
+        if (nom < 0.0) {
+            std::cout << "tauFF: nom < 0 (" << nom << ") for ch=" << chKey
+                      << " dm=" << dmKey << " yr=" << yrKey << " — clamping to 0.0" << std::endl;
+            return 0.0;
+        }
+        return nom;
     } else {
         const double frac = entry.at(unc_);   // absolute fractional uncertainty (always >= 0)
-        if (direction_ ==  1) return entry.at("nom") * (1.0 + frac);
-        if (direction_ == -1) return entry.at("nom") * (1.0 - frac);
+        double result = 0.0;
+        if (direction_ ==  1) result = nom * (1.0 + frac);
+        if (direction_ == -1) result = nom * (1.0 - frac);
+        // Clamp negative variations to 0 to prevent sign flip in weight product
+        return std::max(0.0, result);
     }
     return 1.0;
 }

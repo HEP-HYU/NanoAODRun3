@@ -402,6 +402,41 @@ FourVector sum_4vec( FourVector &p1, FourVector &p2){
         return p1+p2;
 }
 
+// ─── DNN input kinematic variables ───────────────────────────────────────────
+// These scalar quantities are designed to carry discriminating power between
+// the LFV signal topology (t→qℓτ) and the dominant SM backgrounds.
+
+/// |Δφ(lep, MET)| — small in W→lν events (back-to-back), useful vs. QCD
+float dPhi_lep_MET(FourVector &lep, float metphi) {
+    float dphi = lep.Phi() - metphi;
+    // Wrap to [-π, π]
+    while (dphi >  M_PI) dphi -= 2.f * M_PI;
+    while (dphi < -M_PI) dphi += 2.f * M_PI;
+    return std::abs(dphi);
+}
+
+/// |Δφ(τ, MET)| — genuine taus tend to be back-to-back with MET;
+/// fake taus show a more uniform distribution.
+float dPhi_tau_MET(FourVector &tau, float metphi) {
+    float dphi = tau.Phi() - metphi;
+    while (dphi >  M_PI) dphi -= 2.f * M_PI;
+    while (dphi < -M_PI) dphi += 2.f * M_PI;
+    return std::abs(dphi);
+}
+
+/// ΔR(p1, p2) for two single four-vectors (wrapper for use in defineVar)
+float dR_two_vecs(FourVector &p1, FourVector &p2) {
+    return ROOT::Math::VectorUtil::DeltaR(p1, p2);
+}
+
+/// Invariant mass of three four-vectors (e.g. lep + τ + b-jet).
+/// In the LFV signal: m(lep+τ+b) ≈ m_top (173 GeV).
+/// In SM tt̄ the combination is off-shell, providing discrimination.
+float invMass3(FourVector &p1, FourVector &p2, FourVector &p3) {
+    return (p1 + p2 + p3).M();
+}
+
+
 floats sort_discriminant( floats discr, floats obj ){
         auto sorted_discr = Reverse(Argsort(discr));
         floats out;
