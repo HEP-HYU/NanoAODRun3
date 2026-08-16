@@ -53,14 +53,9 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
             else
                 L2corr = _L2Relative->evaluate({jetetas[i], L1pt});
             float L2pt = L1pt * L2corr;
-            // L2L3Residual: Run3Summer24 stores the run number as an additional first input → [run, JetEta, JetPt].
-            // All pre-24 eras use only [JetEta, JetPt].
-            // Passing 3 args to a 2-input correction corrupts the heap → munmap_chunk for 22/23 DATA.
+            // L2L3Residual: DATA keys in ALL Run3 eras require run as 1st input → [run, JetEta, JetPt].
             if (dataMc) {
-                if (_isRun24)
-                    L2L3corr = _L2L3Residual->evaluate({float(run), jetetas[i], L2pt});
-                else
-                    L2L3corr = _L2L3Residual->evaluate({jetetas[i], L2pt});
+                L2L3corr = _L2L3Residual->evaluate({float(run), jetetas[i], L2pt});
             }
             float corrfactor = toCorr[i] * rawFact * L1corr * L2corr * L2L3corr; 
             corrfactors.emplace_back(corrfactor);
@@ -86,11 +81,9 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
 
             for (size_t i=0; i<jetpts.size(); i++){
                 float reso = _jerReso->evaluate({jetetas[i], jetpts[i], rho});
-                // Run3Summer24 ScaleFactor has no systematic input: [JetEta, JetPt] (2 inputs).
-                // Earlier eras have [JetEta, JetPt, systematic] (3 inputs).
-                // Passing 3 args to a 2-input correction corrupts the heap.
-                float sf = _isRun24 ? _jerSF->evaluate({jetetas[i], jetpts[i]})
-                                    : _jerSF->evaluate({jetetas[i], jetpts[i], "nom"});
+                // JER ScaleFactor across ALL Run3 eras (2022, 2022EE, 2023, 2023BPix, 2024)
+                // takes 2 inputs: [JetEta, JetPt].
+                float sf = _jerSF->evaluate({jetetas[i], jetpts[i]});
                 float genPtForSmear = -1.0;
 
                 int genidx = genidxs[i];
