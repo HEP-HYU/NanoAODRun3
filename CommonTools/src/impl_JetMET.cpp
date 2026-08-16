@@ -220,18 +220,18 @@ void NanoAODAnalyzerrdframe::applyMETXYCorrection(const std::string &jecFile, co
 
     // Lambda: evaluate corrected PuppiMET pt/phi.
     // The correction returns the corrected value directly (pt or phi).
-    // PV_npvsGood is Int_t in NanoAOD — accept as int and cast to float for correctionlib.
-    auto applyXY = [this, _metXY, dtmc, ep](float met_pt, float met_phi, int npvGood) -> std::pair<float,float> {
+    // PV_npvsGood is UChar_t (unsigned char) in NanoAOD.
+    auto applyXY = [this, _metXY, dtmc, ep](float met_pt, float met_phi, unsigned char npvGood) -> std::pair<float,float> {
         float npv = float(npvGood);
         float new_pt  = _metXY->evaluate({"pt",  "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
         float new_phi = _metXY->evaluate({"phi", "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
         return {new_pt, new_phi};
     };
 
-    auto getCorr_pt = [applyXY](float met_pt, float met_phi, int npvGood) -> float {
+    auto getCorr_pt = [applyXY](float met_pt, float met_phi, unsigned char npvGood) -> float {
         return applyXY(met_pt, met_phi, npvGood).first;
     };
-    auto getCorr_phi = [applyXY](float met_pt, float met_phi, int npvGood) -> float {
+    auto getCorr_phi = [applyXY](float met_pt, float met_phi, unsigned char npvGood) -> float {
         return applyXY(met_pt, met_phi, npvGood).second;
     };
 
@@ -244,11 +244,11 @@ void NanoAODAnalyzerrdframe::applyMETXYCorrection(const std::string &jecFile, co
         .Redefine("PuppiMET_pt",  "PuppiMET_pt_xyCorr");
 
     // Also apply to PFMET for completeness.
-    auto getCorr_pfpt = [this, _metXY, dtmc, ep](float met_pt, float met_phi, int npvGood) -> float {
+    auto getCorr_pfpt = [this, _metXY, dtmc, ep](float met_pt, float met_phi, unsigned char npvGood) -> float {
         float npv = float(npvGood);
         return _metXY->evaluate({"pt",  "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
     };
-    auto getCorr_pfphi = [this, _metXY, dtmc, ep](float met_pt, float met_phi, int npvGood) -> float {
+    auto getCorr_pfphi = [this, _metXY, dtmc, ep](float met_pt, float met_phi, unsigned char npvGood) -> float {
         float npv = float(npvGood);
         return _metXY->evaluate({"phi", "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
     };
