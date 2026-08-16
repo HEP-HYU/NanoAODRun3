@@ -157,15 +157,16 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     if (!metEpoch.empty()) applyMETXYCorrection(jecFile, metEpoch);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
+    std::string tauid_vsjet = _isRun24 ? "VTight" : "Medium";
     if (_ch.find("muon") != std::string::npos){
         if (!_isData){
-            calculateTauES(tauYear, "VTight", "Tight", "VVLoose");
+            calculateTauES(tauYear, tauid_vsjet, "Tight", "VVLoose");
             calculateMuonSF(muonid, muoniso, muonhlt);
         }
         selectMuons(muoncut, vetomuon);
     } else {
         if (!_isData){
-            calculateTauES(tauYear, "VTight", "VLoose", "Tight");
+            calculateTauES(tauYear, tauid_vsjet, "VLoose", "Tight");
             calculateElectronSF(elecFile, elecYear);
         }
         selectElectrons(eleccut, vetoelec);
