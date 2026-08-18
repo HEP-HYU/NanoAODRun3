@@ -474,19 +474,14 @@ void TopLFVAnalyzer::defineKinematicVars() {
     // bjetvec: select leading b-jet four-vector (same as tauvec pattern).
     defineVar("bjetvec", ::select_leadingvec, {"cleanbjet4vecs"});
 
-    // |Δφ(lep, MET)| — small for signal (W-like lep) vs. QCD/fake MET backgrounds
-    defineVar("dPhi_lep_MET", ::dPhi_lep_MET, {"lepvec", "PuppiMET_phi"});
-
-    // |Δφ(τ, MET)| — genuine τ tends to be back-to-back with neutrino (large |Δφ|)
-    defineVar("dPhi_tau_MET", ::dPhi_tau_MET, {"tauvec", "PuppiMET_phi"});
-
-    // ΔR(lep, b-jet) — in LFV top (t→qℓτ) lep comes from the LFV vertex;
-    // in tt̄ (t→Wb→lνb) lep+b tend to be closer (ΔR ~ 1–2).
-    defineVar("dR_lep_bjet", ::dR_two_vecs, {"lepvec", "bjetvec"});
-
-    // ΔR(τ, b-jet) — in LFV top the τ shares the vertex with b and lep;
-    // in tt̄ fake-τ is uncorrelated with b.
-    defineVar("dR_tau_bjet", ::dR_two_vecs, {"tauvec", "bjetvec"});
+    defineVar("lepMET_dPhi", ::dPhi_MET, {"lepvec", "PuppiMET_phi"});
+    defineVar("tauMET_dPhi", ::dPhi_MET, {"tauvec", "PuppiMET_phi"});
+    defineVar("lepbjet_dR", ::calculate_deltaR, {"lepvec", "bjetvec"});
+    defineVar("taubjet_dR", ::calculate_deltaR, {"tauvec", "bjetvec"});
+    //defineVar("dPhi_lep_MET", ::dPhi_MET, {"lepvec", "PuppiMET_phi"});
+    //defineVar("dPhi_tau_MET", ::dPhi_MET, {"tauvec", "PuppiMET_phi"});
+    //defineVar("dR_lep_bjet", ::calculate_deltaR, {"lepvec", "bjetvec"});
+    //defineVar("dR_tau_bjet", ::calculate_deltaR, {"tauvec", "bjetvec"});
 
     // Invariant mass m(lep+τ+b) — peaks near m_top (173 GeV) for LFV signal;
     // broad or off-peak for SM tt̄ combinatorial background.
@@ -769,10 +764,10 @@ void TopLFVAnalyzer::storeOutputBranches() {
     addVartoStore("chi2.*");
     addVartoStore("btag.*");
     addVartoStore("Jet_HT");           // scalar HT of all selected jets
-    addVartoStore("dPhi_lep_MET");     // DNN: |Δφ(lep, MET)|
-    addVartoStore("dPhi_tau_MET");     // DNN: |Δφ(τ, MET)|
-    addVartoStore("dR_lep_bjet");      // DNN: ΔR(lep, b-jet)
-    addVartoStore("dR_tau_bjet");      // DNN: ΔR(τ, b-jet)
+    addVartoStore("lepMET_dPhi");     // DNN: |Δφ(lep, MET)|
+    addVartoStore("tauMET_dPhi");     // DNN: |Δφ(τ, MET)|
+    addVartoStore("lepbjet_dR");      // DNN: ΔR(lep, b-jet)
+    addVartoStore("taubjet_dR");      // DNN: ΔR(τ, b-jet)
     addVartoStore("LFV_top_mass");     // DNN: m(lep+τ+b)
     addVartoStore("GenPart_top_pt");
     addVartoStore("TopPtWeight");
@@ -921,7 +916,7 @@ void TopLFVAnalyzer::bookHists() {
         add1DHist({"h_jet1_mass_notausf", ";Leading jet mass (GeV);Events", 20, 0, 100}, "Jet1_mass", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_jet1_btag_notausf",";PNet score of leading jet;Events", 20, 0, 1.0}, "Jet1_btagPNetB", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         // DNN variables (no tau SF)
-        add1DHist({"h_dphi_lep_met_notausf", ";|#Delta#phi(lep, MET)|;Events", 16, 0, 3.2}, "dPhi_lep_MET", "eventWeight_notau", weightstr, minstep_S1, maxstep);
+        add1DHist({"h_lepmet_dPhi_notausf", ";|#Delta#phi(lep, MET)|;Events", 16, 0, 3.2}, "lepMET_dPhi", "eventWeight_notau", weightstr, minstep_S1, maxstep);
     }
 
     //for all the other nominal histograms with tauSF
@@ -1003,12 +998,12 @@ void TopLFVAnalyzer::bookHists() {
 
         // ─── DNN kinematic variable histograms ──────────────────────────────
         // Angular variables (available from S2, after tau selection)
-        add1DHist({"h_dphi_lep_met", ";|#Delta#phi(lep, MET)|;Events",    16, 0, 3.2}, "dPhi_lep_MET", "eventWeight", weightstr, minstep_S2, maxstep);
-        add1DHist({"h_dphi_tau_met", ";|#Delta#phi(#tau_{h}, MET)|;Events",16, 0, 3.2}, "dPhi_tau_MET", "eventWeight", weightstr, minstep_S2, maxstep);
+        add1DHist({"h_lepmet_dPhi", ";|#Delta#phi(lep, MET)|;Events",    16, 0, 3.2}, "lepMET_dPhi", "eventWeight", weightstr, minstep_S2, maxstep);
+        add1DHist({"h_taumet_dPhi", ";|#Delta#phi(#tau_{h}, MET)|;Events",16, 0, 3.2}, "tauMET_dPhi", "eventWeight", weightstr, minstep_S2, maxstep);
 
         // b-jet topology variables (available from S5, after b-tagging)
-        add1DHist({"h_dr_lep_bjet",  ";#DeltaR(lep, b-jet);Events",    20, 0, 5.0}, "dR_lep_bjet",  "eventWeight", weightstr, minstep_S5, maxstep);
-        add1DHist({"h_dr_tau_bjet",  ";#DeltaR(#tau_{h}, b-jet);Events",20, 0, 5.0}, "dR_tau_bjet",  "eventWeight", weightstr, minstep_S5, maxstep);
+        add1DHist({"h_lepbjet_dR",  ";#DeltaR(lep, b-jet);Events",    20, 0, 5.0}, "lepbjet_dR",  "eventWeight", weightstr, minstep_S5, maxstep);
+        add1DHist({"h_taubjet_dR",  ";#DeltaR(#tau_{h}, b-jet);Events",20, 0, 5.0}, "taubjet_dR",  "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_lfv_top_mass", ";m(lep+#tau_{h}+b) (GeV);Events", 30, 0, 600}, "LFV_top_mass", "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_bjet1_btag",   ";b-tag score of b-jet;Events",    20, 0, 1.0}, "bJet1_btagScore","eventWeight",weightstr, minstep_S5, maxstep);
 
