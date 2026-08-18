@@ -111,7 +111,8 @@ NanoAODAnalyzerrdframe::~NanoAODAnalyzerrdframe() {
 bool NanoAODAnalyzerrdframe::isDefined(string v) {
 	auto result = std::find(_originalvars.begin(), _originalvars.end(), v);
 	if (result != _originalvars.end()) return true;
-	else return false;
+	if (_rlm.HasColumn(v)) return true;
+	return false;
 }
 
 void NanoAODAnalyzerrdframe::setTree(TTree *t, std::string outfilename) {
