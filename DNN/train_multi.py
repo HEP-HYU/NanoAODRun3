@@ -18,6 +18,7 @@ import pickle
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.utils import to_categorical
 from utils.plots import *
+from utils.feature_config import get_inputvars, SIGLIST_ST, SIGLIST_TT, YEARS
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import KFold
@@ -48,20 +49,8 @@ class_names = ["bkg","sigTT", "sigST"]
 
 print("Start multi LFV Training")
 epochs = 1000
-inputvars_st = [ # "Muon1_pt","Muon1_eta",
-        "Tau1_pt","Tau1_mass","Tau1_eta","Tau1_decayMode",
-        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",#"Jet1_btagUParTAK4CvB","Jet1_btagUParTAK4CvL",
-        "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
-        "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-        "bJet1_btagScore","bJet1_mass","bJet1_pt",#"btagcuts_loose",
-        "chi2","chi2_SMW_mass","chi2_SMTop_mass","chi2_SMTop_pt",
-        "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-        "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-        "lepbjet_dR","taubjet_dR","lepMET_dPhi","tauMET_dPhi",
-        "PuppiMET_pt", "PuppiMET_phi","Jet_HT","ncleanjetspass",
-        ]
-if ch == "muon": inputvars_st = ["Muon1_pt", "Muon1_eta"] + inputvars_st
-else: inputvars_st = ["Electron1_pt", "Electron1_eta"] + inputvars_st
+# Input variables loaded from central config (utils/feature_config.py)
+inputvars_st = get_inputvars(ch)
 
 processed = datetime.now().strftime("%m%d_%H%M")
 
@@ -72,24 +61,9 @@ train_outdir = label+"_"+processed+"/"+ch+"_"+syst+"/"
 os.makedirs(train_outdir, exist_ok=True)
 print ("output dir: ", train_outdir)
 
-siglist_st = []
-siglist_tt = []
-if ch == "muon":
-    siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
-    #siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor"]
-    #siglist_st = ["TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
-    siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"]
-    #siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor",]
-    #siglist_tt = ["TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"]
-else:
-    siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
-    #siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor"]
-    #siglist_st = ["TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
-    siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
-    #siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor"]
-    #siglist_tt = ["TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
-
-years = ["v12_2022", "v12_2022EE", "v12_2023", "v12_2023BPix", "v15_2024"]
+siglist_st = SIGLIST_ST[ch]
+siglist_tt = SIGLIST_TT[ch]
+years = YEARS
 
 df_sig_st_list = []
 df_sig_tt_list = []
@@ -172,7 +146,10 @@ df_bkg["category"] = 0
 
 print ("ST LFV: ", len(df_sig_st), " TT LFV: ", len(df_sig_tt), " ttbar: ", len(df_bkg))
 pd_data = pd.concat([df_sig_tt,df_sig_st,df_bkg])
-pd_data = abs(pd_data)
+# NOTE: abs() was removed.
+# Original rationale: likely to suppress negative chi2 artifacts and ensure non-negative pt/mass.
+# Removed because: StandardScaler handles all ranges correctly, and abs() destroys physically
+# meaningful sign information in eta, dEta, dPhi, and PuppiMET_phi.
 colnames = pd_data.columns
 print(pd_data.head())
 print("Col names:",colnames)
@@ -243,17 +220,22 @@ activation_function='elu'
 weight_initializer = 'he_uniform'
 l2_factor = 1e-4
 
+dropout_rate = 0.3  # Dropout rate to reduce overtraining
+
 ###############   Hidden Layer 1    ###############
 model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
+model.add(tf.keras.layers.Dropout(dropout_rate))
 
 ###############   Hidden Layer 2    ###############
 model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
+model.add(tf.keras.layers.Dropout(dropout_rate))
 
 ###############   Hidden Layer 3    ###############
 model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Dense(256, activation=activation_function, kernel_regularizer=tf.keras.regularizers.l2(l2_factor), kernel_initializer=weight_initializer))
+model.add(tf.keras.layers.Dropout(dropout_rate))
 
 ###############    Output Layer     ###############
 model.add(tf.keras.layers.Dense(3, activation="softmax"))

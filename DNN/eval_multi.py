@@ -18,6 +18,7 @@ import multiprocessing
 from datetime import datetime
 import pickle
 import yaml
+from utils.feature_config import get_inputvars
 
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -55,20 +56,8 @@ def load_xsec_rootfiles(xsecfile):
         raise RuntimeError("Could not load any dataset from %s" % xsecfile)
     return set([name for name in data.keys() if name.endswith(".root")])
 
-inputvars = [#"Muon1_pt", "Muon1_eta",
-            "Tau1_pt","Tau1_mass","Tau1_eta","Tau1_decayMode",
-            "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
-            "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
-            "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-            "bJet1_btagScore","bJet1_mass","bJet1_pt",
-            "chi2","chi2_SMW_mass","chi2_SMTop_mass","chi2_SMTop_pt",
-            "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-            "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-            "lepbjet_dR","taubjet_dR","lepMET_dPhi","tauMET_dPhi",
-            "PuppiMET_pt", "PuppiMET_phi","Jet_HT","ncleanjetspass",
-            ]
-if ch == "muon": inputvars = ["Muon1_pt", "Muon1_eta"] + inputvars
-else: inputvars = ["Electron1_pt", "Electron1_eta"] + inputvars
+# Input variables loaded from central config (utils/feature_config.py)
+inputvars = get_inputvars(ch)
 
 
 discriminators = {"p_st" : 2, "p_tt" : 1 , "p_bkg" : 0 , "p_st_tt" : 999, "p_st_tt_ob" : 999 }
@@ -163,7 +152,8 @@ def run(inputs):
         else: muon_pt = tree["Electron1_pt"].array()
         tau_pt = tree["Tau1_pt"].array()
         pd_data = tree.arrays(inputvars, library="pd")
-        pd_data = abs(pd_data)
+        # NOTE: abs() removed — StandardScaler handles all ranges;
+        # abs() would destroy eta/dEta/dPhi/phi sign information.
         pd_weight = tree.arrays(weights, library="np")
         pred_data = np.array(pd_data.filter(items = inputvars), dtype=np.float32)
 
