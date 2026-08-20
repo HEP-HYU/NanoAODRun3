@@ -4,7 +4,7 @@
 
 import os
 import sys
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import uproot
 import pandas as pd
 import awkward as ak
@@ -56,14 +56,16 @@ def load_xsec_rootfiles(xsecfile):
     return set([name for name in data.keys() if name.endswith(".root")])
 
 inputvars = [#"Muon1_pt", "Muon1_eta",
-            "Tau1_pt","Tau1_mass","Tau1_eta",
+            "Tau1_pt","Tau1_mass","Tau1_eta","Tau1_decayMode",
             "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
             "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
             "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-            "chi2","chi2_SMW_mass","chi2_SMTop_mass",
+            "bJet1_btagScore","bJet1_mass","bJet1_pt",
+            "chi2","chi2_SMW_mass","chi2_SMTop_mass","chi2_SMTop_pt",
             "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
             "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-            "PuppiMET_pt", "PuppiMET_phi"
+            "lepbjet_dR","taubjet_dR","lepMET_dPhi","tauMET_dPhi",
+            "PuppiMET_pt", "PuppiMET_phi","Jet_HT","ncleanjetspass",
             ]
 if ch == "muon": inputvars = ["Muon1_pt", "Muon1_eta"] + inputvars
 else: inputvars = ["Electron1_pt", "Electron1_eta"] + inputvars

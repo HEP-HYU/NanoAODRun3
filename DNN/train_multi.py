@@ -5,7 +5,7 @@
 import os
 import sys
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 import uproot
 import pandas as pd
@@ -27,7 +27,7 @@ from datetime import datetime
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon")
-parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/anti_NanoAODRun3/LFVAnalyzer/process_0715_v4/", help="Processed NanoAOD histogram base directory")
+parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/anti_NanoAODRun3/LFVAnalyzer/process_0715_v9/", help="Processed NanoAOD histogram base directory")
 parser.add_argument("--seed", dest="seed", type=int, default=42)
 args = parser.parse_args()
 ch = args.ch
@@ -49,14 +49,16 @@ class_names = ["bkg","sigTT", "sigST"]
 print("Start multi LFV Training")
 epochs = 1000
 inputvars_st = [ # "Muon1_pt","Muon1_eta",
-        "Tau1_pt","Tau1_mass","Tau1_eta",
-        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
+        "Tau1_pt","Tau1_mass","Tau1_eta","Tau1_decayMode",
+        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",#"Jet1_btagUParTAK4CvB","Jet1_btagUParTAK4CvL",
         "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
         "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-        "chi2","chi2_SMW_mass","chi2_SMTop_mass",
+        "bJet1_btagScore","bJet1_mass","bJet1_pt",#"btagcuts_loose",
+        "chi2","chi2_SMW_mass","chi2_SMTop_mass","chi2_SMTop_pt",
         "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
         "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-        "PuppiMET_pt", "PuppiMET_phi"
+        "lepbjet_dR","taubjet_dR","lepMET_dPhi","tauMET_dPhi",
+        "PuppiMET_pt", "PuppiMET_phi","Jet_HT","ncleanjetspass",
         ]
 if ch == "muon": inputvars_st = ["Muon1_pt", "Muon1_eta"] + inputvars_st
 else: inputvars_st = ["Electron1_pt", "Electron1_eta"] + inputvars_st
@@ -74,10 +76,18 @@ siglist_st = []
 siglist_tt = []
 if ch == "muon":
     siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
+    #siglist_st = ["TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor"]
+    #siglist_st = ["TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor"]
     siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"]
+    #siglist_tt = ["TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor",]
+    #siglist_tt = ["TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor"]
 else:
     siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor", "TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
+    #siglist_st = ["TCETau-LFV-Scalar", "TCETau-LFV-Vector", "TCETau-LFV-Tensor"]
+    #siglist_st = ["TUETau-LFV-Scalar", "TUETau-LFV-Vector", "TUETau-LFV-Tensor"]
     siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor", "TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
+    #siglist_tt = ["TTtoCETau-LFV-Scalar", "TTtoCETau-LFV-Vector", "TTtoCETau-LFV-Tensor"]
+    #siglist_tt = ["TTtoUETau-LFV-Scalar", "TTtoUETau-LFV-Vector", "TTtoUETau-LFV-Tensor"]
 
 years = ["v12_2022", "v12_2022EE", "v12_2023", "v12_2023BPix", "v15_2024"]
 
