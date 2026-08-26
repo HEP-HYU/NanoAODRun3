@@ -51,7 +51,7 @@ xsec = {
     "TTWJetsToLNu"                    : 0.2043,
     "TTWJetsToQQ"                     : 0.4062,
     "TTZToLLNuNu_M-10"               : 0.2529,
-    "TTZToQQ"                         : 0.5297,
+    "TTZtoQQ"                         : 0.5297,
     # QCD (muon-enriched)
     "QCD_Pt-15to20_MuEnrichedPt5"     : 1273190000 * 0.003,
     "QCD_Pt-20to30_MuEnrichedPt5"     : 558528000  * 0.0053,

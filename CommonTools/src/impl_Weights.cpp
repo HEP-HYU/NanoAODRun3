@@ -66,7 +66,8 @@ void NanoAODAnalyzerrdframe::applyWeights(string pileFile, string map){
 
         ////Check Normalisation issue for genWeight
         _rlm = _rlm.Redefine("unitGenWeight","genWeight != 0 ? genWeight/abs(genWeight) : 0");
-        if (_outfilename.find("WtoLNu") != std::string::npos) {
+        if (_outfilename.find("WtoLNu") != std::string::npos || _outfilename.find("WtoENu") != std::string::npos
+            || _outfilename.find("WtoMuNu") != std::string::npos || _outfilename.find("WtoTauNu") != std::string::npos) {
             std::cout << "WtoLNu" << std::endl;
             _rlm = _rlm.Redefine("lhereweight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");
             _rlm = _rlm.Redefine("unitGenWeight","LHEWeight_originalXWGTUP/abs(LHEWeight_originalXWGTUP)");

@@ -442,8 +442,8 @@ if os.path.exists(template_yml_path):
             if args.yield_only:
                 f1.write("\nplots:\n  include: ['histos_yield.yml']\n")
             else:
-                if os.path.exists(os.path.join(config_path, 'histos_v1.yml')):
-                    f1.write("\nplots:\n  include: ['histos_v1.yml', 'histos_v2.yml', 'histos_reco.yml']\n")
+                if os.path.exists(os.path.join(config_path, 'histos.yml')):
+                    f1.write("\nplots:\n  include: ['histos_yield.yml', 'histos.yml', 'histos_reco.yml']\n")
                 else:
                     f1.write("\nplots:\n  include: ['histos_yield.yml', 'histos_control.yml', 'histos_reco.yml']\n")
 
