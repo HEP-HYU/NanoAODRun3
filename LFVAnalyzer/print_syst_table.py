@@ -5,25 +5,30 @@ from collections import OrderedDict
 import argparse
 parser = argparse.ArgumentParser(usage="%prog [options]")
 parser.add_argument("-I", "--input", dest="input", type=str, default="", help="Input folder name")
-parser.add_argument("-Y", "--year", dest="year", type=str, default="", help="Select 2016pre/post, 2017, or 2018 for years")
+parser.add_argument("-Y", "--year", dest="year", type=str, default="", help="Select 2022, 2022EE, 2023, 2023BPix, or 2024 for years")
+parser.add_argument("-C", "--channel", dest="channel", type=str, default="", help="Select muon or electron")
 parser.add_argument("-D", dest="DNN", action="store_true", default=False, help="Run for DNN histograms")
+parser.add_argument("-F", dest="tauFF", action="store_true", default=False, help="Run for tauFF")
 parser.add_argument("--postfix", dest="postfix", type=str, default="", help="Add postfix to output here, to have rebinning for histograms")
 options = parser.parse_args()
 
 year = options.year
+channel = options.channel
 
-config_path = '../plotIt/configs/TOP-22-011/'
+config_path = '../plotIt/configs/Run3_'+channel+'/'
 dest_path = os.path.join('./', options.input)
 tmp_file_name = 'temp_' + year + '_forSyst.yml'
 string_to_add = 'systematics:\n'
 plot_to_add = "plots:\n  include: ['histos_yield.yml']\n\n"
-if 'FF' in options.input:
+if options.tauFF:
     plot_to_add = "plots:\n  include: ['histos_yield_S5.yml']\n\n"
 if options.DNN: plot_to_add = "plots:\n  include: ['histos_dnn.yml']\n\n"
 
-if   year == "2016pre" : tauYear = "UL2016_preVFP"
-elif year == "2016post": tauYear = "UL2016_postVFP"
-else                   : tauYear = "UL" + year
+if   year == "2022"    : tauYear = "2022_preEE"
+elif year == "2022EE"  : tauYear = "2022_postEE"
+elif year == "2023"    : tauYear = "2023_preBPix"
+elif year == "2023BPix": tauYear = "2023_postBPix"
+else                   : tauYear = year
 
 if os.path.exists(config_path + tmp_file_name):
     os.remove(config_path + tmp_file_name)
@@ -31,8 +36,8 @@ if os.path.exists(config_path + tmp_file_name):
 
 unc_cat = OrderedDict([
 ('all', ['xsec', 'pu', 'toppt',
-         'muid', 'muiso', 'mutrg', 'muExtra', 'muhighpt', 'muonhighscale',
-         #'tauidjet', 'tauidel', 'tauidmu', 'tes',
+         #'muid', 'muiso', 'mutrg', 'muExtra', 'muhighpt', 'muonhighscale',
+         'tauidjet', 'tauidel', 'tauidmu', 'tes',
          'tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
          'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
          'tauidjetSystdm10'+tauYear, 'tauidjetSystdm11'+tauYear,
@@ -49,7 +54,6 @@ unc_cat = OrderedDict([
          'tune', 'hdamp',]),
 ('pu', ['pu']),
 ('toppt', ['toppt']),
-('prefire', ['prefire']),
 ('xsec', ['xsec']),
 ('muon', ['muid', 'muiso', 'mutrg', 'muExtra', 'muhighpt', 'muonhighscale']),
 ('muhighpt', ['muhighpt']),
@@ -197,7 +201,7 @@ for key, value in unc_cat.items():
     string_to_add = 'systematics:\n'
 
 unc_summary = OrderedDict([
-('xsec', 'Cross section'), ('pu', 'Pileup'), ('prefire', 'Prefire Reweight'),
+('xsec', 'Cross section'), ('pu', 'Pileup'),
 ('toppt', 'Top pT reweighting'), ('muon', 'Muon SF'),
 ('tauid', 'Tau ID'), ('tes', 'TES'), ('tauFF', 'Tau Fake Factor'),
 ('jesAll', 'JES'), ('jer', 'JER'), ('metUnclust', 'Unclustered energy'),
@@ -215,8 +219,6 @@ with open(template_path) as f:
     lines = f.readlines()
     with open(os.path.join(dest_path, 'figure_' + year + options.postfix, 'total_syst.tex'), "w") as f1:
         for line in lines:
-            #if year != '2017' and 'Prefire' in line: continue
-            #if 'Prefire' in line: continue
             for key, value in unc_summary.items():
                 if value == line.replace("&", "").rstrip().lstrip():
                     with open(os.path.join(dest_path, 'figure_' + year + options.postfix, 'systematics_' + key + '.tex'),'r') as f2:
