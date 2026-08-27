@@ -34,9 +34,10 @@
       "2024_Summer24": 0.1272
     },
     "_comment_wp": "Btag medium WPs for Run 3: ParticleNet for 22/23, UParTAK4 for 24.",
-    "tagger_run3":       "particleNet_shape",
-    "tagger_light_run3": "UParTAK4_light",
-    "tagger_2024":       "UParTAK4_comb",
+    "tagger_run3": "particleNet_comb",
+    "tagger_light_run3": "particleNet_light",
+    "tagger_2024": "UParTAK4_comb",
+    "tagger_light_2024": "UParTAK4_light",
     "era_to_btagYear": {
       "2022":        "2022_Summer22",
       "2022_preEE":  "2022_Summer22",

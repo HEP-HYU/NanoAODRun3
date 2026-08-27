@@ -66,58 +66,160 @@ void NanoAODAnalyzerrdframe::selectMuons(string cut, string vetocut) {
 }
 
 void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagYear, string btagMap, string btagMapLight, float btagcut) {
-    cout << "Loading Btag SF: " << btagYear << endl;
-
-    _rlm = _rlm.Define("btag_var", [](){return strings(btag_var);})
-               .Define("btag_jes_var", [jes_var](){return strings(jes_var);});
+    cout << "Loading Btag SF (fixed WP): " << btagYear << "  comb=" << btagMap << "  light=" << btagMapLight << endl;
+    // btag_var / btag_jes_var columns not needed for fixed-WP SF (shape-only).
 
     auto bSFreader = loadCorrectionSet("data/BTV/" + btagYear + "/btagging.json.gz");
-    auto _btagSF = bSFreader->at(btagMap);
+    // Fixed-WP corrections:
+    //   btagMap      = e.g. "particleNet_comb" (2022/23) or "UParTAK4_comb" (2024) — for b/c jets
+    //   btagMapLight = e.g. "particleNet_light"           or "UParTAK4_light"       — for light jets
+    // Inputs: (systematic, working_point, flavor, abseta, pt)  — no discriminant needed.
+    auto _btagSF      = bSFreader->at(btagMap);
     auto _btagSFlight = bSFreader->at(btagMapLight);
 
-    
+    // -----------------------------------------------------------------------
+    // Fixed Working Point (Case 1/2) b-tag SF
+    // BTV recommendation: for analyses that do NOT use the b-tag discriminant
+    // shape in the fit, apply per-jet SFs only to WP-passing (tagged) jets.
+    // Event weight = product of SF_i over all jets that pass the medium WP.
+    //
+    // Systematic indices (same order for all eras, only common systs used):
+    //   0: central
+    //   1/2:  up/down_correlated
+    //   3/4:  up/down_uncorrelated
+    //   5/6:  up/down_statistic
+    //   7/8:  up/down_type3
+    //   9/10: up/down_bfragmentation
+    //
+    // Light-jet systs (applied only to hadronFlavour==0):
+    //   0: central  1/2: up/down_correlated  3/4: up/down_uncorrelated
+    // -----------------------------------------------------------------------
+    const std::string wp = "M";  // Medium WP
+    const std::vector<std::string> systs_hfbc = {
+        "central",
+        "up_correlated",   "down_correlated",    // 1/2
+        "up_uncorrelated", "down_uncorrelated",  // 3/4
+        "up_statistic",    "down_statistic",      // 5/6
+        "up_type3",        "down_type3",          // 7/8
+        "up_bfragmentation","down_bfragmentation" // 9/10
+    };
+    const std::vector<std::string> systs_light = {
+        "central",
+        "up_correlated",   "down_correlated",    // 1/2
+        "up_uncorrelated", "down_uncorrelated"   // 3/4
+    };
+    const int n_systs = static_cast<int>(systs_hfbc.size()); // 11
 
-    //case3 - Shape correction
-    //If you are interested in using the whole b-tagging discriminant distribution in your analysis,
-    //e.g. using b-tagging variables to separate signal and background, then this method is for you
-    auto btagSF_shape = [this, _btagSF](floats &pts, floats &etas, uchars &hadflav, floats &btags)->floatsVec{
+    auto btagSF_fixedWP = [this, _btagSF, _btagSFlight, wp, systs_hfbc, systs_light, n_systs, btagcut]
+                          (floats &pts, floats &etas, uchars &hadflav, floats &bscores) -> floats {
+        // Returns event-level weight vector [n_systs].
+        // For each systematic, multiply SF of all tagged (score > WP threshold) jets.
+        // Jets that fail the WP do not contribute (SF=1 for them in the simple method).
+        // This is the standard BTV "Case 1" fixed-WP approach.
+        floats out(n_systs, 1.0f);
+        for (int j = 0; j < static_cast<int>(pts.size()); j++) {
+            float pt  = pts[j];
+            float eta = std::abs(etas[j]);
+            int   flav = static_cast<int>(hadflav[j]);
+            float score = bscores[j];
+
+            // Skip jets outside SF validity range or not passing WP
+            if (pt < 20.f || eta > 2.5f) continue;
+            if (score < btagcut) continue;  // only tagged jets get SF
+
+            for (int s = 0; s < n_systs; s++) {
+                float sf = 1.0f;
+                try {
+                    if (flav == 0) {
+                        // Light jets: use _light correction; only 5 systs available
+                        const auto &syst_light = (s < static_cast<int>(systs_light.size()))
+                                                  ? systs_light[s] : systs_light[0];
+                        sf = _btagSFlight->evaluate({syst_light, wp, flav, eta, pt});
+                    } else {
+                        // b/c jets: use _comb correction
+                        sf = _btagSF->evaluate({systs_hfbc[s], wp, flav, eta, pt});
+                    }
+                } catch (const std::exception &e) {
+                    std::cerr << "[WARN] btagSF_fixedWP evaluate failed"
+                              << " syst=" << systs_hfbc[s]
+                              << " wp=" << wp << " flav=" << flav
+                              << " eta=" << eta << " pt=" << pt
+                              << ": " << e.what() << "\n";
+                    sf = 1.0f;
+                }
+                out[s] *= sf;
+            }
+        }
+        return out;
+    };
+
+    // btagWeight[0] = central, [1/2] = corr up/dn, [3/4] = uncorr up/dn,
+    // [5/6] = stat up/dn, [7/8] = type3 up/dn, [9/10] = bfrag up/dn
+    _rlm = _rlm.Define("btagWeight", btagSF_fixedWP,
+                        {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"});
+    // Note: btagNormalization is NOT needed for fixed-WP SFs.
+    // The direct event weight btagWeight[0] is used in defineWeightVars().
+
+    // =======================================================================
+    // SHAPE CORRECTION (Case 3) — disabled; restore when needed
+    // Use this block instead of the fixed-WP block above when the analysis
+    // uses the b-tag discriminant distribution directly in the fit (e.g. DNN
+    // input, template fit on discriminant). Requires:
+    //   btagMap = "particleNet_shape" (or "deepJet_shape" / "robustParticleTransformer_shape")
+    //   After enabling, also call defineBTagNormalization() in defineWeightVars()
+    //   and switch all btagWeight[*] references back to btagWeightNorm[*].
+    //
+    // Systematic indices for shape correction (17 entries):
+    //   0: central
+    //   1/2:  up/down_hf          (b-jets, HF)
+    //   3/4:  up/down_lf          (light jets, LF)
+    //   5/6:  up/down_hfstats1    (b-jets stat1)
+    //   7/8:  up/down_hfstats2    (b-jets stat2)
+    //   9/10: up/down_lfstats1    (light stat1)
+    //  11/12: up/down_lfstats2    (light stat2)
+    //  13/14: up/down_cferr1      (c-jets err1)
+    //  15/16: up/down_cferr2      (c-jets err2)
+    // =======================================================================
+    /*
+    auto btagSF_shape = [this, _btagSF](floats &pts, floats &etas, uchars &hadflav, floats &btags) -> floatsVec {
         std::vector<std::string> systs = {"central",
-            "up_hf", "down_hf", "up_lf", "down_lf",
-            "up_hfstats1", "down_hfstats1", "up_hfstats2", "down_hfstats2",
-            "up_lfstats1", "down_lfstats1", "up_lfstats2", "down_lfstats2",
-            "up_cferr1", "down_cferr1", "up_cferr2", "down_cferr2"};
-        
+            "up_hf",       "down_hf",
+            "up_lf",       "down_lf",
+            "up_hfstats1", "down_hfstats1",
+            "up_hfstats2", "down_hfstats2",
+            "up_lfstats1", "down_lfstats1",
+            "up_lfstats2", "down_lfstats2",
+            "up_cferr1",   "down_cferr1",
+            "up_cferr2",   "down_cferr2"};
+
         floats wVec;
         wVec.reserve(systs.size());
         floatsVec out;
         out.reserve(pts.size());
 
-        if (int(pts.size()) != int(etas.size())) cout << "eta size hmmmmmmmmmmmm" << endl;
-        if (int(pts.size()) != int(hadflav.size())) cout << "hadflav size hmmmmmmmmmmmm" << endl;
-        if (int(pts.size()) != int(btags.size())) cout << "btag size hmmmmmmmmmmmm" << endl;
-        for (auto i=0; i<int(pts.size()); i++){
-            for (auto &syst: systs){
-                float sf = 1.0;
-                if (pts[i] < 30 || etas[i] > 2.5) {
-                    sf = 1.0;
+        for (auto i = 0; i < int(pts.size()); i++) {
+            for (auto &syst : systs) {
+                float sf = 1.0f;
+                if (pts[i] < 30 || std::abs(etas[i]) > 2.5) {
+                    sf = 1.0f;
                 } else if (btags[i] < 0.0f) {
                     // disc < 0 (e.g. btagPNetB=-1): jet is untaggable/masked.
                     // Correctionlib binning starts at 0; evaluating would throw.
-                    // SF = 1.0 by convention (no correction applied).
-                    sf = 1.0;
-                } else if (syst.find("cferr")!=std::string::npos && hadflav[i]!=4) {
-                    sf = 1.0;
-                } else if ((syst.find("hf")!=std::string::npos || syst.find("lf")!=std::string::npos) && hadflav[i]==4) {
-                    sf = 1.0;
+                    sf = 1.0f;
+                } else if (syst.find("cferr") != std::string::npos && hadflav[i] != 4) {
+                    sf = 1.0f;  // cferr systs apply only to c-jets (flav==4)
+                } else if ((syst.find("hf") != std::string::npos || syst.find("lf") != std::string::npos)
+                           && hadflav[i] == 4) {
+                    sf = 1.0f;  // hf/lf systs do NOT apply to c-jets
                 } else {
                     try {
-                        sf = _btagSF->evaluate({syst, int(hadflav[i]), abs(etas[i]), pts[i], btags[i]});
+                        sf = _btagSF->evaluate({syst, int(hadflav[i]), std::abs(etas[i]), pts[i], btags[i]});
                     } catch (const std::exception &e) {
-                        std::cerr << "[WARN] btagSF evaluate failed (syst=" << syst
-                                  << " flav=" << int(hadflav[i]) << " eta=" << etas[i]
-                                  << " pt=" << pts[i] << " disc=" << btags[i]
-                                  << "): " << e.what() << "\n";
-                        sf = 1.0;
+                        std::cerr << "[WARN] btagSF shape evaluate failed"
+                                  << " syst=" << syst << " flav=" << int(hadflav[i])
+                                  << " eta=" << etas[i] << " pt=" << pts[i]
+                                  << " disc=" << btags[i] << ": " << e.what() << "\n";
+                        sf = 1.0f;
                     }
                 }
                 wVec.emplace_back(sf);
@@ -127,22 +229,27 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
         }
         return out;
     };
-    auto btag_evWeight = [this](floatsVec &btagWeights)->floats{
-        const int vars = 17;
-        floats out(vars, 1.0);
 
-        for (auto &jet: btagWeights){
-            for (int i=0; i<vars; i++){
+    auto btag_evWeight = [this](floatsVec &btagWeights) -> floats {
+        const int vars = 17;
+        floats out(vars, 1.0f);
+        for (auto &jet : btagWeights) {
+            for (int i = 0; i < vars; i++) {
                 out[i] *= jet[i];
             }
         }
         return out;
     };
 
-    _rlm = _rlm.Define("Jet_btagSF", btagSF_shape, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"})
-               .Define("btagWeight", btag_evWeight, {"Jet_btagSF"});
-
-
+    // Shape SF needs the per-jet floatsVec column (Jet_btagSF) as intermediate.
+    // The final btagWeight[17] is the per-event product.
+    // After enabling, also restore defineBTagNormalization() call and
+    // use btagWeightNorm[*] (not btagWeight[*]) in defineWeightVars().
+    _rlm = _rlm.Define("btag_var",     []()        { return strings(btag_var); })
+               .Define("btag_jes_var", [jes_var]() { return strings(jes_var); })
+               .Define("Jet_btagSF",   btagSF_shape, {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"})
+               .Define("btagWeight",   btag_evWeight, {"Jet_btagSF"});
+    */
 }
 
 void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet, string vsmu, string vse) {
