@@ -2,6 +2,7 @@
 # Permutation feature importance against the trained model.
 
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import sys
 import pickle
 import argparse
@@ -9,6 +10,8 @@ import uproot
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from tensorflow.keras.utils import to_categorical
 from utils.feature_config import get_inputvars, SIGLIST_ST, SIGLIST_TT, YEARS

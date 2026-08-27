@@ -754,6 +754,7 @@ void TopLFVAnalyzer::storeOutputBranches() {
     addVartoStore("lepbjet_dR");      // DNN: ΔR(lep, b-jet)
     addVartoStore("taubjet_dR");      // DNN: ΔR(τ, b-jet)
     addVartoStore("LFV_top_mass");     // DNN: m(lep+τ+b)
+    addVartoStore("st_met");
     addVartoStore("GenPart_top_pt");
     addVartoStore("TopPtWeight");
     addVartoStore("LHEPart_pt");

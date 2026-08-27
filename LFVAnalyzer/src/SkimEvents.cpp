@@ -14,10 +14,10 @@ SkimEvents::SkimEvents(TTree *t, std::string outfilename, std::string year, std:
   _isSkim = true;
   cout << "<< Start Skim NanoAOD >>" << endl;
   _isHTstitching = false;
-  if (_outfilename.find("WtoENu-4Jets")!= string::npos || _outfilename.find("WtoMuNu-4Jets")!= string::npos || _outfilename.find("WtoTauNu-4Jets")!= string::npos) {
-      cout << "WJet stitching" << endl;
-      _isHTstitching = true;
-  }
+  //if (_outfilename.find("WtoENu-4Jets")!= string::npos || _outfilename.find("WtoMuNu-4Jets")!= string::npos || _outfilename.find("WtoTauNu-4Jets")!= string::npos) {
+  //    cout << "WJet stitching" << endl;
+  //    _isHTstitching = true;
+  //}
   if (_ch.find("muon") != std::string::npos){
       cout << "muon channel" << endl;
       _isMuonCh = true;
@@ -186,14 +186,12 @@ void SkimEvents::defineCuts()
 
   if (_ch.find("muon") != std::string::npos) {
       addCuts("(HLT_IsoMu24 || HLT_Mu50 || HLT_CascadeMu100 || HLT_HighPtTkMu100) && nmuonpass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && Flag_ecalBadCalibFilter && events_isVeto==0","0");
-      if (_isSignal){
-          addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "00");
-      }
   } else if (_ch.find("electron") != std::string::npos) {
       addCuts("(HLT_Ele30_WPTight_Gsf || HLT_Ele115_CaloIdVT_GsfTrkIdT || HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165 || HLT_Photon200) && nelepass == 1 && PV_npvsGood > 0 && Flag_goodVertices && Flag_globalSuperTightHalo2016Filter && Flag_EcalDeadCellTriggerPrimitiveFilter && Flag_BadPFMuonFilter && Flag_BadPFMuonDzFilter && Flag_hfNoisyHitsFilter && Flag_eeBadScFilter && Flag_ecalBadCalibFilter && events_isVeto==0", "0");
-      if (_isSignal){
-          addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "00");
-      }
+  }
+
+  if (_isSignal){
+      addCuts("GenPart_d_SMW1_idx >= 0 && GenPart_d_SMW2_idx >= 0", "00");
   }
 
   //Prescription to fill up WJets 0J
