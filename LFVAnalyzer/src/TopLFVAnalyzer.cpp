@@ -368,16 +368,16 @@ void TopLFVAnalyzer::defineKinematicVars() {
         addVar({"leptau_charge", "Electron1_charge * Tau1_charge", ""});
     }
 
-    addVar({"Jet1_pt",   si("Jet_pt",   0),        ""});
-    addVar({"Jet1_eta",  si("Jet_eta",  0, "-99.f"), ""});
-    addVar({"Jet1_mass", si("Jet_mass", 0),        ""});
-    addVar({"Jet1_btagPNetB", si("Jet_btagPNetB", 0), ""});
-
     // NanoAODv12 (22/23 eras) does not have UParTAK4 tagger branches in the skim output.
     // Use PNet equivalents for pre-2024; keep UParTAK4 for v15_2024.
     const std::string bTagCol    = _isRun24 ? "Jet_btagUParTAK4B"   : "Jet_btagPNetB";
     const std::string bTagColCvB = _isRun24 ? "Jet_btagUParTAK4CvB" : "Jet_btagPNetCvB";
     const std::string bTagColCvL = _isRun24 ? "Jet_btagUParTAK4CvL" : "Jet_btagPNetCvL";
+
+    addVar({"Jet1_pt",   si("Jet_pt",   0),        ""});
+    addVar({"Jet1_eta",  si("Jet_eta",  0, "-99.f"), ""});
+    addVar({"Jet1_mass", si("Jet_mass", 0),        ""});
+    addVar({"Jet1_btagPNetB", si(bTagCol, 0), ""});
 
     // Read btag medium WP from config per era
     std::string btagEra = "";
@@ -418,7 +418,7 @@ void TopLFVAnalyzer::defineKinematicVars() {
     addVar({"Jet2_pt",   si("Jet_pt",   1),        ""});
     addVar({"Jet2_eta",  si("Jet_eta",  1, "-99.f"), ""});
     addVar({"Jet2_mass", si("Jet_mass", 1),        ""});
-    addVar({"Jet2_btagPNetB",        si("Jet_btagPNetB", 1), ""});
+    addVar({"Jet2_btagPNetB",        si(bTagCol, 1), ""});
     addVar({"Jet2_btagUParTAK4B",   si(bTagCol,    1), ""});
     addVar({"Jet2_btagUParTAK4CvB", si(bTagColCvB, 1), ""});
     addVar({"Jet2_btagUParTAK4CvL", si(bTagColCvL, 1), ""});
@@ -427,7 +427,7 @@ void TopLFVAnalyzer::defineKinematicVars() {
     addVar({"Jet3_pt",   si("Jet_pt",   2),        ""});
     addVar({"Jet3_eta",  si("Jet_eta",  2, "-99.f"), ""});
     addVar({"Jet3_mass", si("Jet_mass", 2),        ""});
-    addVar({"Jet3_btagPNetB",        si("Jet_btagPNetB", 2), ""});
+    addVar({"Jet3_btagPNetB",        si(bTagCol, 2), ""});
     addVar({"Jet3_btagUParTAK4B",   si(bTagCol,    2), ""});
     addVar({"Jet3_btagUParTAK4CvB", si(bTagColCvB, 2), ""});
     addVar({"Jet3_btagUParTAK4CvL", si(bTagColCvL, 2), ""});
@@ -774,15 +774,12 @@ void TopLFVAnalyzer::bookHists() {
         "_nobtag", "_nopu", "_notau", "_notoppt",
         "__puup",   "__pudown",
         "__topptup", "__topptdown",
-        // btag shape variations (all 16 components)
-        "__btaghfup",       "__btaghfdown",      // = btaghf (always defined)
-        "__btaglfup",       "__btaglfdown",
-        "__btaghfstats1up",  "__btaghfstats1down",
-        "__btaghfstats2up",  "__btaghfstats2down",
-        "__btaglfstats1up",  "__btaglfstats1down",
-        "__btaglfstats2up",  "__btaglfstats2down",
-        "__btagcferr1up", "__btagcferr1down",
-        "__btagcferr2up", "__btagcferr2down",
+        // Fixed-WP btag variations (10 components)
+        "__btagcorrup",     "__btagcorrdown",
+        "__btaguncorrup",   "__btaguncorrdown",
+        "__btagstatup",     "__btagstatdown",
+        "__btagtype3up",    "__btagtype3down",
+        "__btagbfragup",    "__btagbfragdown",
     };
     // Channel-dependent lepton SF suffixes
     if (_isMuonCh) {

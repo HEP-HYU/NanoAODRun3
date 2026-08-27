@@ -51,7 +51,7 @@ void TauFakeFactorAnalyzer::defineCuts() {
 
 void TauFakeFactorAnalyzer::defineMoreVars() {
 
-    defineBTagNormalization();
+    // defineBTagNormalization(); // Not needed for fixed-WP b-tagging
 
     addVar({"Tau1_pt", "Tau_pt[0]", ""});
     addVar({"Tau1_pt_gen", "(Tau_pt_gen.size()>0) ? Tau_pt_gen[0] : -1", ""});
@@ -98,7 +98,7 @@ void TauFakeFactorAnalyzer::defineMoreVars() {
             addVar({"eventWeight_tau", "tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
         }
         addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_lep * eventWeight_tau"});
-        addVar({"eventWeight", "eventWeight_nobtag * btagWeightNorm[0]"});
+        addVar({"eventWeight", "eventWeight_nobtag * btagWeight[0]"});
     }
 
     // define variables that you want to store

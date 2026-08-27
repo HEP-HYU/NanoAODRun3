@@ -402,11 +402,11 @@ For `--syst all` or `--syst theory`, the following branches are added to each MC
 | `eventWeight__muidup/down` | Muon ID SF |
 | `eventWeight__muisoup/down` | Muon isolation SF |
 | `eventWeight__mutrgup/down` | Muon trigger SF |
-| `eventWeight__btaghfup/down` | b-tag HF uncertainty |
-| `eventWeight__btaglfup/down` | b-tag LF uncertainty |
-| `eventWeight__btaghfstats{1,2}up/down` | b-tag HF stat |
-| `eventWeight__btaglfstats{1,2}up/down` | b-tag LF stat |
-| `eventWeight__btagcferr{1,2}up/down` | b-tag charm frag |
+| `eventWeight__btagcorrup/down` | b-tag correlated uncertainty |
+| `eventWeight__btaguncorrup/down` | b-tag uncorrelated uncertainty |
+| `eventWeight__btagstatup/down` | b-tag statistical uncertainty |
+| `eventWeight__btagtype3up/down` | b-tag type3 uncertainty |
+| `eventWeight__btagbfragup/down` | b-tag b-fragmentation uncertainty |
 | `eventWeight__tauidjetUncert{0,1}up/down` | Tau VSjet stat |
 | `eventWeight__tauidjetSyst*up/down` | Tau VSjet syst (era/DM) |
 | `eventWeight__tauidelup/down` | Tau VSe SF |
@@ -418,7 +418,7 @@ For `--syst all` or `--syst theory`, the following branches are added to each MC
 | `eventWeight__fsrup/down` | FSR (theory mode) |
 | `eventWeight__pdf{i}` | PDF eigenvectors (theory mode) |
 
-**b-tag normalization:** The nominal b-tag SF (`btagWeightNorm[0]`) and all 16 variation components are normalized per jet-multiplicity bin, following the CMS BTV recommendation, to preserve yields.
+**b-tag SF:** Fixed Working Point (Medium) SFs are applied directly to WP-passing (tagged) jets via `btagWeight[0]`, with 10 variation components (`btagWeight[1..10]`). Normalization is not required for fixed-WP SFs.
 
 ### DNN input features
 

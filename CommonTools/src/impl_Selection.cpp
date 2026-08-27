@@ -155,8 +155,9 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
 
     // btagWeight[0] = central, [1/2] = corr up/dn, [3/4] = uncorr up/dn,
     // [5/6] = stat up/dn, [7/8] = type3 up/dn, [9/10] = bfrag up/dn
+    const std::string bTagCol = _isRun24 ? "Jet_btagUParTAK4B" : "Jet_btagPNetB";
     _rlm = _rlm.Define("btagWeight", btagSF_fixedWP,
-                        {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", "Jet_btagPNetB"});
+                        {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", bTagCol});
     // Note: btagNormalization is NOT needed for fixed-WP SFs.
     // The direct event weight btagWeight[0] is used in defineWeightVars().
 
