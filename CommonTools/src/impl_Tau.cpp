@@ -35,8 +35,9 @@ void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, 
     auto tauES = [this, _testool, tauid_vsjet, tauid_vse](std::string var) {
         return [this, _testool, tauid_vsjet, tauid_vse, var](floats &pts, floats &etas, uchars &dms, uchars &genids)->floats {
             floats xout;
-            xout.reserve(pts.size());
-            for (size_t i=0; i<pts.size(); i++) {
+            size_t n = std::min({pts.size(), etas.size(), dms.size(), genids.size()});
+            xout.reserve(n);
+            for (size_t i=0; i<n; i++) {
                 float es = 1.0;
                 int dm_tmp = int (dms[i]);
                 try{

@@ -117,7 +117,8 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
         // Jets that fail the WP do not contribute (SF=1 for them in the simple method).
         // This is the standard BTV "Case 1" fixed-WP approach.
         floats out(n_systs, 1.0f);
-        for (int j = 0; j < static_cast<int>(pts.size()); j++) {
+        size_t n_jets = std::min({pts.size(), etas.size(), hadflav.size(), bscores.size()});
+        for (size_t j = 0; j < n_jets; j++) {
             float pt  = pts[j];
             float eta = std::abs(etas[j]);
             int   flav = static_cast<int>(hadflav[j]);
@@ -324,7 +325,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
     auto skimCol = [this](floatsVec toSkim, ints cut)->floatsVec {
 
         floatsVec out;
-        for (size_t i=0; i<toSkim.size(); i++) {
+        size_t n = std::min(toSkim.size(), cut.size());
+        for (size_t i=0; i<n; i++) {
             if (cut[i] > 0) out.emplace_back(toSkim[i]);
         }
         if (out.size() > 0) return out;
@@ -443,10 +445,11 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             floats uncSources;
             uncSources.reserve(nSystVsJet);
             floatsVec wVec;
-            wVec.reserve(pt.size());
+            size_t n = std::min({pt.size(), dm.size(), genmatch.size()});
+            wVec.reserve(n > 0 ? n : 1);
 
-            if (pt.size() > 0) {
-                for (size_t i=0; i<pt.size(); i++) {
+            if (n > 0) {
+                for (size_t i=0; i<n; i++) {
                     int gm = int(genmatch[i]);
                     if (gm == 5) {  // real hadronic tau only
                         float nom_sf = 1.0f;
@@ -485,10 +488,11 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             floats uncSources;
             uncSources.reserve(3);
             floatsVec wVec;
-            wVec.reserve(eta.size());
+            size_t n = std::min({eta.size(), dm.size(), genmatch.size()});
+            wVec.reserve(n > 0 ? n : 1);
 
-            if (eta.size() > 0) {
-                for (size_t i=0; i<eta.size(); i++) {
+            if (n > 0) {
+                for (size_t i=0; i<n; i++) {
                     int gm = int(genmatch[i]);
                     if (gm == 1 || gm == 3) {  // prompt e or tau→e
                         try {
@@ -525,10 +529,11 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             floats uncSources;
             uncSources.reserve(3);
             floatsVec wVec;
-            wVec.reserve(eta.size());
+            size_t n = std::min(eta.size(), genmatch.size());
+            wVec.reserve(n > 0 ? n : 1);
 
-            if (eta.size() > 0) {
-                for (size_t i=0; i<eta.size(); i++) {
+            if (n > 0) {
+                for (size_t i=0; i<n; i++) {
                     int gm = int(genmatch[i]);
                     if (gm == 2 || gm == 4) {  // prompt μ or tau→μ
                         try {
