@@ -564,26 +564,72 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         };
 
 
+        // ---------------------------------------------------------------
+        // Tau_genPartFlav is still raw-size here (before any seltaucuts Redefine).
+        // First capture Loose-filtered genPartFlav while it is still available at raw size,
+        // then Redefine for tight, then compute both sets of SFs from correctly aligned columns.
+        // ---------------------------------------------------------------
+
+        // --- Loose genPartFlav: filter raw column with loose mask (same raw size) ---
+        _rlm = _rlm.Define("Tau_genPartFlav_loose", "Tau_genPartFlav[seltaucuts_loose]");
+
+        // --- Tight genPartFlav: filter raw column with tight mask ---
+        _rlm = _rlm.Redefine("Tau_genPartFlav", "Tau_genPartFlav[seltaucuts]");
+
+        // --- Tight tau SFs: all columns now aligned to Tight selection ---
         _rlm = _rlm.Define("tauWeightIdVsJet", tauSFIdVsJet, {"Tau_pt","Tau_decayMode","Tau_genPartFlav"})
-                   .Define("tauWeightIdVsEl", tauSFIdVsEl, {"Tau_eta","Tau_decayMode", "Tau_genPartFlav"})
-                   .Define("tauWeightIdVsMu", tauSFIdVsMu, {"Tau_eta","Tau_genPartFlav"});
+                   .Define("tauWeightIdVsEl",  tauSFIdVsEl,  {"Tau_eta","Tau_decayMode","Tau_genPartFlav"})
+                   .Define("tauWeightIdVsMu",  tauSFIdVsMu,  {"Tau_eta","Tau_genPartFlav"});
 
-        tauid_vsjet = "Loose";
+        _rlm = _rlm.Define("taugencut","Tau_genPartFlav == 5")
+                   .Redefine("Tau_pt_gen", "Tau_pt[taugencut]");
 
-        _rlm = _rlm.Define("tauWeightIdVsJet_loose", tauSFIdVsJet, {"Tau_pt","Tau_decayMode","Tau_genPartFlav"});
-        _rlm = _rlm.Define("Tau_genPartFlav_loose","Tau_genPartFlav[seltaucuts_loose]")
-                   .Define("taugencut_loose","Tau_genPartFlav_loose == 5")
-                   .Redefine("Tau_pt_loose_gen", "Tau_pt_loose_gen[taugencut_loose]")
-                   .Redefine("tauWeightIdVsJet_loose", skimCol, {"tauWeightIdVsJet_loose", "seltaucuts_loose"})
-                   .Define("tauWeightIdVsEl_loose", skimCol, {"tauWeightIdVsEl", "seltaucuts_loose"})
-                   .Define("tauWeightIdVsMu_loose", skimCol, {"tauWeightIdVsMu", "seltaucuts_loose"});
+        // --- Loose tau SFs: all columns aligned to Loose selection ---
+        // A NEW lambda is needed because tauSFIdVsJet captures tauid_vsjet by value at
+        // definition time (Tight WP). Reassigning the local variable has no effect on it.
+        const std::string tauid_vsjet_loose = "Loose";
+        auto tauSFIdVsJet_loose = [this, _tauidSFjet, tauid_vsjet_loose, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
+            floats uncSources;
+            uncSources.reserve(nSystVsJet);
+            floatsVec wVec;
+            size_t n = std::min({pt.size(), dm.size(), genmatch.size()});
+            wVec.reserve(n > 0 ? n : 1);
+            if (n > 0) {
+                for (size_t i=0; i<n; i++) {
+                    int gm = int(genmatch[i]);
+                    if (gm == 5) {
+                        float nom_sf = 1.0f;
+                        try {
+                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet_loose, tauid_vse, "nom", "dm"});
+                        } catch (...) { nom_sf = 1.0f; }
+                        for (const auto &sname : systNamesVsJet) {
+                            try {
+                                uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet_loose, tauid_vse, sname, "dm"}));
+                            } catch (...) {
+                                uncSources.emplace_back(nom_sf);
+                            }
+                        }
+                    } else {
+                        uncSources.assign(nSystVsJet, 1.0f);
+                    }
+                    wVec.emplace_back(uncSources);
+                    uncSources.clear();
+                }
+            } else {
+                wVec.emplace_back(floats(nSystVsJet, 1.0f));
+            }
+            return wVec;
+        };
 
-        _rlm = _rlm.Redefine("Tau_genPartFlav","Tau_genPartFlav[seltaucuts]")
-                   .Define("taugencut","Tau_genPartFlav == 5")
-                   .Redefine("Tau_pt_gen", "Tau_pt[taugencut]")
-                   .Redefine("tauWeightIdVsJet", skimCol, {"tauWeightIdVsJet", "seltaucuts"})
-                   .Redefine("tauWeightIdVsEl", skimCol, {"tauWeightIdVsEl", "seltaucuts"})
-                   .Redefine("tauWeightIdVsMu", skimCol, {"tauWeightIdVsMu", "seltaucuts"});
+        _rlm = _rlm.Define("tauWeightIdVsJet_loose", tauSFIdVsJet_loose,
+                            {"Tau_pt_loose","Tau_decayMode_loose","Tau_genPartFlav_loose"})
+                   .Define("tauWeightIdVsEl_loose",  tauSFIdVsEl,
+                            {"Tau_eta_loose","Tau_decayMode_loose","Tau_genPartFlav_loose"})
+                   .Define("tauWeightIdVsMu_loose",  tauSFIdVsMu,
+                            {"Tau_eta_loose","Tau_genPartFlav_loose"});
+
+        _rlm = _rlm.Define("taugencut_loose","Tau_genPartFlav_loose == 5")
+                   .Redefine("Tau_pt_loose_gen","Tau_pt_loose[taugencut_loose]");
     }
 }
 
