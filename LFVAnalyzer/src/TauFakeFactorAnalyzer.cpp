@@ -8,6 +8,17 @@
 #include "TauFakeFactorAnalyzer.h"
 #include "utility.h"
 
+namespace {
+    // Safe-index helper: "((col.size()>n) ? float(col[n]) : fallback)"
+    // Outer parens prevent ?:-vs-* precedence warnings when used as "eventWeight * si(...)".
+    inline std::string si(const std::string& c, int n, const std::string& fb="-1.f") {
+        return "(((" + c + ").size()>" + std::to_string(n) + ") ? float((" + c + ")[" + std::to_string(n) + "]) : " + fb + ")";
+    }
+    inline std::string sii(const std::string& c, int n, const std::string& fb="-1") {
+        return "(((" + c + ").size()>" + std::to_string(n) + ") ? int((" + c + ")[" + std::to_string(n) + "]) : " + fb + ")";
+    }
+}
+
 TauFakeFactorAnalyzer::TauFakeFactorAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads, std::string mode)
 :TopLFVAnalyzer(t, outfilename, year, ch, syst, jsonfname, applytauFF, globaltag, nthreads), _mode(mode)
 {
@@ -53,52 +64,49 @@ void TauFakeFactorAnalyzer::defineMoreVars() {
 
     // defineBTagNormalization(); // Not needed for fixed-WP b-tagging
 
-    addVar({"Tau1_pt", "Tau_pt[0]", ""});
-    addVar({"Tau1_pt_gen", "(Tau_pt_gen.size()>0) ? Tau_pt_gen[0] : -1", ""});
-    addVar({"Tau1_charge", "Tau_charge[0]", ""});
-    addVar({"Tau1_decayMode", "Tau_decayMode[0]", ""});
-    addVar({"Tau1_decayMode_gen", "(Tau_pt_gen.size()>0) ? Tau_decayMode[0] : -1", ""});
+    // Tight tau variables (safely indexed with fallback)
+    addVar({"Tau1_pt", si("Tau_pt", 0), ""});
+    addVar({"Tau1_pt_gen", "(Tau_pt_gen.size()>0) ? float(Tau_pt_gen[0]) : -1.f", ""});
+    addVar({"Tau1_charge", sii("Tau_charge", 0, "0"), ""});
+    addVar({"Tau1_decayMode", sii("Tau_decayMode", 0, "-1"), ""});
+    addVar({"Tau1_decayMode_gen", "(Tau_pt_gen.size()>0 && Tau_decayMode.size()>0) ? int(Tau_decayMode[0]) : -1", ""});
+
+    // Loose tau variables (safely indexed with fallback)
+    addVar({"Tau1_pt_loose", si("Tau_pt_loose", 0), ""});
+    addVar({"Tau1_pt_loose_gen", "(Tau_pt_loose_gen.size()>0) ? float(Tau_pt_loose_gen[0]) : -1.f", ""});
+    addVar({"Tau1_charge_loose", sii("Tau_charge_loose", 0, "0"), ""});
+    addVar({"Tau1_decayMode_loose", sii("Tau_decayMode_loose", 0, "-1"), ""});
+    addVar({"Tau1_decayMode_loose_gen", "(Tau_pt_loose_gen.size()>0 && Tau_decayMode_loose.size()>0) ? int(Tau_decayMode_loose[0]) : -1", ""});
 
     if (_isMuonCh) {
-        addVar({"Muon1_charge", "Muon_charge[0]", ""});
+        addVar({"Muon1_charge", sii("Muon_charge", 0, "0"), ""});
         addVar({"mutau_charge", "Muon1_charge * Tau1_charge", ""});
+        addVar({"mutau_charge_loose", "Muon1_charge * Tau1_charge_loose", ""});
         addVartoStore("Muon1.*");
     } else {
-        addVar({"Electron1_charge", "Electron_charge[0]", ""});
+        addVar({"Electron1_charge", sii("Electron_charge", 0, "0"), ""});
         addVar({"etau_charge", "Electron1_charge * Tau1_charge", ""});
+        addVar({"etau_charge_loose", "Electron1_charge * Tau1_charge_loose", ""});
         addVartoStore("Electron1.*");
-    }
-
-    if (_mode == "lss" or _mode == "los") {
-        addVar({"Tau1_pt_loose", "Tau_pt_loose[0]", ""});
-        addVar({"Tau1_pt_loose_gen", "(Tau_pt_loose_gen.size()>0) ? Tau_pt_loose_gen[0] : -1", ""});
-        addVar({"Tau1_charge_loose", "Tau_charge_loose[0]", ""});
-        addVar({"Tau1_decayMode_loose", "Tau_decayMode_loose[0]", ""});
-        addVar({"Tau1_decayMode_loose_gen", "(Tau_pt_loose_gen.size()>0) ? Tau_decayMode_loose[0] : -1", ""});
-        if (_isMuonCh) {
-            addVar({"mutau_charge_loose", "Muon1_charge * Tau1_charge_loose", ""});
-        } else {
-            addVar({"etau_charge_loose", "Electron1_charge * Tau1_charge_loose", ""});
-        }
     }
 
     // EventWeights
     if (_syst == "data") {
         addVar({"eventWeight", "1.0"});
     } else {
-        addVar({"eventWeight_genpu", "unitGenWeight * TopPtWeight[0] * puWeight[0]"});
+        addVar({"eventWeight_genpu", "unitGenWeight * " + si("TopPtWeight", 0, "1.f") + " * " + si("puWeight", 0, "1.f")});
         if (_isMuonCh) {
-            addVar({"eventWeight_lep", "muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[0]"});
+            addVar({"eventWeight_lep", si("muonWeightId", 0, "1.f") + " * " + si("muonWeightIso", 0, "1.f") + " * " + si("muonWeightTrg", 0, "1.f")});
         } else {
-            addVar({"eventWeight_lep", "elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[0]"});
+            addVar({"eventWeight_lep", si("elecWeightReco", 0, "1.f") + " * " + si("elecWeightId", 0, "1.f") + " * " + si("elecWeightTrg", 0, "1.f")});
         }
         if (_mode == "lss" or _mode == "los") {
-            addVar({"eventWeight_tau", "tauWeightIdVsJet_loose[0][0] * tauWeightIdVsEl_loose[0][0] * tauWeightIdVsMu_loose[0][0]"});
+            addVar({"eventWeight_tau", "(tauWeightIdVsJet_loose.size()>0 && tauWeightIdVsJet_loose[0].size()>0 && tauWeightIdVsEl_loose.size()>0 && tauWeightIdVsEl_loose[0].size()>0 && tauWeightIdVsMu_loose.size()>0 && tauWeightIdVsMu_loose[0].size()>0) ? (tauWeightIdVsJet_loose[0][0] * tauWeightIdVsEl_loose[0][0] * tauWeightIdVsMu_loose[0][0]) : 1.0f"});
         } else {
-            addVar({"eventWeight_tau", "tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight_tau", "(tauWeightIdVsJet.size()>0 && tauWeightIdVsJet[0].size()>0 && tauWeightIdVsEl.size()>0 && tauWeightIdVsEl[0].size()>0 && tauWeightIdVsMu.size()>0 && tauWeightIdVsMu[0].size()>0) ? (tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]) : 1.0f"});
         }
         addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_lep * eventWeight_tau"});
-        addVar({"eventWeight", "eventWeight_nobtag * btagWeight[0]"});
+        addVar({"eventWeight", "eventWeight_nobtag * " + si("btagWeight", 0, "1.f")});
     }
 
     // define variables that you want to store
