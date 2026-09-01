@@ -731,20 +731,20 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
     // https://btv-wiki.docs.cern.ch/ScaleFactors/Run3Summer22/#ak4-b-tagging
     if (_isRun22) { 
         _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.245") //l: 0.047, m: 0.245, t: 0.6734
-                   .Define("btagcuts_loose", "Jet_btagPNetB>0.047");
+                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.047");
     } else if (_isRun22EE) { 
         _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.2605") //l: 0.0499, m: 0.2605, t: 0.6915
-                   .Define("btagcuts_loose", "Jet_btagPNetB>0.0499");
+                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.0499");
     } else if (_isRun23) { 
         _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.1917") //l: 0.0358, m: 0.1917, t: 0.6172
-                   .Define("btagcuts_loose", "Jet_btagPNetB>0.0358");
+                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.0358");
     } else if (_isRun23BPix) { 
         _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.1919") //l: 0.0359, m: 0.1919, t: 0.6133
-                   .Define("btagcuts_loose", "Jet_btagPNetB>0.0359");
+                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.0359");
     } else if (_isRun24){
         // TODO: copy from 23BPix
         _rlm = _rlm.Define("btagcuts", "Jet_btagUParTAK4B>0.1272") //l: 0.0246, m: 0.1272, t: 0.4648
-                   .Define("btagcuts_loose", "Jet_btagUParTAK4B>0.0246");
+                   .Define("btagcuts_loose", "Jet_btagUParTAK4B_loose>0.0246");
     }
 
     _rlm = _rlm.Define("bJet_pt", "Jet_pt[btagcuts]")
