@@ -13,6 +13,7 @@
 #include "correction.h"
 #include "GEScaleSyst.h"
 #include "TCanvas.h"
+#include "TH2F.h"
 #include "ROOT/RDFHelpers.hxx"
 #include "Math/GenVector/VectorUtil.h"
 using namespace std;
@@ -66,7 +67,7 @@ void NanoAODAnalyzerrdframe::selectMuons(string cut, string vetocut) {
 }
 
 void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagYear, string btagMap, string btagMapLight, float btagcut) {
-    cout << "Loading Btag SF (fixed WP): " << btagYear << "  comb=" << btagMap << "  light=" << btagMapLight << endl;
+    cout << "Loading Btag SF (fixed WP, Method 1a): " << btagYear << "  comb=" << btagMap << "  light=" << btagMapLight << endl;
     // btag_var / btag_jes_var columns not needed for fixed-WP SF (shape-only).
 
     auto bSFreader = loadCorrectionSet("data/BTV/" + btagYear + "/btagging.json.gz");
@@ -78,11 +79,42 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     auto _btagSFlight = bSFreader->at(btagMapLight);
 
     // -----------------------------------------------------------------------
-    // Fixed Working Point (Case 1/2) b-tag SF
-    // BTV recommendation: for analyses that do NOT use the b-tag discriminant
-    // shape in the fit, apply per-jet SFs only to WP-passing (tagged) jets.
-    // Event weight = product of SF_i over all jets that pass the medium WP.
-    //
+    // BTV Method 1a (Event Reweighting) MC Efficiency Map Loading
+    // Weight = Prod_{tagged} SF_i * Prod_{untagged} (1 - SF_j * eff_j) / (1 - eff_j)
+    // If btag_eff.root does not exist, gracefully fall back to Case 1 (tagged only).
+    // -----------------------------------------------------------------------
+    std::string effPath = "data/BTV/" + btagYear + "/btag_eff.root";
+    std::shared_ptr<TH2F> sp_eff_b = nullptr;
+    std::shared_ptr<TH2F> sp_eff_c = nullptr;
+    std::shared_ptr<TH2F> sp_eff_light = nullptr;
+    bool has_eff = false;
+
+    TFile *fEff = TFile::Open(effPath.c_str(), "READ");
+    if (fEff && !fEff->IsZombie()) {
+        TH2F *h_b = dynamic_cast<TH2F*>(fEff->Get("h2_eff_b"));
+        TH2F *h_c = dynamic_cast<TH2F*>(fEff->Get("h2_eff_c"));
+        TH2F *h_l = dynamic_cast<TH2F*>(fEff->Get("h2_eff_light"));
+        if (h_b && h_c && h_l) {
+            h_b->SetDirectory(0);
+            h_c->SetDirectory(0);
+            h_l->SetDirectory(0);
+            sp_eff_b = std::shared_ptr<TH2F>(h_b);
+            sp_eff_c = std::shared_ptr<TH2F>(h_c);
+            sp_eff_light = std::shared_ptr<TH2F>(h_l);
+            has_eff = true;
+            cout << "[INFO] Loaded BTV Method 1a efficiency maps from " << effPath << endl;
+        } else {
+            cout << "[WARN] Could not retrieve all 3 efficiency histograms from " << effPath
+                 << ". Falling back to simple method." << endl;
+        }
+        fEff->Close();
+        delete fEff;
+    } else {
+        cout << "[INFO] b-tag efficiency file not found at " << effPath
+             << ". Falling back to simple method (tagged jets only)." << endl;
+    }
+
+    // -----------------------------------------------------------------------
     // Systematic indices (same order for all eras, only common systs used):
     //   0: central
     //   1/2:  up/down_correlated
@@ -110,23 +142,63 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     };
     const int n_systs = static_cast<int>(systs_hfbc.size()); // 11
 
-    auto btagSF_fixedWP = [this, _btagSF, _btagSFlight, wp, systs_hfbc, systs_light, n_systs, btagcut]
+    // Helper lambda to query efficiency from 2D map with boundary clamping
+    auto get_efficiency = [has_eff, sp_eff_b, sp_eff_c, sp_eff_light](int flav, float pt, float abseta) -> float {
+        if (!has_eff) return 1.0f;
+        TH2F *h = nullptr;
+        float def_eff = 0.65f;
+        if (flav == 5) {
+            h = sp_eff_b.get();
+            def_eff = 0.65f;
+        } else if (flav == 4) {
+            h = sp_eff_c.get();
+            def_eff = 0.15f;
+        } else {
+            h = sp_eff_light.get();
+            def_eff = 0.01f;
+        }
+        if (!h) return def_eff;
+
+        float minPt  = h->GetXaxis()->GetXmin();
+        float maxPt  = h->GetXaxis()->GetXmax() - 1e-3f;
+        float minEta = h->GetYaxis()->GetXmin();
+        float maxEta = h->GetYaxis()->GetXmax() - 1e-3f;
+
+        float clampedPt  = std::clamp(pt, minPt, maxPt);
+        float clampedEta = std::clamp(abseta, minEta, maxEta);
+
+        int bx = h->GetXaxis()->FindFixBin(clampedPt);
+        int by = h->GetYaxis()->FindFixBin(clampedEta);
+        float val = h->GetBinContent(bx, by);
+        if (val <= 0.0f || val > 1.0f) val = def_eff;
+        return val;
+    };
+
+    auto btagSF_fixedWP = [this, _btagSF, _btagSFlight, wp, systs_hfbc, systs_light, n_systs, btagcut, has_eff, get_efficiency]
                           (floats &pts, floats &etas, uchars &hadflav, floats &bscores) -> floats {
         // Returns event-level weight vector [n_systs].
-        // For each systematic, multiply SF of all tagged (score > WP threshold) jets.
-        // Jets that fail the WP do not contribute (SF=1 for them in the simple method).
-        // This is the standard BTV "Case 1" fixed-WP approach.
+        // Under Method 1a:
+        //   Tagged jets: multiply SF
+        //   Untagged jets: multiply (1 - SF * eff) / (1 - eff)
+        // Under simple fallback (has_eff == false):
+        //   Tagged jets: multiply SF
+        //   Untagged jets: weight = 1.0
         floats out(n_systs, 1.0f);
         size_t n_jets = std::min({pts.size(), etas.size(), hadflav.size(), bscores.size()});
         for (size_t j = 0; j < n_jets; j++) {
-            float pt  = pts[j];
-            float eta = std::abs(etas[j]);
-            int   flav = static_cast<int>(hadflav[j]);
+            float pt    = pts[j];
+            float abseta = std::abs(etas[j]);
+            int   flav  = static_cast<int>(hadflav[j]);
             float score = bscores[j];
 
-            // Skip jets outside SF validity range or not passing WP
-            if (pt < 20.f || eta > 2.5f) continue;
-            if (score < btagcut) continue;  // only tagged jets get SF
+            // Skip jets outside kinematic range
+            if (pt < 20.f || abseta > 2.5f) continue;
+            bool is_tagged = (score >= btagcut);
+
+            // If efficiency map not available, untagged jets do not contribute (SF=1)
+            if (!has_eff && !is_tagged) continue;
+
+            float eff = get_efficiency(flav, pt, abseta);
 
             for (int s = 0; s < n_systs; s++) {
                 float sf = 1.0f;
@@ -135,20 +207,28 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
                         // Light jets: use _light correction; only 5 systs available
                         const auto &syst_light = (s < static_cast<int>(systs_light.size()))
                                                   ? systs_light[s] : systs_light[0];
-                        sf = _btagSFlight->evaluate({syst_light, wp, flav, eta, pt});
+                        sf = _btagSFlight->evaluate({syst_light, wp, flav, abseta, pt});
                     } else {
                         // b/c jets: use _comb correction
-                        sf = _btagSF->evaluate({systs_hfbc[s], wp, flav, eta, pt});
+                        sf = _btagSF->evaluate({systs_hfbc[s], wp, flav, abseta, pt});
                     }
                 } catch (const std::exception &e) {
                     std::cerr << "[WARN] btagSF_fixedWP evaluate failed"
                               << " syst=" << systs_hfbc[s]
                               << " wp=" << wp << " flav=" << flav
-                              << " eta=" << eta << " pt=" << pt
+                              << " eta=" << abseta << " pt=" << pt
                               << ": " << e.what() << "\n";
                     sf = 1.0f;
                 }
-                out[s] *= sf;
+
+                if (is_tagged) {
+                    out[s] *= sf;
+                } else {
+                    // Method 1a: Untagged jet factor
+                    float denom = std::max(1e-4f, 1.0f - eff);
+                    float w_fail = (1.0f - sf * eff) / denom;
+                    out[s] *= std::clamp(w_fail, 0.0f, 10.0f);
+                }
             }
         }
         return out;
