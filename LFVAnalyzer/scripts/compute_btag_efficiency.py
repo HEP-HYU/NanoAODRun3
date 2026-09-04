@@ -47,14 +47,48 @@ def delta_r(eta1, phi1, eta2, phi2):
     dphi = math.remainder(phi1 - phi2, 2.0 * math.pi)
     return math.hypot(deta, dphi)
 
+def find_root_files(inputs):
+    """
+    Recursively find all .root files from a list of files, directories, or glob patterns.
+    Handles nested subdirectories (e.g. QCD pt-binned samples in subfolders).
+    """
+    found = []
+    if isinstance(inputs, str):
+        inputs = [inputs]
+    for inp in inputs:
+        # Split comma-separated paths
+        for token in inp.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            matched = glob.glob(token)
+            if not matched and os.path.exists(token):
+                matched = [token]
+            for item in matched:
+                if os.path.isfile(item) and item.endswith(".root"):
+                    found.append(item)
+                elif os.path.isdir(item):
+                    for root_dir, _, files in os.walk(item):
+                        for f in files:
+                            if f.endswith(".root"):
+                                found.append(os.path.join(root_dir, f))
+    return sorted(list(set(found)))
+
 def main():
     parser = argparse.ArgumentParser(description="Compute 2D MC b-tag efficiency maps for Method 1a aligned with analysis selection")
-    parser.add_argument("-I", "--infile", dest="infile", type=str, default="", help="Single input ROOT file or comma-separated files")
-    parser.add_argument("-D", "--indir", dest="indir", type=str, default="", help="Directory containing skimmed MC ROOT files")
-    parser.add_argument("-O", "--outfile", dest="outfile", type=str, required=True, help="Output ROOT file path (e.g. data/BTV/2022_Summer22/btag_eff.root)")
-    parser.add_argument("-Y", "--year", dest="year", type=str, required=True, help="Era name: 2022, 2022EE, 2023, 2023BPix, 2024")
+    parser.add_argument("-I", "--infile", dest="infile", nargs="*", default=[], help="Single/multiple input ROOT files, comma-separated files, or glob patterns")
+    parser.add_argument("-D", "--indir", dest="indir", nargs="*", default=[], help="Directory or directories containing skimmed MC files (searched recursively)")
+    parser.add_argument("-O", "--outfile", dest="outfile", type=str, default="", help="Output ROOT file path (default: data/BTV/<year>/btag_eff_<process>.root)")
+    parser.add_argument("-Y", "--year", dest="year", type=str, default="", help="Era name: 2022, 2022EE, 2023, 2023BPix, 2024 (required unless --auto-skim is used)")
+    parser.add_argument("-P", "--process", dest="process", type=str, default="ttbar", help="Process group aligned with plotIt (ttbar, singletop, wjets, dyjets, qcd, diboson, ttx, signal, inclusive) [default: ttbar]")
+    parser.add_argument("--auto-skim", dest="auto_skim", type=str, nargs="?", const="/data2/common/skimmed_NanoAOD/skim_0812_LFV/muon/mc/", default="", help="Root directory of skimmed MC to automatically scan and compute all process maps across eras [default: /data2/common/skimmed_NanoAOD/skim_0812_LFV/muon/mc/]")
+    parser.add_argument("-j", "--jobs", dest="jobs", type=int, default=4, help="Number of concurrent worker processes when using --auto-skim [default: 4]")
+    parser.add_argument("--dry-run", dest="dry_run", action="store_true", help="Display discovered jobs and command plan without executing (for --auto-skim)")
+    parser.add_argument("--skip-existing", dest="skip_existing", action="store_true", help="Skip jobs whose output ROOT file already exists")
     parser.add_argument("--channel", dest="channel", type=str, default="muon", choices=["muon", "electron", "both"], help="Lepton channel for selection (analysis default: muon)")
     parser.add_argument("--wp", dest="wp", type=float, default=-1.0, help="Override b-tag Medium WP threshold")
+    parser.add_argument("--eta-bins", dest="eta_bins", type=str, default="single", help="Eta binning: 'single' ([0.0, max_eta], default), 'barrel-endcap' ([0.0, 1.4442, max_eta]), or comma-separated edges")
+    parser.add_argument("--pt-bins", dest="pt_bins", type=str, default="", help="Custom comma-separated pT bin edges (default: standard BTV boundaries starting from min_pt)")
     parser.add_argument("--muon-pt", dest="muon_pt", type=float, default=50.0, help="Minimum signal muon pT (analysis default: 50.0 GeV)")
     parser.add_argument("--elec-pt", dest="elec_pt", type=float, default=50.0, help="Minimum signal electron pT (analysis default: 50.0 GeV)")
     parser.add_argument("--tau-pt", dest="tau_pt", type=float, default=40.0, help="Minimum signal tau pT (analysis default: 40.0 GeV)")
@@ -67,6 +101,37 @@ def main():
     parser.add_argument("--no-full-baseline", dest="full_baseline", action="store_false", help="Disable lepton/tau event multiplicity cuts and only apply N_jets>=3")
     args = parser.parse_args()
 
+    # If --auto-skim is requested, delegate execution to run_all_btag_efficiency
+    if args.auto_skim:
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        if this_dir not in sys.path:
+            sys.path.insert(0, this_dir)
+        import run_all_btag_efficiency
+        sys.argv = [
+            "run_all_btag_efficiency.py",
+            "-B", args.auto_skim,
+            "-j", str(args.jobs),
+            "--channel", args.channel,
+            "--eta-bins", args.eta_bins,
+        ]
+        if args.year:
+            sys.argv.extend(["-Y", args.year])
+        if args.process and args.process != "ttbar":
+            sys.argv.extend(["-P", args.process])
+        if args.pt_bins:
+            sys.argv.extend(["--pt-bins", args.pt_bins])
+        if args.max_events > 0:
+            sys.argv.extend(["--max-events", str(args.max_events)])
+        if args.dry_run:
+            sys.argv.append("--dry-run")
+        if args.skip_existing:
+            sys.argv.append("--skip-existing")
+        run_all_btag_efficiency.main()
+        return
+
+    if not args.year:
+        parser.error("-Y/--year is required unless --auto-skim is specified.")
+
     # Deferred ROOT import so script can be inspected without ROOT installed
     try:
         import ROOT
@@ -76,19 +141,41 @@ def main():
 
     ROOT.TH1.SetDefaultSumw2(True)
 
-    input_files = []
+    # Collect input files recursively
+    input_items = []
     if args.infile:
-        for f in args.infile.split(","):
-            input_files.extend(glob.glob(f.strip()))
+        input_items.extend(args.infile)
     if args.indir:
-        input_files.extend(glob.glob(os.path.join(args.indir, "*.root")))
+        input_items.extend(args.indir)
+
+    input_files = find_root_files(input_items)
 
     if not input_files:
-        print("ERROR: No input files found! Specify -I <file> or -D <dir>.")
+        print(f"ERROR: No input ROOT files found in {input_items}! Specify -I <file/glob> or -D <dir(s)>.")
         sys.exit(1)
 
-    print(f">> Total input files: {len(input_files)}")
-    print(f">> Era: {args.year}, Channel: {args.channel}")
+    # Determine output file path
+    if not args.outfile:
+        out_dir = os.path.join("data", "BTV", args.year)
+        if args.process.lower() in ["inclusive", "default", "common"]:
+            args.outfile = os.path.join(out_dir, "btag_eff.root")
+        else:
+            args.outfile = os.path.join(out_dir, f"btag_eff_{args.process.lower()}.root")
+    elif os.path.isdir(args.outfile) or args.outfile.endswith("/"):
+        out_dir = args.outfile
+        if args.process.lower() in ["inclusive", "default", "common"]:
+            args.outfile = os.path.join(out_dir, "btag_eff.root")
+        else:
+            args.outfile = os.path.join(out_dir, f"btag_eff_{args.process.lower()}.root")
+    else:
+        out_dir = os.path.dirname(args.outfile)
+
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    print(f">> Era: {args.year}, Process: {args.process}, Channel: {args.channel}")
+    print(f">> Total input files found (recursive): {len(input_files)}")
+    print(f">> Output file: {args.outfile}")
 
     tagger_col = get_tagger_col(args.year)
     btag_cut = args.wp if args.wp > 0 else get_wp_threshold(args.year)
@@ -99,21 +186,38 @@ def main():
     else:
         print(f">> Event Selection: INCLUSIVE JET BASELINE (N_clean_jets >= {args.min_njets}, NO b-tag cut)")
 
-    # Dynamic pT binning matching min_pt and standard BTV boundaries
-    standard_pt_edges = [20.0, 30.0, 40.0, 50.0, 70.0, 100.0, 140.0, 200.0, 300.0, 600.0, 1000.0]
-    pt_edges = [b for b in standard_pt_edges if b >= args.min_pt]
-    if not pt_edges or pt_edges[0] != args.min_pt:
-        pt_edges.insert(0, args.min_pt)
-    if pt_edges[-1] < 1000.0:
-        pt_edges.append(1000.0)
+    # Dynamic pT binning
+    if args.pt_bins.strip():
+        pt_edges = [float(x.strip()) for x in args.pt_bins.split(",") if x.strip()]
+    else:
+        standard_pt_edges = [20.0, 30.0, 40.0, 50.0, 70.0, 100.0, 140.0, 200.0, 300.0, 600.0, 1000.0]
+        pt_edges = [b for b in standard_pt_edges if b >= args.min_pt]
+        if not pt_edges or pt_edges[0] != args.min_pt:
+            pt_edges.insert(0, args.min_pt)
+        if pt_edges[-1] < 1000.0:
+            pt_edges.append(1000.0)
+
+    # Dynamic |eta| binning (default: single bin [0.0, max_eta])
+    if args.eta_bins.lower() == "single":
+        eta_edges = [0.0, args.max_eta]
+    elif args.eta_bins.lower() in ["barrel-endcap", "be"]:
+        eta_edges = [0.0, 1.4442, args.max_eta]
+    elif args.eta_bins.lower() in ["four", "homogeneous"]:
+        eta_edges = [0.0, 0.6, 1.2, 2.1, args.max_eta]
+    else:
+        eta_edges = [float(x.strip()) for x in args.eta_bins.split(",") if x.strip()]
+        if eta_edges[0] != 0.0:
+            eta_edges.insert(0, 0.0)
+        if eta_edges[-1] < args.max_eta:
+            eta_edges.append(args.max_eta)
 
     pt_bins = array.array('d', pt_edges)
-    eta_bins = array.array('d', ETA_BINS)
+    eta_bins = array.array('d', eta_edges)
     n_pt = len(pt_edges) - 1
-    n_eta = len(ETA_BINS) - 1
+    n_eta = len(eta_edges) - 1
 
     print(f">> pT bin edges: {pt_edges}")
-    print(f">> |eta| bin edges: {list(ETA_BINS)}")
+    print(f">> |eta| bin edges: {eta_edges}")
 
     # Book 2D Denominator and Numerator histograms: X = pT, Y = |eta|
     flavors = ["b", "c", "light"]

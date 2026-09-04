@@ -81,37 +81,153 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     // -----------------------------------------------------------------------
     // BTV Method 1a (Event Reweighting) MC Efficiency Map Loading
     // Weight = Prod_{tagged} SF_i * Prod_{untagged} (1 - SF_j * eff_j) / (1 - eff_j)
-    // If btag_eff.root does not exist, gracefully fall back to Case 1 (tagged only).
+    // Hierarchical search:
+    //   1. Process-specific map: data/BTV/<year>/btag_eff_<proc>.root (e.g. ttbar, qcd, wjets)
+    //   2. Sample-specific map:  data/BTV/<year>/btag_eff_<sample>.root
+    //   3. Inclusive map:        data/BTV/<year>/btag_eff.root (or btag_eff_inclusive.root)
+    //   4. Graceful fallback:    Simple product (tagged jets only)
     // -----------------------------------------------------------------------
-    std::string effPath = "data/BTV/" + btagYear + "/btag_eff.root";
     std::shared_ptr<TH2F> sp_eff_b = nullptr;
     std::shared_ptr<TH2F> sp_eff_c = nullptr;
     std::shared_ptr<TH2F> sp_eff_light = nullptr;
     bool has_eff = false;
 
-    TFile *fEff = TFile::Open(effPath.c_str(), "READ");
-    if (fEff && !fEff->IsZombie()) {
-        TH2F *h_b = dynamic_cast<TH2F*>(fEff->Get("h2_eff_b"));
-        TH2F *h_c = dynamic_cast<TH2F*>(fEff->Get("h2_eff_c"));
-        TH2F *h_l = dynamic_cast<TH2F*>(fEff->Get("h2_eff_light"));
-        if (h_b && h_c && h_l) {
-            h_b->SetDirectory(0);
-            h_c->SetDirectory(0);
-            h_l->SetDirectory(0);
-            sp_eff_b = std::shared_ptr<TH2F>(h_b);
-            sp_eff_c = std::shared_ptr<TH2F>(h_c);
-            sp_eff_light = std::shared_ptr<TH2F>(h_l);
-            has_eff = true;
-            cout << "[INFO] Loaded BTV Method 1a efficiency maps from " << effPath << endl;
-        } else {
-            cout << "[WARN] Could not retrieve all 3 efficiency histograms from " << effPath
-                 << ". Falling back to simple method." << endl;
+    std::string baseName = _outfilename;
+    size_t lastSlash = baseName.find_last_of("/\\");
+    if (lastSlash != std::string::npos) baseName = baseName.substr(lastSlash + 1);
+    size_t dotPos = baseName.find_last_of(".");
+    if (dotPos != std::string::npos) baseName = baseName.substr(0, dotPos);
+
+    // Strip leading "hist_" if present (as in plotIt files.yml hist_*.root)
+    std::string cleanName = baseName;
+    if (cleanName.rfind("hist_", 0) == 0) {
+        cleanName = cleanName.substr(5);
+    }
+
+    std::string lowerName = cleanName;
+    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+
+    // -----------------------------------------------------------------------
+    // Process group classification aligned with plotIt files.yml:
+    // -----------------------------------------------------------------------
+    std::string procGroup = "";
+
+    // 1. Signal (type: signal, groups: GLFVST*, GLFVTT*)
+    //    e.g. hist_TUMuTau-LFV-*, hist_TCMuTau-LFV-*, hist_TTtoUMuTau-LFV-*, hist_TTtoCMuTau-LFV-*,
+    //         hist_TUETau-LFV-*, hist_TCETau-LFV-*, hist_TTtoUETau-LFV-*, hist_TTtoCETau-LFV-*
+    //    MUST check before ttbar because TTto*LFV contains "ttto".
+    if (lowerName.find("lfv") != std::string::npos ||
+        lowerName.find("tumutau") != std::string::npos || lowerName.find("tcmutau") != std::string::npos ||
+        lowerName.find("tuetau") != std::string::npos || lowerName.find("tcetau") != std::string::npos) {
+        procGroup = "signal";
+    }
+    // 2. tt+X / ttV (group: GttV, yields-group: '7tt+X')
+    //    e.g. TTWtoQQ, TTZtoQQ, TTHto2B, TTHtoNon2B
+    //    MUST check before ttbar because TTW/TTZ/TTH start with "TT".
+    else if (lowerName.find("ttw") != std::string::npos ||
+             lowerName.find("ttz") != std::string::npos ||
+             lowerName.find("tth") != std::string::npos) {
+        procGroup = "ttx";
+    }
+    // 3. ttbar (groups: Gttll, Gttlj, Gttjj, yields-groups: '1\ttbar LL', '2\ttbar LJ', '3\ttbar Had')
+    //    e.g. TTto2L2Nu, TTtoLNu2Q, TTto4Q
+    else if (lowerName.find("ttto") != std::string::npos ||
+             lowerName.find("ttbar") != std::string::npos ||
+             lowerName.find("tt_") != std::string::npos) {
+        procGroup = "ttbar";
+    }
+    // 4. Single Top (group: GSingleT, yields-group: '5Single Top')
+    //    e.g. TBbar_s-channel, TbarB_s-channel, TQbarto*-t-channel, TbarQto*-t-channel,
+    //         TWminusto*, TbarWplusto*, TBbarQ_t-channel, TbarBQ_t-channel
+    else if (lowerName.find("tbbar") != std::string::npos ||
+             lowerName.find("tbarb") != std::string::npos ||
+             lowerName.find("tqbarto") != std::string::npos ||
+             lowerName.find("tbarqto") != std::string::npos ||
+             lowerName.find("twminus") != std::string::npos ||
+             lowerName.find("tbarwplus") != std::string::npos ||
+             lowerName.find("singletop") != std::string::npos ||
+             lowerName.find("st_") != std::string::npos) {
+        procGroup = "singletop";
+    }
+    // 5. W+Jets (group: GWJets, yields-group: '6W+Jets')
+    //    2022/2023: WtoLNu-2Jets, WtoLNu-2Jets_0J, WtoLNu-2Jets_1J, WtoLNu-2Jets_2J
+    //    2024:      WtoENu-4Jets, WtoMuNu-4Jets, WtoTauNu-4Jets, WtoLNu-4Jets_*
+    else if (lowerName.find("wtolnu") != std::string::npos ||
+             lowerName.find("wtoenu") != std::string::npos ||
+             lowerName.find("wtomunu") != std::string::npos ||
+             lowerName.find("wtotaunu") != std::string::npos ||
+             lowerName.find("wjets") != std::string::npos) {
+        procGroup = "wjets";
+    }
+    // 6. Z+Jets / Drell-Yan (group: GZJets, yields-group: '4Z+Jets')
+    //    2022/2023: DYto2L-2Jets_MLL-10to50, DYto2L-2Jets_MLL-50
+    //    2024:      DYto2E-2Jets_MLL-10-50, DYto2E-2Jets_MLL-50,
+    //               DYto2Mu-2Jets_MLL-10-50, DYto2Mu-2Jets_MLL-50,
+    //               DYto2Tau-2Jets_MLL-10-50, DYto2Tau-2Jets_MLL-50
+    else if (lowerName.find("dyto2l") != std::string::npos ||
+             lowerName.find("dyto2e") != std::string::npos ||
+             lowerName.find("dyto2mu") != std::string::npos ||
+             lowerName.find("dyto2tau") != std::string::npos ||
+             lowerName.find("dyto") != std::string::npos ||
+             lowerName.find("dyjets") != std::string::npos ||
+             lowerName.find("zjets") != std::string::npos) {
+        procGroup = "dyjets";
+    }
+    // 7. Diboson (group: GVV, yields-group: '8VV')
+    //    e.g. WW, WZ, ZZ
+    else if (lowerName == "ww" || lowerName == "wz" || lowerName == "zz" ||
+             lowerName.find("ww_") != std::string::npos || lowerName.find("wz_") != std::string::npos || lowerName.find("zz_") != std::string::npos ||
+             lowerName.find("_ww") != std::string::npos || lowerName.find("_wz") != std::string::npos || lowerName.find("_zz") != std::string::npos ||
+             lowerName.find("diboson") != std::string::npos) {
+        procGroup = "diboson";
+    }
+    // 8. QCD (group: GQCD, yields-group: '9QCD')
+    //    e.g. QCD_Pt*MuEnriched, QCD_Pt*EMEnriched, QCD_Pt*
+    else if (lowerName.find("qcd") != std::string::npos) {
+        procGroup = "qcd";
+    }
+
+    std::vector<std::string> effCandidates;
+    if (!procGroup.empty()) {
+        effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff_" + procGroup + ".root");
+    }
+    if (!cleanName.empty() && cleanName != procGroup) {
+        effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff_" + cleanName + ".root");
+    }
+    effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff.root");
+    effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff_inclusive.root");
+
+    std::string chosenEffPath = "";
+    for (const auto &candPath : effCandidates) {
+        TFile *fEff = TFile::Open(candPath.c_str(), "READ");
+        if (fEff && !fEff->IsZombie()) {
+            TH2F *h_b = dynamic_cast<TH2F*>(fEff->Get("h2_eff_b"));
+            TH2F *h_c = dynamic_cast<TH2F*>(fEff->Get("h2_eff_c"));
+            TH2F *h_l = dynamic_cast<TH2F*>(fEff->Get("h2_eff_light"));
+            if (h_b && h_c && h_l) {
+                h_b->SetDirectory(0);
+                h_c->SetDirectory(0);
+                h_l->SetDirectory(0);
+                sp_eff_b = std::shared_ptr<TH2F>(h_b);
+                sp_eff_c = std::shared_ptr<TH2F>(h_c);
+                sp_eff_light = std::shared_ptr<TH2F>(h_l);
+                has_eff = true;
+                chosenEffPath = candPath;
+                fEff->Close();
+                delete fEff;
+                break;
+            }
+            fEff->Close();
+            delete fEff;
         }
-        fEff->Close();
-        delete fEff;
+    }
+
+    if (has_eff) {
+        cout << "[INFO] Loaded BTV Method 1a efficiency maps from " << chosenEffPath
+             << " (process group: " << (procGroup.empty() ? "unclassified" : procGroup) << ")" << endl;
     } else {
-        cout << "[INFO] b-tag efficiency file not found at " << effPath
-             << ". Falling back to simple method (tagged jets only)." << endl;
+        cout << "[INFO] No b-tag efficiency map found for " << btagYear
+             << " in candidates (btag_eff_" << procGroup << ".root / btag_eff.root). Falling back to simple method (tagged jets only)." << endl;
     }
 
     // -----------------------------------------------------------------------
