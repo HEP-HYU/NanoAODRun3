@@ -196,6 +196,10 @@ def run_single_job(job, script_path, extra_args):
         return True, job, proc.stdout
     except subprocess.CalledProcessError as e:
         print(f"[FAIL ] {era_proc} failed with code {e.returncode}!")
+        if e.stdout:
+            print(f"\n{'='*25} ERROR LOG: {era_proc} {'='*25}")
+            print(e.stdout.strip())
+            print(f"{'='*65}\n")
         return False, job, e.stdout
 
 
