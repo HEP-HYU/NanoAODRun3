@@ -25,6 +25,7 @@ def analyze_logs(base_dir):
     error_files = []
     error_but_done_files = []
     no_done_files = []
+    count = 0
 
     for root, dirs, files in os.walk(base_dir):
         for file in files:
@@ -48,9 +49,13 @@ def analyze_logs(base_dir):
                     if SUCCESS_KEYWORD not in content and NOEVENT_KEYWORD not in content:
                         no_done_files.append(filepath)
 
+                    if not has_error and (SUCCESS_KEYWORD in content or NOEVENT_KEYWORD in content):
+                        count = count + 1
+
                 except Exception as e:
                     print(f"Error reading {filepath}: {e}")
 
+    print ("done: ", count)
     return error_files, error_but_done_files, no_done_files
 
 

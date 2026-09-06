@@ -12,6 +12,7 @@ parser.add_argument('-C', '-ch', '--channel', dest='channel', type=str, default=
 parser.add_argument("-D", dest="DNN", action="store_true", default=False, help="Run for DNN histograms")
 parser.add_argument("-F", '--ff', dest="tauFF", action="store_true", default=False, help="Run for tauFF histograms")
 parser.add_argument("-y", dest="yield_only", action="store_true", default=False, help="Run for yield histograms")
+parser.add_argument("-q", dest="qcd", action="store_true", default=False, help="include QCD")
 parser.add_argument("--postfix", dest="postfix", type=str, default="", help="Add postfix to output here, to have rebinning for histograms")
 args = parser.parse_args()
 
@@ -455,9 +456,16 @@ if os.path.exists(template_yml_path):
 # Execute plotIt
 plotit_bin = '../plotIt/plotIt'
 out_fig_arg = os.path.join(dest_path, 'figure_run3' + postfix)
+if args.qcd:
+    out_fig_arg = os.path.join(dest_path, 'figure_run3_qcd' + postfix)
+    os.makedirs(out_fig_arg, exist_ok=True)
 config_arg = os.path.join(config_path, 'config_Run3.yml')
 
-if args.yield_only:
-    call([plotit_bin, '-o ' + out_fig_arg, config_arg, '-y', '-a'], shell=False)
+if args.yield_only and not args.qcd:
+    call([plotit_bin, '-o ' + out_fig_arg, config_arg, '-y'], shell=False)
+elif args.yield_only and args.qcd:
+    call([plotit_bin, '-o ' + out_fig_arg, config_arg, '-y', '-q'], shell=False)
+elif args.qcd:
+    call([plotit_bin, '-o ' + out_fig_arg, config_arg, '-q', '-a'], shell=False)
 else:
-    call([plotit_bin, '-o ' + out_fig_arg, config_arg], shell=False)
+    call([plotit_bin, '-o ' + out_fig_arg, config_arg, '-a'], shell=False)

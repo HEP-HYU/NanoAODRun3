@@ -15,13 +15,13 @@
       "vsjet": "7",
       "vsmu":  "4",
       "vse":   "2",
-      "_comment": "VSjet VVTight, VSmu Tight, VSe VVLoose"
+      "_comment": "VSjet VTight, VSmu Tight, VSe VLoose"
     },
     "electron_ch": {
       "vsjet": "7",
       "vsmu":  "1",
       "vse":   "6",
-      "_comment": "VSjet VVTight, VSmu VLoose, VSe VTight"
+      "_comment": "VSjet VTight, VSmu Loose, VSe Tight"
     }
   },
 

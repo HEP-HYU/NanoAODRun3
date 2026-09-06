@@ -114,6 +114,8 @@ for i, var_name in enumerate(inputvars):
 
     acc_drop  = baseline_acc - perm_acc
     loss_rise = perm_loss - baseline_loss
+    if var_name == "LFV_top_mass":
+        var_name = "leptaubjet1_mass"
     importances.append((var_name, acc_drop, loss_rise, perm_acc))
     print(f"Shuffling {var_name:25s} | Acc: {perm_acc:.4f} (Drop: {acc_drop:+.4f}) | Loss rise: {loss_rise:+.4f}")
 

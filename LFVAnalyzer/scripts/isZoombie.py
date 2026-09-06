@@ -15,12 +15,14 @@ REQUIRED_KEYS = [
 ]
 
 
-def has_required_keys(tfile, is_skim):
+def has_required_keys(tfile, is_skim, is_tauFF):
     """필수 key 존재 여부 체크"""
     keys = [key.GetName() for key in tfile.GetListOfKeys()]
 
     if is_skim:
         required_keys = REQUIRED_KEYS
+    elif is_tauFF:
+        required_keys = ["Events", "h_ncleanloosejetspass_S3"]
     else:
         required_keys = ["Events", "h_tau1_pt_S5"]
 
@@ -30,7 +32,7 @@ def has_required_keys(tfile, is_skim):
     return True
 
 
-def find_problematic_root_files(base_dir=".", is_skim=False):
+def find_problematic_root_files(base_dir=".", is_skim=False, is_tauFF=False):
     bad_files = []
 
     for root, dirs, files in os.walk(base_dir):
@@ -53,7 +55,7 @@ def find_problematic_root_files(base_dir=".", is_skim=False):
                         continue
 
                     # 3. 필수 key 누락
-                    if not has_required_keys(f, is_skim):
+                    if not has_required_keys(f, is_skim, is_tauFF):
                         bad_files.append(filepath)
 
                     f.Close()
@@ -70,6 +72,8 @@ if __name__ == "__main__":
     parser.add_argument("input_path", help="Base directory to scan")
     parser.add_argument("--isSkim", action="store_true",
                         help="Enable skim mode (check full key set)")
+    parser.add_argument("--tauFF", action="store_true",
+                        help="Enable tauFF mode (check full key set)")
 
     args = parser.parse_args()
 
@@ -79,7 +83,7 @@ if __name__ == "__main__":
     else:
         print ("process")
 
-    bad_files = find_problematic_root_files(args.input_path, args.isSkim)
+    bad_files = find_problematic_root_files(args.input_path, args.isSkim, args.tauFF)
 
     with open(output_file, "w") as f:
         for bf in bad_files:

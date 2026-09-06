@@ -133,12 +133,12 @@ def run(inputs):
         pd_weight = []
         dnnhist_nom = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
         dnnhist_entries_nom = np.histogram(pred, bins=binedges, density=False)
-        #dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
-        #dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
-        #dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
-        #dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
-        #dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
-        #dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
+        dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
+        dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
+        dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
+        dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
+        dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
+        dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
         print ("syst_list: ", syst_list)
         for syst in syst_list:
             syst_hist_dnn_dict["h_dnn_pred_S5__"+syst] = dnnhist_nom
@@ -177,12 +177,12 @@ def run(inputs):
             pd_weight = []
             dnnhist_nom = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
             dnnhist_entries_nom = np.histogram(pred, bins=binedges, density=False)
-            #dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
-            #dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
-            #dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
-            #dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
-            #dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
-            #dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
+            dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
+            dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
+            dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
+            dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
+            dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
+            dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
             print ("syst_list: ", syst_list)
             for syst in syst_list:
                 syst_hist_dnn_dict["h_dnn_pred_S5__"+syst] = dnnhist_nom
@@ -201,24 +201,24 @@ def run(inputs):
             #print("PRED COMB SHAPE : ", result_df.shape)
             #print("DF saved here: ", outf_dir.split(".root")[0]+'combined_data.csv')
 
-            if discriminator_key == "p_st_tt_ob"  : 
-                 rmzeros = pred[:,0] 
-                 rmzeros[rmzeros<=0.00] = 0.001
-                 pred[:,0] = rmzeros
-                 if alpha <10: pred = ( ( (1-alpha) * pred[:,2] + alpha * pred[:,1] ) / pred[:,0] ).tolist()
-                 else: pred = ( ( pred[:,2] + pred[:,1] ) / pred[:,0] ).tolist()
-                 pred = np.array(pred)
-                 pred[pred>=100.0] = 99.999
-                 pred = pred.tolist()
+            if discriminator_key == "p_st_tt_ob"  :
+                rmzeros = pred[:,0]
+                rmzeros[rmzeros<=0.00] = 0.001
+                pred[:,0] = rmzeros
+                pred_st = pred[:,2].tolist()
+                pred_tt = pred[:,1].tolist()
+                pred_bkg = pred[:,0].tolist()
+                if alpha <10: pred = ( ( (1-alpha) * pred[:,2] + alpha * pred[:,1] ) / pred[:,0] ).tolist()
+                else: pred = ( ( pred[:,2] + pred[:,1] ) / pred[:,0] ).tolist()
+                pred = np.array(pred)
+                pred[pred>=100.0] = 99.999
+                pred = pred.tolist()
             elif discriminator_key == "p_st_tt"  : pred = ( pred[:,2] + pred[:,1] ).tolist()
             elif discriminator_key == "p_max"  : pred = ( np.amax(pred, axis=1) ).tolist()
             elif discriminator_key == "p_mean"  : pred = ( np.mean(pred, axis=1) ).tolist()
             elif discriminator_key == "p_min"  : pred = ( np.min(pred, axis=1) ).tolist()
             else  : pred = ( pred[:, discriminators[discriminator_key]] ).tolist()
 
-            #pred_st = pred[:,2].tolist()
-            #pred_tt = pred[:,1].tolist()
-            #pred_bkg = pred[:,0].tolist()
             #pred = ( ((1 - alpha) * pred[:,2] + alpha * pred[:,1]) / pred[:,0])
             #pred[pred >= 100.0] = 99.999
             #pred = pred.tolist()
@@ -227,12 +227,12 @@ def run(inputs):
             nom_weight = pd_weight.copy()
             dnnhist_nom = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
             dnnhist_entries_nom = np.histogram(pred, bins=binedges, density=False)
-            #dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
-            #dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
-            #dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
-            #dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
-            #dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
-            #dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
+            dnnhist_st = np.histogram(pred_st, bins=binedges2, weights=pd_weight, density=False)
+            dnnhist_entries_st = np.histogram(pred_st, bins=binedges2, density=False)
+            dnnhist_tt = np.histogram(pred_tt, bins=binedges2, weights=pd_weight, density=False)
+            dnnhist_entries_tt = np.histogram(pred_tt, bins=binedges2, density=False)
+            dnnhist_bkg = np.histogram(pred_bkg, bins=binedges2, weights=pd_weight, density=False)
+            dnnhist_entries_bkg = np.histogram(pred_bkg, bins=binedges2, density=False)
 
             print ("syst_list: ", syst_list)
             for syst in syst_list:
@@ -313,16 +313,16 @@ def run(inputs):
 
     with uproot.recreate(outf_dir) as outf:
         if '__' not in outf_dir.split('/')[-1]:
-            outt= outf.mktree("Events", {"Muon1_pt": np.float64, "Tau1_pt": np.float64, "dnn_pred": np.float64})#, "dnn_st": np.float64, "dnn_tt": np.float64, "dnn_bkg": np.float64})
-            outt.extend({"Muon1_pt": muon_pt, "Tau1_pt": tau_pt, "dnn_pred": pred})#, "dnn_st": pred_st, "dnn_tt": pred_tt, "dnn_bkg": pred_bkg})
+            outt= outf.mktree("Events", {"Muon1_pt": np.float64, "Tau1_pt": np.float64, "dnn_pred": np.float64, "dnn_st": np.float64, "dnn_tt": np.float64, "dnn_bkg": np.float64})
+            outt.extend({"Muon1_pt": muon_pt, "Tau1_pt": tau_pt, "dnn_pred": pred, "dnn_st": pred_st, "dnn_tt": pred_tt, "dnn_bkg": pred_bkg})
         outf["h_dnn_pred_S5"] = dnnhist_nom
         outf["h_dnn_entries_S5"] = dnnhist_entries_nom
-        #outf["h_dnn_pred_st_S5"] = dnnhist_st
-        #outf["h_dnn_entries_st_S5"] = dnnhist_entries_st
-        #outf["h_dnn_pred_tt_S5"] = dnnhist_tt
-        #outf["h_dnn_entries_tt_S5"] = dnnhist_entries_tt
-        #outf["h_dnn_pred_bkg_S5"] = dnnhist_bkg
-        #outf["h_dnn_entries_bkg_S5"] = dnnhist_entries_bkg
+        outf["h_dnn_pred_st_S5"] = dnnhist_st
+        outf["h_dnn_entries_st_S5"] = dnnhist_entries_st
+        outf["h_dnn_pred_tt_S5"] = dnnhist_tt
+        outf["h_dnn_entries_tt_S5"] = dnnhist_entries_tt
+        outf["h_dnn_pred_bkg_S5"] = dnnhist_bkg
+        outf["h_dnn_entries_bkg_S5"] = dnnhist_entries_bkg
         outf["hcounter"] = hcounter
 
         if (not "Muon" in input_file) and (not "egamma" in input_file.lower()):

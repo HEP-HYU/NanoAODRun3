@@ -17,6 +17,9 @@ year = options.year
 ch = options.ch
 workdir = os.getcwd()
 
+#print ("sleep")
+#time.sleep(10800)
+
 # Storage base paths — override with env vars for portability.
 # Default values match the original hardcoded paths.
 _SKIM_BASE = os.environ.get("LFV_SKIM_DIR", "/data2/common/skimmed_NanoAOD")
@@ -87,4 +90,5 @@ for fn in os.listdir("data/dataset/" + year):
 
             print(runString)
             if not options.dry:
+                #time.sleep(2)
                 call([runString], shell=True)

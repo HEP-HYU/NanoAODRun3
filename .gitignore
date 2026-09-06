@@ -2,6 +2,9 @@
 # Physics source code and config files ARE tracked.
 # Build artifacts, analysis outputs, and temp files are NOT tracked.
 
+CMSSW*
+plotIt
+
 # ── C++ build artifacts ────────────────────────────────────────────
 *.o
 *.so
@@ -23,6 +26,7 @@ __pycache__/
 # ── ROOT analysis output ───────────────────────────────────────────
 # Processed histograms and skimmed NanoAODs are stored separately
 *.root
+*/process_*
 
 # ── DNN training artifacts ─────────────────────────────────────────
 *.h5
@@ -32,6 +36,7 @@ scaler_*.pickle
 feature_importance.csv
 dnn_model/
 training_history/
+DNN/DNN_*
 
 # ── Editor / OS temp files ─────────────────────────────────────────
 *.swp

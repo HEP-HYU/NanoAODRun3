@@ -23,9 +23,11 @@ indir = os.path.join(_SKIM_BASE, options.version, ch)
 tgdir = os.path.join(workdir, options.outdir, ch, year)
 logdir = os.path.join(workdir, options.outdir, ch, year, 'log')
 splitList = [#"Muon0-G",
-        #"TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor",
-        #"TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Vector",
-        #"TTto2L2Nu", "TTtoLNu2Q"
+#        "TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor",
+#        "TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor",
+#        "TCMuTau-LFV-Scalar", "TCMuTau-LFV-Vector", "TCMuTau-LFV-Tensor", "TUMuTau-LFV-Scalar", "TUMuTau-LFV-Vector", "TUMuTau-LFV-Tensor",
+#        "TTtoCMuTau-LFV-Scalar", "TTtoCMuTau-LFV-Vector", "TTtoCMuTau-LFV-Tensor", "TTtoUMuTau-LFV-Scalar", "TTtoUMuTau-LFV-Vector", "TTtoUMuTau-LFV-Tensor",
+#        "TTto2L2Nu", "TTtoLNu2Q", "TTto4Q"
             ]
 
 os.makedirs(tgdir, exist_ok=True)

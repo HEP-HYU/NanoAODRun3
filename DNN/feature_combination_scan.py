@@ -1,6 +1,6 @@
 # use: python feature_combination_scan.py --mode sfs -C muon -P /home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/ -D sfs_results.json --epochs 1000 --patience 10
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import sys
 import argparse
 import uproot
@@ -66,7 +66,7 @@ def main():
     # Arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon", help="muon or electron")
-    parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/Users/su/Desktop/antigravity_lfvcode/NanoAODRun3/process_0513_v7/")
+    parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/NanoAODRun3/LFVAnalyzer/process_0513_v7/")
     parser.add_argument("-O", "--outfile", dest="outfile", type=str, default="feature_scan_results.json")
     parser.add_argument("--mode", dest="mode", type=str, default="sfs", choices=["sfs", "random"], help="sfs (Sequential Forward Selection) or random (Random Search)")
     parser.add_argument("--n-random", dest="n_random", type=int, default=200, help="Number of random combinations to test in random mode")
@@ -245,7 +245,7 @@ def main():
             plt.legend(loc='lower right')
             plt.grid(True, linestyle='--', alpha=0.5)
             plt.tight_layout()
-            plt.savefig("sfs_accuracy_curve.png")
+            plt.savefig("sfs_accuracy_curve_v2.pdf")
             plt.close()
             print("SFS Curve saved as sfs_accuracy_curve.png")
 
@@ -299,7 +299,7 @@ def main():
         plt.title("Random Feature Combination Performance")
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.tight_layout()
-        plt.savefig("random_features_scatter.png")
+        plt.savefig("random_features_scatter_v2.pdf")
         plt.close()
         print("Scatter plot saved as random_features_scatter.png")
 
@@ -320,7 +320,7 @@ def main():
         plt.xlabel(f"Occurrences in Top {top_n} Combinations")
         plt.title(f"Feature Selection Frequency in Top 10% Performers (out of {args.n_random} runs)")
         plt.tight_layout()
-        plt.savefig("feature_selection_frequency.png")
+        plt.savefig("feature_selection_frequency_v2.pdf")
         plt.close()
         print("Selection frequency chart saved as feature_selection_frequency.png")
 

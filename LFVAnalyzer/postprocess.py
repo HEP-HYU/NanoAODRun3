@@ -352,7 +352,8 @@ for fname in file_list:
             h.SetBinError(2, sqrt(pow(h.GetBinError(1), 2) + pow(h.GetBinError(2), 2)))
             h.SetBinContent(1, 0.)
             h.SetBinError(1, 0.)
-            h = h.Rebin(len(rebin_arr)-1, h.GetName(), rebin_arr)
+            if "_st" not in hname and "_tt" not in hname and "_bkg" not in hname:
+                h = h.Rebin(len(rebin_arr)-1, h.GetName(), rebin_arr)
         if yield_name in hname:
             h1 = h.Clone('h1')
             h1.SetName(hname.replace(yield_name, yield_name + '_yield'))

@@ -1,16 +1,16 @@
 #!/bin/bash
 
 #SBATCH -J LFV
-#SBATCH -p gpu,cpu,high_cpu -x gpu-0-2
+#SBATCH -p high_cpu
 #SBATCH -N 1
 #SBATCH --output=/dev/null
 #SBATCH --error=/dev/null
 #SBATCH --open-mode=append
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1gb 
+#SBATCH --mem=2gb 
 #SBATCH --comment python
-#SBATCH --time 20:00:00
+#SBATCH --time 15:00:00
 #SBATCH --hint=compute_bound
 
 year=$1

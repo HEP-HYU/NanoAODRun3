@@ -2,9 +2,9 @@ cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LF
 cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v12_2022EE -C muon -N
 cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v12_2023 -C muon -N
 cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v12_2023BPix -C muon -N
-cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v15_2024 -C muon -N
+#cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v15_2024 -C muon -N
 cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v12_2022 -C electron -N
 cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v12_2022EE -C electron -N
 cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v12_2023 -C electron -N
 cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v12_2023BPix -C electron -N
-cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v15_2024 -C electron -N
+#cat scripts/skim_test.txt  | xargs -i -l1 python scripts/skim.py -V skim_0706_LFV -Y v15_2024 -C electron -N
