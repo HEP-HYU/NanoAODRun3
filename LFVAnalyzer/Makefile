@@ -46,7 +46,7 @@ all:	$(TARGET) libnanoadrdframe.so
 clean:
 	rm -f $(OBJS) $(TARGET) libnanoaodrdframe.so $(COMMONDIR)/JetMETObjects_dict.C $(COMMONDIR)/rootdict.C JetMETObjects_dict_rdict.pcm rootdict_rdict.pcm
 
-$(COMMONDIR)/rootdict.C: $(COMMONDIR)/NanoAODAnalyzerrdframe.h $(SRCDIR)/TopLFVAnalyzer.h $(SRCDIR)/TauFakeFactorAnalyzer.h $(SRCDIR)/SkimEvents.h $(COMMONDIR)/Linkdef.h
+$(COMMONDIR)/rootdict.C: $(COMMONDIR)/NanoAODAnalyzerrdframe.h $(SRCDIR)/TopLFVAnalyzer.h $(SRCDIR)/TauFakeFactorAnalyzer.h $(SRCDIR)/BTagEfficiencyAnalyzer.h $(SRCDIR)/SkimEvents.h $(COMMONDIR)/Linkdef.h
 	rm -f $@
 	rootcint $@ -I$(corlibincl) -I$(COMMONDIR) -I$(SRCDIR) $^
 	rm -f rootdict_rdict.pcm

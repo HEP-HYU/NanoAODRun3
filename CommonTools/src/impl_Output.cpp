@@ -29,6 +29,13 @@ void NanoAODAnalyzerrdframe::helper_2DHistCreator(std::string hname, std::string
 	_th2dhistos[hname] = histojets;
 }
 
+void NanoAODAnalyzerrdframe::helper_2DHistCreator(TH2DModel histdef, std::string rdfvarX, std::string rdfvarY, std::string evWeight, RNode *anode) {
+
+	std::string hname = std::string(histdef.fName.Data());
+	RDF2DHist histojets = anode->Histo2D(histdef, rdfvarX, rdfvarY, evWeight);
+	_th2dhistos[hname] = histojets;
+}
+
 // Automatically loop to create
 void NanoAODAnalyzerrdframe::setupCuts_and_Hists() {
 
@@ -50,7 +57,10 @@ void NanoAODAnalyzerrdframe::setupCuts_and_Hists() {
         std::string hpost = "";
 
         if (x.mincutstep.length()==0) {
-            helper_2DHistCreator(std::string(x.hmodel.fName.Data())+hpost+x.systname,  std::string(x.hmodel.fTitle.Data()), x.hmodel.fNbinsX, x.hmodel.fXLow, x.hmodel.fXUp, x.hmodel.fNbinsY, x.hmodel.fYLow, x.hmodel.fYUp, x.varnameX, x.varnameY, x.weightname+x.systname, &_rlm);
+            TH2DModel m = x.hmodel;
+            std::string hname = std::string(x.hmodel.fName.Data()) + hpost + x.systname;
+            m.fName = hname.c_str();
+            helper_2DHistCreator(m, x.varnameX, x.varnameY, x.weightname+x.systname, &_rlm);
         }
     }
 
@@ -82,7 +92,10 @@ void NanoAODAnalyzerrdframe::setupCuts_and_Hists() {
                 bool reachedMax = false;
                 if (x.maxcutstep.length() > 0 and acut.idx.compare(0, x.maxcutstep.length(), x.maxcutstep)>=0) reachedMax = true;
                 if (!reachedMax) {
-                    helper_2DHistCreator(std::string(x.hmodel.fName.Data())+hpost+x.systname, std::string(x.hmodel.fTitle.Data()), x.hmodel.fNbinsX, x.hmodel.fXLow, x.hmodel.fXUp, x.hmodel.fNbinsY, x.hmodel.fYLow, x.hmodel.fYUp, x.varnameX, x.varnameY, x.weightname+x.systname, rnext);
+                    TH2DModel m = x.hmodel;
+                    std::string hname = std::string(x.hmodel.fName.Data()) + hpost + x.systname;
+                    m.fName = hname.c_str();
+                    helper_2DHistCreator(m, x.varnameX, x.varnameY, x.weightname+x.systname, rnext);
                 }
             }
         }

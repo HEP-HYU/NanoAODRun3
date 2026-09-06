@@ -182,6 +182,7 @@ protected:
   //bool helper_1DHistCreator(std::string hname, std::string title, const int nbins, const double xlow, const double xhi, std::string rdfvar, std::string evWeight);
   void helper_1DHistCreator(std::string hname, std::string title, const int nbins, const double xlow, const double xhi, std::string rdfvar, std::string evWeight, RNode *anode);
   void helper_2DHistCreator(std::string hname, std::string title, const int nbinsx, const double xlow, const double xhi, const int nbinsy, const double ylow, const double yhi, std::string rdfvarX, std::string rdfvarY, std::string evWeight, RNode *anode);
+  void helper_2DHistCreator(TH2DModel histdef, std::string rdfvarX, std::string rdfvarY, std::string evWeight, RNode *anode);
   std::vector<std::string> _originalvars;
   std::vector<std::string> _selections;
 

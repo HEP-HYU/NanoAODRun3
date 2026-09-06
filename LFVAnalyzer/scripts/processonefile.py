@@ -68,7 +68,9 @@ if __name__=='__main__':
     if tmpt.GetEntries() > 0:
         t.Add(infile)
     aproc = None
-    if len(mode) > 1:
+    if mode == "btageff":
+        aproc = ROOT.BTagEfficiencyAnalyzer(t, outputroot, year, ch, syst, json, False, "", 1)
+    elif len(mode) > 1:
         aproc = ROOT.TauFakeFactorAnalyzer(t, outputroot, year, ch, syst, json, False, "", 1, mode)
     else:
         aproc = ROOT.TopLFVAnalyzer(t, outputroot, year, ch, syst, json, applytauFF, "", 1)
