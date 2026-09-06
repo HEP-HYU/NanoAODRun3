@@ -44,6 +44,15 @@ PROCESS_GROUPS = [
     "inclusive",
 ]
 
+# Standard BTV campaign name mappings aligned with analysis_config.json
+ERA_TO_BTAG_YEAR = {
+    "2022": "2022_Summer22",
+    "2022EE": "2022_Summer22EE",
+    "2023": "2023_Summer23",
+    "2023BPix": "2023_Summer23BPix",
+    "2024": "2024_Summer24",
+}
+
 def parse_era_from_dirname(dirname):
     """
     Parses era string from directory name.
@@ -202,6 +211,32 @@ def run_single_job(job, script_path, engine, extra_args):
             print(f"{'='*65}\n")
         return False, job, e.stdout
 
+def create_era_symlinks(out_base, channels):
+    """
+    Creates bidirectional convenience symlinks between short era names (e.g. '2022')
+    and BTV campaign names (e.g. '2022_Summer22') so that any analyzer can seamlessly
+    find efficiency maps regardless of naming convention.
+    """
+    for ch in channels:
+        ch_dir = os.path.join(out_base, ch)
+        if not os.path.isdir(ch_dir):
+            continue
+        for short_era, btv_era in ERA_TO_BTAG_YEAR.items():
+            short_path = os.path.join(ch_dir, short_era)
+            btv_path = os.path.join(ch_dir, btv_era)
+            if os.path.isdir(short_path) and not os.path.exists(btv_path):
+                try:
+                    os.symlink(short_era, btv_path)
+                    print(f"[INFO] Created BTV era symlink: {ch}/{btv_era} -> {short_era}")
+                except OSError:
+                    pass
+            elif os.path.isdir(btv_path) and not os.path.exists(short_path):
+                try:
+                    os.symlink(btv_era, short_path)
+                    print(f"[INFO] Created short era symlink: {ch}/{short_era} -> {btv_era}")
+                except OSError:
+                    pass
+
 def main():
     parser = argparse.ArgumentParser(description="Batch orchestrator to compute b-tag efficiencies across channels, eras, and processes")
     parser.add_argument("-C", "--channel", dest="channel", type=str, default="both",
@@ -341,12 +376,13 @@ def main():
             results.append((success, job))
             if not success:
                 failed_jobs.append(job)
-
-    print("\n" + "=" * 80)
     print("EXECUTION SUMMARY")
     print(f"Total jobs scheduled : {len(all_jobs)}")
     print(f"Successfully finished: {len(all_jobs) - len(failed_jobs)}")
     print(f"Failed jobs          : {len(failed_jobs)}")
+
+    # Create era symlinks for seamless analyzer loading
+    create_era_symlinks(args.out_base, active_channels)
 
     if failed_jobs:
         print("\nFailed Jobs:")

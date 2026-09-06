@@ -188,27 +188,36 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     }
 
     std::string chName = _isMuonCh ? "muon" : "electron";
+    std::vector<std::string> yearList = {btagYear};
+    if (!_year.empty() && _year != btagYear) {
+        yearList.push_back(_year);
+    }
+
     std::vector<std::string> effCandidates;
 
     // 1. Channel-specific candidates (highest priority)
-    if (!procGroup.empty()) {
-        effCandidates.push_back("data/BTV/" + chName + "/" + btagYear + "/btag_eff_" + procGroup + ".root");
+    for (const auto &y : yearList) {
+        if (!procGroup.empty()) {
+            effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff_" + procGroup + ".root");
+        }
+        if (!cleanName.empty() && cleanName != procGroup) {
+            effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff_" + cleanName + ".root");
+        }
+        effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff.root");
+        effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff_inclusive.root");
     }
-    if (!cleanName.empty() && cleanName != procGroup) {
-        effCandidates.push_back("data/BTV/" + chName + "/" + btagYear + "/btag_eff_" + cleanName + ".root");
-    }
-    effCandidates.push_back("data/BTV/" + chName + "/" + btagYear + "/btag_eff.root");
-    effCandidates.push_back("data/BTV/" + chName + "/" + btagYear + "/btag_eff_inclusive.root");
 
     // 2. Legacy / channel-agnostic fallback candidates
-    if (!procGroup.empty()) {
-        effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff_" + procGroup + ".root");
+    for (const auto &y : yearList) {
+        if (!procGroup.empty()) {
+            effCandidates.push_back("data/BTV/" + y + "/btag_eff_" + procGroup + ".root");
+        }
+        if (!cleanName.empty() && cleanName != procGroup) {
+            effCandidates.push_back("data/BTV/" + y + "/btag_eff_" + cleanName + ".root");
+        }
+        effCandidates.push_back("data/BTV/" + y + "/btag_eff.root");
+        effCandidates.push_back("data/BTV/" + y + "/btag_eff_inclusive.root");
     }
-    if (!cleanName.empty() && cleanName != procGroup) {
-        effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff_" + cleanName + ".root");
-    }
-    effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff.root");
-    effCandidates.push_back("data/BTV/" + btagYear + "/btag_eff_inclusive.root");
 
     std::string chosenEffPath = "";
     for (const auto &candPath : effCandidates) {
