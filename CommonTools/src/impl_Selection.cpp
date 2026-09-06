@@ -13,7 +13,9 @@
 #include "correction.h"
 #include "GEScaleSyst.h"
 #include "TCanvas.h"
+#include "TH2.h"
 #include "TH2F.h"
+#include "TSystem.h"
 #include "ROOT/RDFHelpers.hxx"
 #include "Math/GenVector/VectorUtil.h"
 using namespace std;
@@ -87,9 +89,9 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     //   3. Inclusive map:        data/BTV/<year>/btag_eff.root (or btag_eff_inclusive.root)
     //   4. Graceful fallback:    Simple product (tagged jets only)
     // -----------------------------------------------------------------------
-    std::shared_ptr<TH2F> sp_eff_b = nullptr;
-    std::shared_ptr<TH2F> sp_eff_c = nullptr;
-    std::shared_ptr<TH2F> sp_eff_light = nullptr;
+    std::shared_ptr<TH2> sp_eff_b = nullptr;
+    std::shared_ptr<TH2> sp_eff_c = nullptr;
+    std::shared_ptr<TH2> sp_eff_light = nullptr;
     bool has_eff = false;
 
     std::string baseName = _outfilename;
@@ -221,18 +223,19 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
 
     std::string chosenEffPath = "";
     for (const auto &candPath : effCandidates) {
+        if (gSystem->AccessPathName(candPath.c_str()) != 0) continue; // File does not exist
         TFile *fEff = TFile::Open(candPath.c_str(), "READ");
         if (fEff && !fEff->IsZombie()) {
-            TH2F *h_b = dynamic_cast<TH2F*>(fEff->Get("h2_eff_b"));
-            TH2F *h_c = dynamic_cast<TH2F*>(fEff->Get("h2_eff_c"));
-            TH2F *h_l = dynamic_cast<TH2F*>(fEff->Get("h2_eff_light"));
+            TH2 *h_b = dynamic_cast<TH2*>(fEff->Get("h2_eff_b"));
+            TH2 *h_c = dynamic_cast<TH2*>(fEff->Get("h2_eff_c"));
+            TH2 *h_l = dynamic_cast<TH2*>(fEff->Get("h2_eff_light"));
             if (h_b && h_c && h_l) {
                 h_b->SetDirectory(0);
                 h_c->SetDirectory(0);
                 h_l->SetDirectory(0);
-                sp_eff_b = std::shared_ptr<TH2F>(h_b);
-                sp_eff_c = std::shared_ptr<TH2F>(h_c);
-                sp_eff_light = std::shared_ptr<TH2F>(h_l);
+                sp_eff_b = std::shared_ptr<TH2>(h_b);
+                sp_eff_c = std::shared_ptr<TH2>(h_c);
+                sp_eff_light = std::shared_ptr<TH2>(h_l);
                 has_eff = true;
                 chosenEffPath = candPath;
                 fEff->Close();
@@ -283,7 +286,7 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     // Helper lambda to query efficiency from 2D map with boundary clamping
     auto get_efficiency = [has_eff, sp_eff_b, sp_eff_c, sp_eff_light](int flav, float pt, float abseta) -> float {
         if (!has_eff) return 1.0f;
-        TH2F *h = nullptr;
+        TH2 *h = nullptr;
         float def_eff = 0.65f;
         if (flav == 5) {
             h = sp_eff_b.get();
