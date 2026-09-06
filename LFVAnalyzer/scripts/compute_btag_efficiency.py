@@ -42,13 +42,66 @@ def get_wp_threshold(year):
             return val
     return 0.2450
 
+def to_int(val, default=0, signed=False):
+    """
+    Safely convert PyROOT TTree values (int, UChar_t, Char_t, Bool_t, bytes, string) to int.
+    Handles ROOT's Python 3 string mapping for char/uchar branches (e.g. '\x1e' -> 30, '\x05' -> 5).
+    """
+    if val is None:
+        return default
+    if isinstance(val, int):
+        return val
+    if isinstance(val, bool):
+        return int(val)
+    if isinstance(val, (bytes, bytearray)):
+        b = val[0] if len(val) > 0 else default
+        if signed and b >= 128:
+            return b - 256
+        return b
+    if isinstance(val, str):
+        if not val:
+            return default
+        if val.isdigit() or (val.startswith('-') and val[1:].isdigit()):
+            return int(val)
+        if len(val) == 1:
+            code = ord(val)
+            if signed and code >= 128:
+                return code - 256
+            return code
+        try:
+            return int(val)
+        except Exception:
+            code = ord(val[0])
+            if signed and code >= 128:
+                return code - 256
+            return code
+    try:
+        return int(val)
+    except Exception:
+        return default
+
+def to_float(val, default=0.0):
+    """Safely convert value to float, handling string/char buffer artifacts."""
+    if val is None:
+        return default
+    if isinstance(val, (float, int)):
+        return float(val)
+    if isinstance(val, str):
+        if len(val) == 1:
+            return float(ord(val))
+        try:
+            return float(val)
+        except ValueError:
+            return default
+    try:
+        return float(val)
+    except Exception:
+        return default
+
 def safe_len(obj, fallback_count=None):
     """Safely determine collection or buffer length without throwing TypeError on C-buffers."""
     if fallback_count is not None:
-        try:
-            return int(fallback_count)
-        except Exception:
-            pass
+        return to_int(fallback_count, 0)
     if hasattr(obj, "__len__"):
         try:
             return len(obj)
@@ -286,74 +339,62 @@ def main():
 
         w = 1.0
         if hasattr(ev, "genWeight"):
-            w = 1.0 if ev.genWeight >= 0 else -1.0
+            w = 1.0 if to_float(getattr(ev, "genWeight", 1.0)) >= 0 else -1.0
 
-        # 0. Primary vertex cut
+        # 0. Primary vertex cut (using to_int to handle PyROOT UChar_t -> str/bytes mapping)
         pv_npvs = getattr(ev, "PV_npvsGood", None)
-        if args.full_baseline and pv_npvs is not None and pv_npvs <= 0:
+        if args.full_baseline and pv_npvs is not None and to_int(pv_npvs) <= 0:
             continue
 
-        # Fast path: Check if skimmed branches exist (nmuonpass, nelepass, nvetomuons, nvetoelepass)
+        # Fast path 1: Check if skimmed branches exist (nmuonpass, nelepass, nvetomuons, nvetoelepass)
         has_skim_leptons = hasattr(ev, "nmuonpass") and hasattr(ev, "nvetomuons") and hasattr(ev, "nvetoelepass")
-
-        signal_leptons = []  # list of (eta, phi, charge)
-        clean_taus = []      # list of (eta, phi, charge)
 
         if has_skim_leptons and args.full_baseline:
             # Check single lepton requirement
             if args.channel == "muon":
-                if getattr(ev, "nmuonpass", 0) != 1:
+                if to_int(getattr(ev, "nmuonpass", 0)) != 1:
                     continue
             elif args.channel == "electron":
-                if getattr(ev, "nelepass", 0) != 1:
+                if to_int(getattr(ev, "nelepass", 0)) != 1:
                     continue
             else:
-                if getattr(ev, "nmuonpass", 0) != 1 and getattr(ev, "nelepass", 0) != 1:
+                if to_int(getattr(ev, "nmuonpass", 0)) != 1 and to_int(getattr(ev, "nelepass", 0)) != 1:
                     continue
 
             # Check veto lepton requirement (no additional loose leptons)
-            if getattr(ev, "nvetomuons", 0) != 0 or getattr(ev, "nvetoelepass", 0) != 0:
+            if to_int(getattr(ev, "nvetomuons", 0)) != 0 or to_int(getattr(ev, "nvetoelepass", 0)) != 0:
                 continue
 
-            # Retrieve signal lepton eta/phi/charge for jet overlap removal
-            if args.channel in ["muon", "both"] and getattr(ev, "nmuonpass", 0) == 1:
-                mu_pts = getattr(ev, "Muon_pt", None)
+        # Fast path 2: Early exit if raw tau or jet count is insufficient to pass baseline
+        n_tau_raw = to_int(getattr(ev, "nTau", None))
+        n_jet_raw = to_int(getattr(ev, "nJet", None))
+        if args.full_baseline:
+            if n_tau_raw < 1 or n_jet_raw < args.min_njets:
+                continue
+
+        signal_leptons = []  # list of (eta, phi, charge)
+        clean_taus = []      # list of (eta, phi, charge)
+
+        if has_skim_leptons:
+            # Retrieve signal lepton eta/phi/charge
+            if args.channel in ["muon", "both"] and to_int(getattr(ev, "nmuonpass", 0)) == 1:
                 mu_etas = getattr(ev, "Muon_eta", None)
                 mu_phis = getattr(ev, "Muon_phi", None)
                 mu_qs = getattr(ev, "Muon_charge", None)
-                if mu_etas is not None and mu_phis is not None and safe_len(mu_etas, getattr(ev, "nMuon", None)) > 0:
-                    q = mu_qs[0] if mu_qs is not None and safe_len(mu_qs) > 0 else 0
-                    signal_leptons.append((mu_etas[0], mu_phis[0], q))
-            elif getattr(ev, "nelepass", 0) == 1:
+                n_mu = safe_len(mu_etas, getattr(ev, "nMuon", None))
+                if n_mu > 0 and mu_etas is not None and mu_phis is not None:
+                    q = to_int(mu_qs[0], 0, signed=True) if mu_qs is not None else 0
+                    signal_leptons.append((to_float(mu_etas[0]), to_float(mu_phis[0]), q))
+            elif to_int(getattr(ev, "nelepass", 0)) == 1:
                 el_etas = getattr(ev, "Electron_eta", None)
                 el_phis = getattr(ev, "Electron_phi", None)
                 el_qs = getattr(ev, "Electron_charge", None)
-                if el_etas is not None and el_phis is not None and safe_len(el_etas, getattr(ev, "nElectron", None)) > 0:
-                    q = el_qs[0] if el_qs is not None and safe_len(el_qs) > 0 else 0
-                    signal_leptons.append((el_etas[0], el_phis[0], q))
-
-            # Clean tau check
-            tau_etas = getattr(ev, "Tau_eta", None)
-            tau_phis = getattr(ev, "Tau_phi", None)
-            tau_qs = getattr(ev, "Tau_charge", None)
-            n_tau_tot = safe_len(tau_etas, getattr(ev, "nTau", None))
-
-            if hasattr(ev, "ncleantaupass"):
-                if getattr(ev, "ncleantaupass", 0) != 1:
-                    continue
-                if tau_etas is not None and tau_phis is not None and n_tau_tot > 0:
-                    t_q = tau_qs[0] if tau_qs is not None and safe_len(tau_qs) > 0 else 0
-                    clean_taus.append((tau_etas[0], tau_phis[0], t_q))
-                    # Opposite-sign charge check: leptau_charge < 0
-                    if signal_leptons and signal_leptons[0][2] * t_q >= 0:
-                        continue
-            elif n_tau_tot > 0 and tau_etas is not None and tau_phis is not None:
-                # Fallback tau selection
-                t_q = tau_qs[0] if tau_qs is not None and safe_len(tau_qs) > 0 else 0
-                clean_taus.append((tau_etas[0], tau_phis[0], t_q))
-
+                n_el = safe_len(el_etas, getattr(ev, "nElectron", None))
+                if n_el > 0 and el_etas is not None and el_phis is not None:
+                    q = to_int(el_qs[0], 0, signed=True) if el_qs is not None else 0
+                    signal_leptons.append((to_float(el_etas[0]), to_float(el_phis[0]), q))
         else:
-            # Fallback path: Full manual object inspection using safe_len
+            # Fallback path: Full manual object inspection
             n_veto_muons = 0
             n_veto_elecs = 0
 
@@ -369,12 +410,12 @@ def main():
             sig_mu_indices = set()
             if mu_pts is not None and mu_etas is not None and mu_phis is not None:
                 for m_i in range(n_mu_cnt):
-                    m_pt = mu_pts[m_i]
-                    m_eta = mu_etas[m_i]
-                    m_phi = mu_phis[m_i]
-                    m_q = mu_charges[m_i] if mu_charges is not None else 0
-                    is_tight = bool(mu_tight[m_i]) if mu_tight is not None else True
-                    iso_val = mu_iso[m_i] if mu_iso is not None else 0.0
+                    m_pt = to_float(mu_pts[m_i])
+                    m_eta = to_float(mu_etas[m_i])
+                    m_phi = to_float(mu_phis[m_i])
+                    m_q = to_int(mu_charges[m_i], 0, signed=True) if mu_charges is not None else 0
+                    is_tight = bool(to_int(mu_tight[m_i])) if mu_tight is not None else True
+                    iso_val = to_float(mu_iso[m_i]) if mu_iso is not None else 0.0
 
                     if m_pt > args.muon_pt and abs(m_eta) < 2.4 and is_tight and iso_val < 0.15:
                         if args.channel in ["muon", "both"]:
@@ -384,10 +425,10 @@ def main():
                 for m_i in range(n_mu_cnt):
                     if m_i in sig_mu_indices:
                         continue
-                    m_pt = mu_pts[m_i]
-                    m_eta = mu_etas[m_i]
-                    is_loose = bool(mu_loose[m_i]) if mu_loose is not None else False
-                    iso_val = mu_iso[m_i] if mu_iso is not None else 1.0
+                    m_pt = to_float(mu_pts[m_i])
+                    m_eta = to_float(mu_etas[m_i])
+                    is_loose = bool(to_int(mu_loose[m_i])) if mu_loose is not None else False
+                    iso_val = to_float(mu_iso[m_i]) if mu_iso is not None else 1.0
                     if m_pt > 15.0 and abs(m_eta) < 2.4 and is_loose and iso_val < 0.25:
                         n_veto_muons += 1
 
@@ -402,12 +443,12 @@ def main():
             sig_el_indices = set()
             if el_pts is not None and el_etas is not None and el_phis is not None:
                 for e_i in range(n_el_cnt):
-                    e_pt = el_pts[e_i]
-                    e_eta = el_etas[e_i]
+                    e_pt = to_float(el_pts[e_i])
+                    e_eta = to_float(el_etas[e_i])
                     e_abseta = abs(e_eta)
-                    e_phi = el_phis[e_i]
-                    e_q = el_charges[e_i] if el_charges is not None else 0
-                    is_mva90 = bool(el_mva[e_i]) if el_mva is not None else True
+                    e_phi = to_float(el_phis[e_i])
+                    e_q = to_int(el_charges[e_i], 0, signed=True) if el_charges is not None else 0
+                    is_mva90 = bool(to_int(el_mva[e_i])) if el_mva is not None else True
 
                     if e_pt > args.elec_pt and e_abseta < 2.5 and not (1.4442 < e_abseta < 1.566) and is_mva90:
                         if args.channel in ["electron", "both"]:
@@ -417,9 +458,9 @@ def main():
                 for e_i in range(n_el_cnt):
                     if e_i in sig_el_indices:
                         continue
-                    e_pt = el_pts[e_i]
-                    e_abseta = abs(el_etas[e_i])
-                    cb_val = el_cutbased[e_i] if el_cutbased is not None else 0
+                    e_pt = to_float(el_pts[e_i])
+                    e_abseta = abs(to_float(el_etas[e_i]))
+                    cb_val = to_int(el_cutbased[e_i]) if el_cutbased is not None else 0
                     if e_pt > 15.0 and e_abseta < 2.5 and not (1.4442 < e_abseta < 1.566) and cb_val >= 1:
                         n_veto_elecs += 1
 
@@ -429,59 +470,68 @@ def main():
                 if n_veto_muons > 0 or n_veto_elecs > 0:
                     continue
 
-            tau_pts = getattr(ev, "Tau_pt", None)
-            tau_etas = getattr(ev, "Tau_eta", None)
-            tau_phis = getattr(ev, "Tau_phi", None)
-            tau_charges = getattr(ev, "Tau_charge", None)
-            tau_dm_new = getattr(ev, "Tau_idDecayModeNewDMs", None)
-            tau_dm = getattr(ev, "Tau_decayMode", None)
-            tau_vsjet = getattr(ev, "Tau_idDeepTau2018v2p5VSjet", None)
-            tau_vsmu = getattr(ev, "Tau_idDeepTau2018v2p5VSmu", None)
-            tau_vse = getattr(ev, "Tau_idDeepTau2018v2p5VSe", None)
+        if args.full_baseline and len(signal_leptons) != 1:
+            continue
 
-            vsjet_th = 7
-            vsmu_th = 4 if args.channel == "muon" else 1
-            vse_th = 2 if args.channel == "muon" else 6
+        # Clean Tau selection
+        tau_pts = getattr(ev, "Tau_pt", None)
+        tau_etas = getattr(ev, "Tau_eta", None)
+        tau_phis = getattr(ev, "Tau_phi", None)
+        tau_charges = getattr(ev, "Tau_charge", None)
+        tau_dm_new = getattr(ev, "Tau_idDecayModeNewDMs", None)
+        tau_dm = getattr(ev, "Tau_decayMode", None)
+        tau_vsjet = getattr(ev, "Tau_idDeepTau2018v2p5VSjet", None)
+        tau_vsmu = getattr(ev, "Tau_idDeepTau2018v2p5VSmu", None)
+        tau_vse = getattr(ev, "Tau_idDeepTau2018v2p5VSe", None)
 
-            n_tau_cnt = safe_len(tau_pts, getattr(ev, "nTau", None))
-            if tau_pts is not None and tau_etas is not None and tau_phis is not None:
-                for t_i in range(n_tau_cnt):
-                    t_pt = tau_pts[t_i]
-                    t_eta = tau_etas[t_i]
-                    t_phi = tau_phis[t_i]
-                    t_q = tau_charges[t_i] if tau_charges is not None else 0
-                    if t_pt <= args.tau_pt or abs(t_eta) >= 2.5:
-                        continue
-                    if tau_dm_new is not None and not tau_dm_new[t_i]:
-                        continue
-                    if tau_dm is not None and (tau_dm[t_i] == 5 or tau_dm[t_i] == 6):
-                        continue
-                    if tau_vsjet is not None and tau_vsjet[t_i] < vsjet_th:
-                        continue
-                    if tau_vsmu is not None and tau_vsmu[t_i] < vsmu_th:
-                        continue
-                    if tau_vse is not None and tau_vse[t_i] < vse_th:
-                        continue
+        vsjet_th = 7
+        vsmu_th = 4 if args.channel == "muon" else 1
+        vse_th = 2 if args.channel == "muon" else 6
 
-                    overlap_lep = False
-                    for l_eta, l_phi, _ in signal_leptons:
-                        if delta_r(t_eta, t_phi, l_eta, l_phi) < args.dr_lep:
-                            overlap_lep = True
-                            break
-                    if overlap_lep:
-                        continue
+        n_tau_cnt = safe_len(tau_pts, n_tau_raw)
+        if tau_pts is not None and tau_etas is not None and tau_phis is not None:
+            for t_i in range(n_tau_cnt):
+                t_pt = to_float(tau_pts[t_i])
+                t_eta = to_float(tau_etas[t_i])
+                t_phi = to_float(tau_phis[t_i])
+                t_q = to_int(tau_charges[t_i], 0, signed=True) if tau_charges is not None else 0
 
-                    clean_taus.append((t_eta, t_phi, t_q))
-
-            if args.full_baseline:
-                if len(clean_taus) != 1:
+                if t_pt <= args.tau_pt or abs(t_eta) >= 2.5:
                     continue
-                lep_charge = signal_leptons[0][2]
-                tau_charge = clean_taus[0][2]
-                if lep_charge * tau_charge >= 0:
+                if tau_dm_new is not None and to_int(tau_dm_new[t_i]) == 0:
+                    continue
+                if tau_dm is not None:
+                    dm_val = to_int(tau_dm[t_i])
+                    if dm_val == 5 or dm_val == 6:
+                        continue
+                if tau_vsjet is not None and to_int(tau_vsjet[t_i]) < vsjet_th:
+                    continue
+                if tau_vsmu is not None and to_int(tau_vsmu[t_i]) < vsmu_th:
+                    continue
+                if tau_vse is not None and to_int(tau_vse[t_i]) < vse_th:
                     continue
 
-        # 3. Clean Jet selection and overlap removal (lepjetoverlap && taujetoverlap)
+                # Overlap removal with signal leptons
+                overlap_lep = False
+                for l_eta, l_phi, _ in signal_leptons:
+                    if delta_r(t_eta, t_phi, l_eta, l_phi) < args.dr_lep:
+                        overlap_lep = True
+                        break
+                if overlap_lep:
+                    continue
+
+                clean_taus.append((t_eta, t_phi, t_q))
+
+        if args.full_baseline:
+            if len(clean_taus) != 1:
+                continue
+            # Opposite-sign charge cut: leptau_charge < 0
+            lep_charge = signal_leptons[0][2]
+            tau_charge = clean_taus[0][2]
+            if lep_charge * tau_charge >= 0:
+                continue
+
+        # Clean Jet selection and overlap removal (lepjetoverlap && taujetoverlap)
         pts = getattr(ev, "Jet_pt", None)
         etas = getattr(ev, "Jet_eta", None)
         phis = getattr(ev, "Jet_phi", None)
@@ -491,14 +541,8 @@ def main():
         if pts is None or etas is None or hadflav is None or scores is None:
             continue
 
-        n_jet_cnt = getattr(ev, "nJet", None)
-        n_jets = min(
-            safe_len(pts, n_jet_cnt),
-            safe_len(etas, n_jet_cnt),
-            safe_len(hadflav, n_jet_cnt),
-            safe_len(scores, n_jet_cnt)
-        )
-        if n_jets == 0:
+        n_jet_cnt = safe_len(pts, n_jet_raw)
+        if n_jet_cnt < args.min_njets:
             continue
 
         pass_jet_id = getattr(ev, "Jet_passJetIdTightLepVeto", None)
@@ -508,24 +552,24 @@ def main():
 
         clean_jets = []
 
-        for j in range(n_jets):
-            pt = pts[j]
-            eta = etas[j]
+        for j in range(n_jet_cnt):
+            pt = to_float(pts[j])
+            eta = to_float(etas[j])
             abseta = abs(eta)
-            phi = phis[j] if phis is not None else 0.0
+            phi = to_float(phis[j]) if phis is not None else 0.0
 
             # Kinematic cut
             if pt <= args.min_pt or abseta >= args.max_eta:
                 continue
 
             # Jet ID & energy fraction cuts matching analysis_config.json
-            if pass_jet_id is not None and pass_jet_id[j] < 1.0:
+            if pass_jet_id is not None and to_float(pass_jet_id[j]) < 1.0:
                 continue
-            if pass_jet_id is None and jet_id is not None and jet_id[j] < 2:
+            if pass_jet_id is None and jet_id is not None and to_int(jet_id[j]) < 2:
                 continue
-            if mu_ef is not None and mu_ef[j] >= 0.8:
+            if mu_ef is not None and to_float(mu_ef[j]) >= 0.8:
                 continue
-            if ch_em_ef is not None and ch_em_ef[j] >= 0.8:
+            if ch_em_ef is not None and to_float(ch_em_ef[j]) >= 0.8:
                 continue
 
             # Overlap removal with signal leptons (lepjetoverlap: dR >= dr_lep)
@@ -546,7 +590,9 @@ def main():
                 if is_overlap:
                     continue
 
-            clean_jets.append((pt, abseta, hadflav[j], scores[j]))
+            flav = to_int(hadflav[j])
+            score = to_float(scores[j])
+            clean_jets.append((pt, abseta, flav, score))
 
         # Event-level multiplicity cut: N_clean_jets >= min_njets (default: 3)
         # Note: BTV principle: NEVER apply b-tag cut here!
