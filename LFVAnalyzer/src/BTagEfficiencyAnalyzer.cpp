@@ -64,11 +64,11 @@ void BTagEfficiencyAnalyzer::defineCuts() {
 }
 
 void BTagEfficiencyAnalyzer::defineMoreVars() {
-    // 1. Charge product for OS selection
+    // 1. Charge product for OS selection (safe indexing)
     if (_isMuonCh) {
-        addVar({"leptau_charge", "Muon_charge[0] * Tau_charge[0]", ""});
+        addVar({"leptau_charge", "Muon_charge.size() > 0 && Tau_charge.size() > 0 ? (Muon_charge[0] * Tau_charge[0]) : 0", ""});
     } else {
-        addVar({"leptau_charge", "Electron_charge[0] * Tau_charge[0]", ""});
+        addVar({"leptau_charge", "Electron_charge.size() > 0 && Tau_charge.size() > 0 ? (Electron_charge[0] * Tau_charge[0]) : 0", ""});
     }
 
     // 2. Absolute eta for clean jets (Jet_pt, Jet_eta, Jet_hadronFlavour are already cleaned in selectJets)
@@ -126,7 +126,7 @@ void BTagEfficiencyAnalyzer::defineMoreVars() {
 }
 
 void BTagEfficiencyAnalyzer::bookHists() {
-    maxstep = "0000";
+    maxstep = ""; // Empty string: fills histograms for all cutsteps >= mincutstep ("0000" = S4)
 
     // POG Recommended binning:
     // pT:  [40, 50, 70, 100, 140, 200, 300, 600, 1000]

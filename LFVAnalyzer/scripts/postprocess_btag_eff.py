@@ -56,9 +56,10 @@ def process_file(in_path, out_path, fallback_eff=None):
         return False
 
     flavors = ["b", "c", "light"]
+    processed_flavors = 0
     for fl in flavors:
-        denom_names = [f"h2_denom_{fl}_S4", f"h2_denom_{fl}"]
-        num_names   = [f"h2_num_{fl}_S4", f"h2_num_{fl}"]
+        denom_names = [f"h2_denom_{fl}_S4", f"h2_denom_{fl}", f"h2_denom_{fl}_S0000"]
+        num_names   = [f"h2_num_{fl}_S4", f"h2_num_{fl}", f"h2_num_{fl}_S0000"]
 
         h_denom = find_hist(fin, denom_names)
         h_num   = find_hist(fin, num_names)
@@ -67,6 +68,7 @@ def process_file(in_path, out_path, fallback_eff=None):
             print(f"[WARNING] Histograms for flavor '{fl}' not found in {in_path}! Skipping...", file=sys.stderr)
             continue
 
+        processed_flavors += 1
         h_denom_cl = h_denom.Clone(f"h2_denom_{fl}")
         h_num_cl   = h_num.Clone(f"h2_num_{fl}")
 
@@ -99,9 +101,19 @@ def process_file(in_path, out_path, fallback_eff=None):
         mean_eff = h2_eff.Integral() / (nbins_x * nbins_y) if (nbins_x * nbins_y) > 0 else 0.0
         print(f"  [FLAVOR {fl:>5}] Mean Eff: {mean_eff:.4f} (Smoothed bins: {n_smoothed}/{nbins_x * nbins_y})")
 
+    if processed_flavors == 0:
+        keys_in_file = [k.GetName() for k in fin.GetListOfKeys()]
+        print(f"[ERROR] No b-tag efficiency histograms found in raw output {in_path}!", file=sys.stderr)
+        print(f"        Keys present in input file: {keys_in_file}", file=sys.stderr)
+        fout.Close()
+        fin.Close()
+        if os.path.isfile(out_path):
+            os.remove(out_path)
+        return False
+
     # Also copy over control histograms if present
     for ctrl in ["h_nevents", "h_ncleanjetspass"]:
-        h_ctrl = find_hist(fin, [f"{ctrl}_S4", ctrl])
+        h_ctrl = find_hist(fin, [f"{ctrl}_S4", ctrl, f"{ctrl}_S0000"])
         if h_ctrl:
             h_ctrl_cl = h_ctrl.Clone(ctrl)
             h_ctrl_cl.SetDirectory(fout)
