@@ -157,7 +157,7 @@ def main():
     parser.add_argument("-j", "--jobs", dest="jobs", type=int, default=4, help="Number of concurrent worker processes when using --auto-skim [default: 4]")
     parser.add_argument("--dry-run", dest="dry_run", action="store_true", help="Display discovered jobs and command plan without executing (for --auto-skim)")
     parser.add_argument("--skip-existing", dest="skip_existing", action="store_true", help="Skip jobs whose output ROOT file already exists")
-    parser.add_argument("--channel", dest="channel", type=str, default="muon", choices=["muon", "electron", "both"], help="Lepton channel for selection (analysis default: muon)")
+    parser.add_argument("-C", "--channel", dest="channel", type=str, default="muon", choices=["muon", "electron", "both"], help="Lepton channel for selection (analysis default: muon)")
     parser.add_argument("--wp", dest="wp", type=float, default=-1.0, help="Override b-tag Medium WP threshold")
     parser.add_argument("--eta-bins", dest="eta_bins", type=str, default="single", help="Eta binning: 'single' ([0.0, max_eta], default), 'barrel-endcap' ([0.0, 1.4442, max_eta]), or comma-separated edges")
     parser.add_argument("--pt-bins", dest="pt_bins", type=str, default="", help="Custom comma-separated pT bin edges (default: standard BTV boundaries starting from min_pt)")
