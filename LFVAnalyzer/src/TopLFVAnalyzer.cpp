@@ -617,19 +617,12 @@ void TopLFVAnalyzer::defineWeightVars() {
             addVar({"eventWeight__tauideldown", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][2] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidmuup", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][1]"});
             addVar({"eventWeight__tauidmudown", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][2]"});
-            // Fixed-WP btag systematics
-            // btagWeight indices: 0=central, 1/2=corr up/dn, 3/4=uncorr up/dn,
-            //                     5/6=stat up/dn, 7/8=type3 up/dn, 9/10=bfrag up/dn
+            // Fixed-WP btag systematics (BTV standard: correlated + uncorrelated)
+            // btagWeight indices: 0=central, 1/2=corr up/dn, 3/4=uncorr up/dn
             addVar({"eventWeight__btagcorrup",     "eventWeight_nobtag * btagWeight[1]"});
             addVar({"eventWeight__btagcorrdown",   "eventWeight_nobtag * btagWeight[2]"});
             addVar({"eventWeight__btaguncorrup",   "eventWeight_nobtag * btagWeight[3]"});
             addVar({"eventWeight__btaguncorrdown", "eventWeight_nobtag * btagWeight[4]"});
-            addVar({"eventWeight__btagstatup",     "eventWeight_nobtag * btagWeight[5]"});
-            addVar({"eventWeight__btagstatdown",   "eventWeight_nobtag * btagWeight[6]"});
-            addVar({"eventWeight__btagtype3up",    "eventWeight_nobtag * btagWeight[7]"});
-            addVar({"eventWeight__btagtype3down",  "eventWeight_nobtag * btagWeight[8]"});
-            addVar({"eventWeight__btagbfragup",    "eventWeight_nobtag * btagWeight[9]"});
-            addVar({"eventWeight__btagbfragdown",  "eventWeight_nobtag * btagWeight[10]"});
 
             if (_applytauFF) {
                 addVar({"eventWeight__tauFFstatup", "eventWeight * tauFFstatup"});
@@ -668,12 +661,6 @@ void TopLFVAnalyzer::defineWeightVars() {
             addVar({"eventWeight_notau__btagcorrdown",   "eventWeight_genpumu * btagWeight[2]"});
             addVar({"eventWeight_notau__btaguncorrup",   "eventWeight_genpumu * btagWeight[3]"});
             addVar({"eventWeight_notau__btaguncorrdown", "eventWeight_genpumu * btagWeight[4]"});
-            addVar({"eventWeight_notau__btagstatup",     "eventWeight_genpumu * btagWeight[5]"});
-            addVar({"eventWeight_notau__btagstatdown",   "eventWeight_genpumu * btagWeight[6]"});
-            addVar({"eventWeight_notau__btagtype3up",    "eventWeight_genpumu * btagWeight[7]"});
-            addVar({"eventWeight_notau__btagtype3down",  "eventWeight_genpumu * btagWeight[8]"});
-            addVar({"eventWeight_notau__btagbfragup",    "eventWeight_genpumu * btagWeight[9]"});
-            addVar({"eventWeight_notau__btagbfragdown",  "eventWeight_genpumu * btagWeight[10]"});
 
 
             if (_syst == "theory") {
@@ -774,12 +761,9 @@ void TopLFVAnalyzer::bookHists() {
         "_nobtag", "_nopu", "_notau", "_notoppt",
         "__puup",   "__pudown",
         "__topptup", "__topptdown",
-        // Fixed-WP btag variations (10 components)
+        // Fixed-WP btag variations (BTV standard: correlated + uncorrelated)
         "__btagcorrup",     "__btagcorrdown",
         "__btaguncorrup",   "__btaguncorrdown",
-        "__btagstatup",     "__btagstatdown",
-        "__btagtype3up",    "__btagtype3down",
-        "__btagbfragup",    "__btagbfragdown",
     };
     // Channel-dependent lepton SF suffixes
     if (_isMuonCh) {

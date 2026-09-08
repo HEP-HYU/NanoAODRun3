@@ -44,7 +44,7 @@ unc_cat = OrderedDict([
          'tauidjetHighptstat_bin1', 'tauidjetHighptstat_bin2',
          'tauidjetHighptsyst', 'tauidjetHighptextrap',
          'tauidel', 'tauidmu', 'tes', 'tauFFstat', 'tauFFsyst',
-         'btagcorr', 'btaguncorr', 'btagstat', 'btagtype3', 'btagbfrag',
+         'btagcorr', 'btaguncorr',
          'jesAbsolute', 'jesAbsolute_'+year[:4], 'jesBBEC1', 'jesBBEC1_'+year[:4],
          #'jesFlavorQCD',
          'jesFlavorPureGluon', 'jesFlavorPureQuark', 'jesFlavorPureCharm', 'jesFlavorPureBottom',
@@ -115,10 +115,7 @@ unc_cat = OrderedDict([
 ('tune', ['tune']),
 ('btagcorr', ['btagcorr']),
 ('btaguncorr', ['btaguncorr']),
-('btagstat', ['btagstat']),
-('btagtype3', ['btagtype3']),
-('btagbfrag', ['btagbfrag']),
-('bAll', ['btagcorr', 'btaguncorr', 'btagstat', 'btagtype3', 'btagbfrag']),
+('bAll', ['btagcorr', 'btaguncorr']),
 ])
 
 if year == "2018":

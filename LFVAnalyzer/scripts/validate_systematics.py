@@ -167,9 +167,6 @@ WEIGHT_SYST_BRANCHES = [
     "eventWeight__mutrgup", "eventWeight__mutrgdown",
     "eventWeight__btagcorrup",     "eventWeight__btagcorrdown",
     "eventWeight__btaguncorrup",   "eventWeight__btaguncorrdown",
-    "eventWeight__btagstatup",     "eventWeight__btagstatdown",
-    "eventWeight__btagtype3up",    "eventWeight__btagtype3down",
-    "eventWeight__btagbfragup",    "eventWeight__btagbfragdown",
     "eventWeight__tauidjetUncert0up",    "eventWeight__tauidjetUncert0down",
     "eventWeight__tauidjetUncert1up",    "eventWeight__tauidjetUncert1down",
     "eventWeight__tauidjetSystallerasup","eventWeight__tauidjetSystallerasdown",
@@ -186,9 +183,6 @@ WEIGHT_SYST_PAIRS = [
     ("eventWeight__mutrgup",        "eventWeight__mutrgdown"),
     ("eventWeight__btagcorrup",     "eventWeight__btagcorrdown"),
     ("eventWeight__btaguncorrup",   "eventWeight__btaguncorrdown"),
-    ("eventWeight__btagstatup",     "eventWeight__btagstatdown"),
-    ("eventWeight__btagtype3up",    "eventWeight__btagtype3down"),
-    ("eventWeight__btagbfragup",    "eventWeight__btagbfragdown"),
 ]
 
 # Kinematic branches that must NOT change for weight-only systematics

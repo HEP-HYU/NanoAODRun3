@@ -256,32 +256,25 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     }
 
     // -----------------------------------------------------------------------
-    // Systematic indices (same order for all eras, only common systs used):
+    // BTV POG Multi-era Standard Scheme (correlated + uncorrelated):
     //   0: central
-    //   1/2:  up/down_correlated
-    //   3/4:  up/down_uncorrelated
-    //   5/6:  up/down_statistic
-    //   7/8:  up/down_type3
-    //   9/10: up/down_bfragmentation
+    //   1/2: up/down_correlated   (correlated across all Run 3 eras)
+    //   3/4: up/down_uncorrelated (uncorrelated per data-taking era)
     //
-    // Light-jet systs (applied only to hadronFlavour==0):
-    //   0: central  1/2: up/down_correlated  3/4: up/down_uncorrelated
+    // Applied to both b/c jets (_comb) and light jets (_light).
     // -----------------------------------------------------------------------
     const std::string wp = "M";  // Medium WP
     const std::vector<std::string> systs_hfbc = {
         "central",
         "up_correlated",   "down_correlated",    // 1/2
-        "up_uncorrelated", "down_uncorrelated",  // 3/4
-        "up_statistic",    "down_statistic",      // 5/6
-        "up_type3",        "down_type3",          // 7/8
-        "up_bfragmentation","down_bfragmentation" // 9/10
+        "up_uncorrelated", "down_uncorrelated"   // 3/4
     };
     const std::vector<std::string> systs_light = {
         "central",
         "up_correlated",   "down_correlated",    // 1/2
         "up_uncorrelated", "down_uncorrelated"   // 3/4
     };
-    const int n_systs = static_cast<int>(systs_hfbc.size()); // 11
+    const int n_systs = static_cast<int>(systs_hfbc.size()); // 5
 
     // Helper lambda to query efficiency from 2D map with boundary clamping
     auto get_efficiency = [has_eff, sp_eff_b, sp_eff_c, sp_eff_light](int flav, float pt, float abseta) -> float {
@@ -375,8 +368,7 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
         return out;
     };
 
-    // btagWeight[0] = central, [1/2] = corr up/dn, [3/4] = uncorr up/dn,
-    // [5/6] = stat up/dn, [7/8] = type3 up/dn, [9/10] = bfrag up/dn
+    // btagWeight[0] = central, [1/2] = corr up/dn, [3/4] = uncorr up/dn
     const std::string bTagCol = _isRun24 ? "Jet_btagUParTAK4B" : "Jet_btagPNetB";
     _rlm = _rlm.Define("btagWeight", btagSF_fixedWP,
                         {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", bTagCol});
