@@ -36,7 +36,7 @@ eras = {
     '2022':     {'lumi': 7980.4,   'config_tag': '2022',      'dir_candidates': ['v12_2022', 'v2022', '2022']},
     '2022EE':   {'lumi': 26671.7,  'config_tag': '2022EE',    'dir_candidates': ['v12_2022EE', 'v2022EE', '2022EE']},
     '2023':     {'lumi': 17794.0,  'config_tag': '2023',      'dir_candidates': ['v12_2023', 'v2023', '2023']},
-    '2023BPix': {'lumi': 9451.0,   'config_tag': '2023_BPix', 'dir_candidates': ['v12_2023BPix', 'v12_2023_BPix', 'v2023_BPix', 'v2023BPix', '2023BPix', '2023_BPix']},
+    '2023BPix': {'lumi': 9451.0,   'config_tag': '2023BPix', 'dir_candidates': ['v12_2023BPix', 'v12_2023_BPix', 'v2023_BPix', 'v2023BPix', '2023BPix', '2023_BPix']},
     '2024':     {'lumi': 109000.0, 'config_tag': '2024',      'dir_candidates': ['v15_2024', 'v2024', '2024']}
 }
 
@@ -46,6 +46,9 @@ total_lumi = sum(info['lumi'] for info in eras.values()) # 170897.1 pb^-1
 common_syst_list = []
 for era_key, era_info in eras.items():
     cfg_file = os.path.join(config_path, f"config_{era_info['config_tag']}.yml")
+    if not os.path.exists(cfg_file):
+        alt_tag = era_info['config_tag'].replace('_', '')
+        cfg_file = os.path.join(config_path, f"config_{alt_tag}.yml")
     if os.path.exists(cfg_file):
         with open(cfg_file) as f:
             lines = f.readlines()
@@ -434,6 +437,8 @@ if os.path.exists(template_yml_path):
         for line in lines:
             if 'luminosity:' in line and not line.strip().startswith('#'):
                 f1.write(f"  luminosity: {total_lumi:.1f}\n")
+            elif line.strip().startswith('systematics:'):
+                break
             else:
                 f1.write(line)
         f1.write(common_syst)
