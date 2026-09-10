@@ -327,6 +327,7 @@ void TopLFVAnalyzer::defineKinematicVars() {
         addVar({"tauFFstatdown","1.0", ""});
         addVar({"tauFFsystup",  "1.0", ""});
         addVar({"tauFFsystdown","1.0", ""});
+        addVar({"unitGenWeightFF", "unitGenWeight", ""});
     } else {
         auto tauFF_nom      = tauFFfunctor(tauYear, _ch, "nom",  0);
         auto tauFF_statup   = tauFFfunctor(tauYear, _ch, "stat", 1);
@@ -338,11 +339,11 @@ void TopLFVAnalyzer::defineKinematicVars() {
         defineVar("tauFFstatdown",tauFF_statdown, {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
         defineVar("tauFFsystup",  tauFF_systup,   {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
         defineVar("tauFFsystdown",tauFF_systdown, {"Tau_pt", "Tau_pt_gen", "Tau_decayMode"});
-    }
 
-    // unitGenWeightFF: generator weight including the tau fake factor.
-    // Note: UFO_reweight was removed — no Run3 UFO reweighting prescription.
-    addVar({"unitGenWeightFF", "unitGenWeight * tauFF", ""});
+        // Redefine unitGenWeight so all downstream event weights automatically incorporate tauFF
+        _rlm = _rlm.Redefine("unitGenWeight", "unitGenWeight * tauFF");
+        addVar({"unitGenWeightFF", "unitGenWeight", ""});
+    }
 
     if (_isMuonCh) {
         addVar({"Muon1_pt",     si("Muon_pt",     0),        ""});
@@ -1094,11 +1095,10 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
         return nom;
     } else {
         const double frac = entry.at(unc_);   // absolute fractional uncertainty (always >= 0)
-        double result = 0.0;
-        if (direction_ ==  1) result = nom * (1.0 + frac);
-        if (direction_ == -1) result = nom * (1.0 - frac);
-        // Clamp negative variations to 0 to prevent sign flip in weight product
-        return std::max(0.0, result);
+        double result = 1.0;
+        if (direction_ ==  1) result = 1.0 + frac;
+        if (direction_ == -1) result = std::max(0.0, 1.0 - frac);
+        return result;
     }
     return 1.0;
 }

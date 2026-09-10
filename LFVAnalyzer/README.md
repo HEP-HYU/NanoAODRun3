@@ -479,7 +479,7 @@ python scripts/process.py -V skim_v1 -O process_v1_fake_tss -Y v12_2023BPix -C m
 python scripts/process.py -V skim_v1 -O process_v1_fake_tos -Y v12_2023BPix -C muon -S nosyst -M tos
 
 # Step 2: compute fake factors
-python fake_factor_calculator_fromROOTFile.py   # per-pt-bin version
+python fake_factor_calculator_fromROOTFile.py   # per-decay-mode version
 
 # Step 3: apply in final selection (output folder must contain 'FF')
 python scripts/process.py -V skim_v1 -O process_v1_FF -Y v12_2023BPix -C muon -S theory --ff
