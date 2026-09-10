@@ -11,6 +11,7 @@ parser.add_argument('-I', '--input', dest='input', type=str, default="process_07
 parser.add_argument('-C', '-ch', '--channel', dest='channel', type=str, default="", choices=["", "electron", "muon"], help="Channel: electron or muon (auto-detected from input if empty)")
 parser.add_argument("-D", dest="DNN", action="store_true", default=False, help="Run for DNN histograms")
 parser.add_argument("-F", '--ff', dest="tauFF", action="store_true", default=False, help="Run for tauFF histograms")
+parser.add_argument("-f", '--calcff', dest="calcTauFF", action="store_true", default=False, help="Run for calculate tauFF histograms")
 parser.add_argument("-y", dest="yield_only", action="store_true", default=False, help="Run for yield histograms")
 parser.add_argument("-q", dest="qcd", action="store_true", default=False, help="include QCD")
 parser.add_argument("--postfix", dest="postfix", type=str, default="", help="Add postfix to output here, to have rebinning for histograms")
@@ -158,7 +159,7 @@ for era_key, era_info in eras.items():
 # Write files_Run3.yml
 files_run3_yml = os.path.join(config_path, 'files_Run3.yml')
 with open(files_run3_yml, 'w+') as fnew:
-    if has_merged_run3:
+    if has_merged_run3 and not args.calcTauFF:
         run3_dir_path = os.path.normpath(os.path.join(dest_path, channel, 'Run3' + postfix)) if os.path.exists(os.path.join(dest_path, channel, 'Run3' + postfix)) else os.path.normpath(os.path.join(dest_path, 'Run3' + postfix))
         if channel == 'electron' and args.yield_only:
             fnew.write(f"""
@@ -442,6 +443,8 @@ if os.path.exists(template_yml_path):
                 f1.write("\nplots:\n  include: ['histos_yield_S5.yml']\n")
             else:
                 f1.write("\nplots:\n  include: ['histos_FFapply.yml', 'histos_yield_S5.yml']\n")
+        elif args.calcTauFF:
+            f1.write("\nplots:\n  include: ['histos_FFcalc.yml']\n")
         elif args.DNN:
             f1.write("\nplots:\n  include: ['histos_dnn.yml']\n")
         else:

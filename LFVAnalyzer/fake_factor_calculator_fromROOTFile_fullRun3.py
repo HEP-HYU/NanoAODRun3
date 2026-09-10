@@ -6,7 +6,7 @@ from ROOT import TFile
 import sys, argparse
 
 parser = argparse.ArgumentParser(description="Calculate Fake Factors from ROOT files")
-parser.add_argument("-V", "--version", dest="version", type=str, default="process_0812_v3_fake", help="Input folder prefix")
+parser.add_argument("-V", "--version", dest="version", type=str, default="process_0812_v5_fake", help="Input folder prefix")
 parser.add_argument("-C", "--channel", dest="channel", type=str, default="")
 parser.add_argument("-Y", "--years", dest="years", nargs="+", default=['2022', '2022EE', '2023', '2023BPix', '2024'], help="Years/Eras list")
 options, _ = parser.parse_known_args()
