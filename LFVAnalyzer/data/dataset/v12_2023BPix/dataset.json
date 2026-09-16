@@ -226,14 +226,14 @@
     {
         "DataSetName": "/DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2_ext1-v4/NANOAODSIM",
         "name": "DYto2L-2Jets_MLL-10to50",
-        "nevt": 100386286,
+        "nevt": 100410583,
         "path": "",
         "xsec": 20950.0
     },
     {
         "DataSetName": "/DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v4/NANOAODSIM",
         "name": "DYto2L-2Jets_MLL-50",
-        "nevt": 95472230,
+        "nevt": 94876537,
         "path": "",
         "xsec": 6688.0
     },
@@ -343,6 +343,34 @@
         "xsec": 98.04
     },
     {
+        "DataSetName": "/TTto2L2Nu_TuneCP5Up_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto2L2Nu__tuneup",
+        "nevt": 9745000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTto2L2Nu_TuneCP5Down_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto2L2Nu__tunedown",
+        "nevt": 9766000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto2L2Nu__hdampup",
+        "nevt": 9880000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTto2L2Nu_Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto2L2Nu__hdampdown",
+        "nevt": 9640000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
         "DataSetName": "/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
         "name": "TTto4Q",
         "nevt": 53044000,
@@ -350,11 +378,67 @@
         "xsec": 419.82
     },
     {
+        "DataSetName": "/TTto4Q_TuneCP5Up_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto4Q__tuneup",
+        "nevt": 22961000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTto4Q_TuneCP5Down_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto4Q__tunedown",
+        "nevt": 22961000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTto4Q_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto4Q__hdampup",
+        "nevt": 22289000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTto4Q_Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTto4Q__hdampdown",
+        "nevt": 22466000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
         "DataSetName": "/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
         "name": "TTtoLNu2Q",
         "nevt": 82058000,
         "path": "",
         "xsec": 405.75
+    },
+    {
+        "DataSetName": "/TTtoLNu2Q_TuneCP5Up_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTtoLNu2Q__tuneup",
+        "nevt": 32910000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTtoLNu2Q_TuneCP5Down_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTtoLNu2Q__tunedown",
+        "nevt": 32130000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTtoLNu2Q_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTtoLNu2Q__hdampup",
+        "nevt": 32916000,
+        "path": "",
+        "xsec": 0.0
+    },
+    {
+        "DataSetName": "/TTtoLNu2Q_Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
+        "name": "TTtoLNu2Q__hdampdown",
+        "nevt": 32046000,
+        "path": "",
+        "xsec": 0.0
     },
     {
         "DataSetName": "/TTW-WtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",

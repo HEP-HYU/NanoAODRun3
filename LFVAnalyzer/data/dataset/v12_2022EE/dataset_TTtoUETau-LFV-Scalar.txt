@@ -27,12 +27,12 @@
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/3db79700-c3b3-4ff8-8021-194f79015768.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/7dd550d7-9ba0-4845-8782-17eb8f269a8c.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/70226491-5386-4cad-b089-f5ac1883b2db.root
-/store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/4ee1361b-4251-45cb-86e9-fe5f22241366.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/fa9a7eb8-9bcd-4db3-8c77-65b9153f9533.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/aa7a4059-3704-4c4c-a887-126b96740a1e.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/1385c6d7-e5ff-46c4-a1a6-fcc0660ee224.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/945a5212-980e-4793-ae43-cc8a70c68cd7.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/6ab569c2-1da9-488d-86d5-65157446702b.root
-/store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/ec847cd7-f2fd-44d2-b9e3-fef1d27a96d4.root
+/store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/4ee1361b-4251-45cb-86e9-fe5f22241366.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/71ad1585-3a3a-48b4-9dc4-ebbbae72f8e7.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/632787c0-489a-41ed-961a-66d30c303b17.root
+/store/mc/Run3Summer22EENanoAODv12/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2820000/ec847cd7-f2fd-44d2-b9e3-fef1d27a96d4.root

@@ -54,12 +54,12 @@
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/a3c6aeda-928a-4fef-8cc4-55862971783c.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/bd17fcd6-46f6-4c99-b8d1-d0b45906570a.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/d945cd6f-3507-4547-9d89-df0c5313891c.root
+/store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/81181891-3fdb-4d5c-a001-921177a6ff92.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/63c3b607-59b7-4133-98cc-b0f52bbef58c.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/96813f96-f4db-45d0-a9b1-026a98e4451c.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/48734549-cb5a-4dd5-8185-c79ac20f4c20.root
-/store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/81181891-3fdb-4d5c-a001-921177a6ff92.root
-/store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/ecfd6730-45d1-4773-a230-800a4495b344.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/e21e676f-a0fd-47b4-b1df-0f2b05abaefa.root
+/store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/ecfd6730-45d1-4773-a230-800a4495b344.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/9195354a-4e7e-4b40-b0f3-9cb1c3e620ba.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/58ea58b7-abca-4779-ae57-7c56fab95ba2.root
 /store/mc/Run3Summer22NanoAODv12/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/130000/e47bf47b-a580-47b6-b98c-521855904986.root
