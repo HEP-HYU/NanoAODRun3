@@ -86,11 +86,9 @@ def run(inputs):
     syst_hist_dnn_entries_dict = {}
     hist_nevents_S4_dict = {}
     hist_nevents_S5_dict = {}
-    syst_extend = []
 
     if not "SingleMuon" in input_file :
         infile_forS = uproot.open(input_file.replace("_FF", ""))
-        h_nevents_S4_nobtag = infile_forS["h_nevents_S4"]  ### get it from removed FF 
         h_nevents_S4 = infile_forS["h_nevents_S4_all"]
         #if any(string in input_file for string in ["_LFV", "TTt", "_ST_t"]) and "__" not in input_file:
         #    ScaleWeightSum = infile['ScaleWeightSum']
@@ -149,74 +147,10 @@ def run(inputs):
             pd_weight = tree.arrays(["eventWeight__"+syst], library="np")
             pd_weight = pd_weight["eventWeight__"+syst].tolist()
 
-            # set SF for mu / tau 100 GeV above ro below
-            if any(s_ in syst for s_ in ["mescale", "renscale", "facscale"]):
-                tmp_weight_mu1ta1 = []
-                tmp_weight_mu1ta2 = []
-                tmp_weight_mu2ta1 = []
-                tmp_weight_mu2ta2 = []
-                for ei in range(len(pd_weight)):
-                    if muon_pt[ei] < 100 and tau_pt[ei] < 100:
-                        tmp_weight_mu1ta1.append(pd_weight[ei])
-                        tmp_weight_mu1ta2.append(nom_weight[ei])
-                        tmp_weight_mu2ta1.append(nom_weight[ei])
-                        tmp_weight_mu2ta2.append(nom_weight[ei])
-                    elif muon_pt[ei] < 100 and tau_pt[ei] >= 100:
-                        tmp_weight_mu1ta1.append(nom_weight[ei])
-                        tmp_weight_mu1ta2.append(pd_weight[ei])
-                        tmp_weight_mu2ta1.append(nom_weight[ei])
-                        tmp_weight_mu2ta2.append(nom_weight[ei])
-                    elif muon_pt[ei] >= 100 and tau_pt[ei] < 100:
-                        tmp_weight_mu1ta1.append(nom_weight[ei])
-                        tmp_weight_mu1ta2.append(nom_weight[ei])
-                        tmp_weight_mu2ta1.append(pd_weight[ei])
-                        tmp_weight_mu2ta2.append(nom_weight[ei])
-                    elif muon_pt[ei] >= 100 and tau_pt[ei] >= 100:
-                        tmp_weight_mu1ta1.append(nom_weight[ei])
-                        tmp_weight_mu1ta2.append(nom_weight[ei])
-                        tmp_weight_mu2ta1.append(nom_weight[ei])
-                        tmp_weight_mu2ta2.append(pd_weight[ei])
-                    else: print("Wrong event categorization for scale UNC!!")
-
-                if "up" in syst: typeS = "up"
-                else:            typeS = "down"
-
-                #do normal histo first
-                dnnhist_Wsyst = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
-                dnnhist_entries_Wsyst = np.histogram(pred, bins=binedges, density=False)
-                syst_hist_dnn_dict["h_dnn_pred_S5__"+syst] = dnnhist_Wsyst
-                syst_hist_dnn_entries_dict["h_dnn_entries_S5__"+syst] = dnnhist_entries_Wsyst
-
-                #pt binned unc
-                dnnhist_Wsyst11 = np.histogram(pred, bins=binedges, weights=tmp_weight_mu1ta1, density=False)
-                dnnhist_entries_Wsyst11 = np.histogram(pred, bins=binedges, density=False)
-                syst_hist_dnn_dict["h_dnn_pred_S5__"+syst.replace(typeS, "")+"mu1ta1"+typeS] = dnnhist_Wsyst11
-                syst_hist_dnn_entries_dict["h_dnn_entries_S5__"+syst.replace(typeS, "")+"mu1ta1"+typeS] = dnnhist_entries_Wsyst11
-                syst_extend.append(syst.replace(typeS, "")+"mu1ta1"+typeS)
-
-                dnnhist_Wsyst12 = np.histogram(pred, bins=binedges, weights=tmp_weight_mu1ta2, density=False)
-                dnnhist_entries_Wsyst12 = np.histogram(pred, bins=binedges, density=False)
-                syst_hist_dnn_dict["h_dnn_pred_S5__"+syst.replace(typeS, "")+"mu1ta2"+typeS] = dnnhist_Wsyst12
-                syst_hist_dnn_entries_dict["h_dnn_entries_S5__"+syst.replace(typeS, "")+"mu1ta2"+typeS] = dnnhist_entries_Wsyst12
-                syst_extend.append(syst.replace(typeS, "")+"mu1ta2"+typeS)
-
-                dnnhist_Wsyst21 = np.histogram(pred, bins=binedges, weights=tmp_weight_mu2ta1, density=False)
-                dnnhist_entries_Wsyst21 = np.histogram(pred, bins=binedges, density=False)
-                syst_hist_dnn_dict["h_dnn_pred_S5__"+syst.replace(typeS, "")+"mu2ta1"+typeS] = dnnhist_Wsyst21
-                syst_hist_dnn_entries_dict["h_dnn_entries_S5__"+syst.replace(typeS, "")+"mu2ta1"+typeS] = dnnhist_entries_Wsyst21
-                syst_extend.append(syst.replace(typeS, "")+"mu2ta1"+typeS)
-
-                dnnhist_Wsyst22 = np.histogram(pred, bins=binedges, weights=tmp_weight_mu2ta2, density=False)
-                dnnhist_entries_Wsyst22 = np.histogram(pred, bins=binedges, density=False)
-                syst_hist_dnn_dict["h_dnn_pred_S5__"+syst.replace(typeS, "")+"mu2ta2"+typeS] = dnnhist_Wsyst22
-                syst_hist_dnn_entries_dict["h_dnn_entries_S5__"+syst.replace(typeS, "")+"mu2ta2"+typeS] = dnnhist_entries_Wsyst22
-                syst_extend.append(syst.replace(typeS, "")+"mu2ta2"+typeS)
-
-            else:
-                dnnhist_Wsyst = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
-                dnnhist_entries_Wsyst = np.histogram(pred, bins=binedges, density=False)
-                syst_hist_dnn_dict["h_dnn_pred_S5__"+syst] = dnnhist_Wsyst
-                syst_hist_dnn_entries_dict["h_dnn_entries_S5__"+syst] = dnnhist_entries_Wsyst
+            dnnhist_Wsyst = np.histogram(pred, bins=binedges, weights=pd_weight, density=False)
+            dnnhist_entries_Wsyst = np.histogram(pred, bins=binedges, density=False)
+            syst_hist_dnn_dict["h_dnn_pred_S5__"+syst] = dnnhist_Wsyst
+            syst_hist_dnn_entries_dict["h_dnn_entries_S5__"+syst] = dnnhist_entries_Wsyst
             if 'btag' in syst:
                 hist_nevents_S4_dict["h_nevents_S4__"+syst] = infile_forS["h_nevents_S4__"+syst]
                 hist_nevents_S5_dict["h_nevents_S5__"+syst] = infile["h_nevents_S5__"+syst]
@@ -230,17 +164,12 @@ def run(inputs):
         outf["hcounter"] = hcounter
 
         if not "SingleMuon" in input_file:
-            outf["h_nevents_S4_nobtag"] = h_nevents_S4_nobtag
             outf["h_nevents_S4"] = h_nevents_S4
 
             #if any(string in input_file for string in ["_LFV","TTT","_ST_t"]) and "__" not in input_file:
             #    outf["ScaleWeightSum"] = ScaleWeightSum
             #    outf["PSWeightSum"] = PSWeightSum
             #    outf["LHEPdfWeightSum"] = LHEPdfWeightSum
-
-        if len(syst_extend) > 1:
-            syst_list.extend(syst_extend)
-            print ("syst_list.extend ", syst_extend)
 
         for syst in syst_list:
             if 'pdf' in syst and not 'alphas' in syst:

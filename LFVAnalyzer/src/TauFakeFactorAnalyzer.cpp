@@ -108,9 +108,10 @@ void TauFakeFactorAnalyzer::bookHists() {
 
     add1DHist({"h_nevents", ";Number of events w/o b SF;Events", 2, -0.5, 1.5}, "one", "eventWeight", "", "0", "");
 
-    if (_syst != "data") {
-        add1DHist({"h_nevents", ";Number of events w/o b SF;Events", 2, -0.5, 1.5}, "one", "eventWeight", "_nobtag", "0", "");
-    }
+    // Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+    // if (_syst != "data") {
+    //     add1DHist({"h_nevents", ";Number of events w/o b SF;Events", 2, -0.5, 1.5}, "one", "eventWeight", "_nobtag", "0", "");
+    // }
 
     add1DHist({"h_tau1_pt", ";#tau_{h} p_{T} (GeV);Events", 20, 0, 400}, "Tau1_pt", "eventWeight", "", "0", maxstep);
     add1DHist({"h_tau1_gen_pt", ";#tau_{h} p_{T} (GeV) (MC: Tau_genPartFlav == 5);Events", 20, 0, 400}, "Tau1_pt_gen", "eventWeight", "", "0", maxstep);

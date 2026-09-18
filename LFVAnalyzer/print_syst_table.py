@@ -24,11 +24,15 @@ if options.tauFF:
     plot_to_add = "plots:\n  include: ['histos_yield_S5.yml']\n\n"
 if options.DNN: plot_to_add = "plots:\n  include: ['histos_dnn.yml']\n\n"
 
-if   year == "2022"    : tauYear = "2022_preEE"
-elif year == "2022EE"  : tauYear = "2022_postEE"
-elif year == "2023"    : tauYear = "2023_preBPix"
-elif year == "2023BPix": tauYear = "2023_postBPix"
-else                   : tauYear = year
+if   year.endswith("2022")    : tauYear = "2022_preEE"
+elif year.endswith("2022EE")  : tauYear = "2022_postEE"
+elif year.endswith("2023")    : tauYear = "2023_preBPix"
+elif year.endswith("2023BPix"): tauYear = "2023_postBPix"
+elif year.endswith("2024")    : tauYear = "2024"
+else                          : tauYear = year
+
+m_year = re.search(r'(20\d\d)', year)
+jes_year = m_year.group(1) if m_year else year[:4]
 
 if os.path.exists(config_path + tmp_file_name):
     os.remove(config_path + tmp_file_name)
@@ -45,12 +49,11 @@ unc_cat = OrderedDict([
          'tauidjetHighptsyst', 'tauidjetHighptextrap',
          'tauidel', 'tauidmu', 'tes', 'tauFFstat', 'tauFFsyst',
          'btagcorr', 'btaguncorr',
-         'jesAbsolute', 'jesAbsolute_'+year[:4], 'jesBBEC1', 'jesBBEC1_'+year[:4],
-         #'jesFlavorQCD',
+         'jesAbsolute', 'jesAbsolute_'+jes_year, 'jesBBEC1', 'jesBBEC1_'+jes_year,
          'jesFlavorPureGluon', 'jesFlavorPureQuark', 'jesFlavorPureCharm', 'jesFlavorPureBottom',
-         'jesRelativeBal', 'jesRelativeSample_'+year[:4], 'jer',
+         'jesRelativeBal', 'jesRelativeSample_'+jes_year, 'jer',
          'metUnclust',
-         'mescale', 'renscale', 'faccale', 'isr', 'fsr', 'pdfalphas',
+         'mescale', 'renscale', 'facscale', 'isr', 'fsr', 'pdfalphas',
          'tune', 'hdamp',]),
 ('pu', ['pu']),
 ('toppt', ['toppt']),
@@ -87,21 +90,19 @@ unc_cat = OrderedDict([
 ('tauFFsyst', ['tauFFsyst']),
 ('tauFF', ['tauFFstat', 'tauFFsyst']),
 ('jesAbsolute', ['jesAbsolute']),
-('jesAbsolute_'+year[:4], ['jesAbsolute_'+year[:4]]),
+('jesAbsolute_'+jes_year, ['jesAbsolute_'+jes_year]),
 ('jesBBEC1', ['jesBBEC1']),
-('jesBBEC1_'+year[:4], ['jesBBEC1_'+year[:4]]),
-#('jesFlavorQCD', ['jesFlavorQCD']),
+('jesBBEC1_'+jes_year, ['jesBBEC1_'+jes_year]),
 ('jesFlavorPureGluon', ['jesFlavorPureGluon']),
 ('jesFlavorPureQuark', ['jesFlavorPureQuark']),
 ('jesFlavorPureCharm', ['jesFlavorPureCharm']),
 ('jesFlavorPureBottom', ['jesFlavorPureBottom']),
 ('jesFlavorPure', ['jesFlavorPureGluon', 'jesFlavorPureQuark', 'jesFlavorPureCharm', 'jesFlavorPureBottom']),
 ('jesRelativeBal', ['jesRelativeBal']),
-('jesRelativeSample_'+year[:4], ['jesRelativeSample_'+year[:4]]),
-('jesAll', ['jesAbsolute', 'jesAbsolute_'+year[:4], 'jesBBEC1', 'jesBBEC1_'+year[:4],
-            #'jesFlavorQCD',
+('jesRelativeSample_'+jes_year, ['jesRelativeSample_'+jes_year]),
+('jesAll', ['jesAbsolute', 'jesAbsolute_'+jes_year, 'jesBBEC1', 'jesBBEC1_'+jes_year,
             'jesFlavorPureGluon', 'jesFlavorPureQuark', 'jesFlavorPureCharm', 'jesFlavorPureBottom',
-            'jesRelativeBal', 'jesRelativeSample_'+year[:4]]),
+            'jesRelativeBal', 'jesRelativeSample_'+jes_year]),
 ('jer', ['jer']),
 ('metUnclust', ['metUnclust']),
 ('scale', ['mescale', 'renscale', 'facscale']),

@@ -12,6 +12,8 @@
 #include "Math/GenVector/Rotation3D.h"
 #include "Math/Math.h"
 
+// Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+/*
 std::map<int,float> btagNormFactors;
 
 float getBTagNormFactor(int njet)
@@ -23,6 +25,7 @@ float getBTagNormFactor(int njet)
 
     return it->second;
 }
+*/
 
 // Utility function to generate fourvector objects for thigs that pass selections
 

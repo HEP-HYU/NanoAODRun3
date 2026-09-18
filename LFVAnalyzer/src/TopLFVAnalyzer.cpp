@@ -51,6 +51,8 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
     }
 }
 
+// Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+/*
 void TopLFVAnalyzer::defineBTagNormalization(){
     if (_isData) return;
     std::string lepWeight = "";
@@ -144,6 +146,7 @@ void TopLFVAnalyzer::defineBTagNormalization(){
     defineVar("btagNorm", getBTagNorm, {"ncleanjetspass"});
     defineVar("btagWeightNorm", applyBTagNorm, {"btagWeight", "btagNorm"});
 }
+*/
 
 void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
     // ── Load analysis configuration (static cache, read once per process) ────
@@ -839,10 +842,9 @@ void TopLFVAnalyzer::bookHists() {
     if (_syst == "" or _syst == "nosyst" or _syst == "data" or ext_syst) {
         syst_weight = init_weight;
         if (_syst != "data") {
-            //We anyway need this for bSF rescaling
-            add1DHist({"h_nevents", ";Number of events w/o b SF;Events", 2, -0.5, 1.5}, "one", "eventWeight", "_nobtag", minstep_S1, "");
-            add1DHist({"h_nevents_notausf", ";Number of events w/o b and tau SF;Events", 2, -0.5, 1.5}, "one", "eventWeight_notau", "_nobtag", minstep_S1, "00");
-            add1DHist({"h_jet_ht", ";Jet HT w/o b SF (GeV);Events", 48, 40, 1000}, "Jet_HT", "eventWeight", "_nobtag", minstep_S1, "");
+            // S4/S5 diagnostic histograms w/o b-tag SF to check b-tag SF closure (S4) and net effect in SR (S5).
+            // Method 1a (Fixed WP) does not use b-tag normalization; general _nobtag histograms are removed.
+            add1DHist({"h_nevents", ";Number of events w/o b SF;Events", 2, -0.5, 1.5}, "one", "eventWeight", "_nobtag", minstep_S4, "");
         }
     }
     else {

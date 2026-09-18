@@ -23,8 +23,8 @@ protected:
     bool ext_syst = false;  ///< true when _syst encodes an external variation (JES/JER/TES/btag)
     std::string maxstep;
     std::string tauYear = "";
-    bool _applytauFF;
-    void defineBTagNormalization();
+    // Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+    // void defineBTagNormalization();
     /// @name defineMoreVars helpers (called in order; RDataFrame column ordering preserved)
     ///@{
     void defineKinematicVars();     ///< 4-vectors, ΔR, M_T, S_T^MET, top reco, object branches

@@ -4,7 +4,7 @@ from subprocess import call
 parser = argparse.ArgumentParser(usage="%prog [options]")
 parser.add_argument("-V", "--version", dest="version", type=str, default="", help="Skim version: folder under /data2/common/skimmed_NanoAOD/")
 parser.add_argument("-O", "--outdir", dest="outdir", type=str, default="test", help="Output folder in your working directory")
-parser.add_argument("-Y", "--year", dest="year", type=str, default="", help="Select 2016pre, 2016post, 2017, or 2018 runs")
+parser.add_argument("-Y", "--year", dest="year", type=str, default="", help="Select 2022, 2022EE, 2023, 2023BPix, or 2024 runs")
 parser.add_argument("-C", "--ch",  dest="ch", type=str, default="", help="Select electron or muon")
 parser.add_argument("-S", "--syst", dest="syst", type=str, default="theory", help="Systematic: 'data' for Data, 'nosyst' for mc without uncertainties. Default is 'theory'. To run without theory unc for TT samples, put 'all'.")
 parser.add_argument("-D", "--dataset", dest="dataset", action="store", nargs="+", default=[], help="Put dataset folder name (eg. TTTo2L2Nu) to process specific one.")
@@ -40,13 +40,16 @@ mc_list = [os.path.join(mcdir, s) for s in os.listdir(mcdir)]
 
 dataset_list = data_list + mc_list
 
+m_year = re.search(r'(20\d\d)', year)
+jes_year = m_year.group(1) if m_year else year[:4]
+
 syst_list = ["", "__tesup", "__tesdown", "__jerup","__jerdown", "__jesAbsoluteup","__jesAbsolutedown",
-             "__jesAbsolute_"+year[:4]+"up", "__jesAbsolute_"+year[:4]+"down",
-             "__jesBBEC1up", "__jesBBEC1down", "__jesBBEC1_"+year[:4]+"up", "__jesBBEC1_"+year[:4]+"down",
-             #"__jesFlavorQCDup", "__jesFlavorQCDdown", "__jesRelativeBalup", "__jesRelativeBaldown",
+             "__jesAbsolute_"+jes_year+"up", "__jesAbsolute_"+jes_year+"down",
+             "__jesBBEC1up", "__jesBBEC1down", "__jesBBEC1_"+jes_year+"up", "__jesBBEC1_"+jes_year+"down",
              "__jesRelativeBalup", "__jesRelativeBaldown",
-             "__jesRelativeSample_"+year[:4]+"up", "__jesRelativeSample_"+year[:4]+"down"]
-if year == "2018": syst_list.extend(["__jesHEMup", "__jesHEMdown"])
+             "__jesRelativeSample_"+jes_year+"up", "__jesRelativeSample_"+jes_year+"down"]
+# jesHEM was 2018 Run 2 only (HCAL issue repaired in LS2, excluded in Run 3)
+# if year == "2018": syst_list.extend(["__jesHEMup", "__jesHEMdown"])
 syst_list.extend(["__jesFlavorPureGluonup", "__jesFlavorPureGluondown", "__jesFlavorPureQuarkup", "__jesFlavorPureQuarkdown",
                   "__jesFlavorPureCharmup", "__jesFlavorPureCharmdown", "__jesFlavorPureBottomup", "__jesFlavorPureBottomdown"])
 syst_list.extend(["__metUnclustup", "__metUnclustdown"])
@@ -145,8 +148,11 @@ for ds in dataset_list:
                     else:
                         parameters.append([year, ch, ds, outdir, outfname, "nosyst"])
             elif src == "" and ext_syst:
-                if any(i in dataset_name for i in syst_ext) and options.syst == "nosyst": continue
-                else: parameters.append([year, ch, ds, outdir, outfname, "nosyst"])
+                if toSplit:
+                    os.makedirs(tgdir.replace(year, year + '/' + "split"), exist_ok=True)
+                    parameters.append([year, ch, rootfilestoprocess, outdir.replace(year, year + '/' + "split"), outfname, "nosyst"])
+                else:
+                    parameters.append([year, ch, ds, outdir, outfname, "nosyst"])
             else:
                 #os.makedir(os.path.join(tgdir, dataset_name+src)
                 if any(i in dataset_name for i in syst_ext): continue

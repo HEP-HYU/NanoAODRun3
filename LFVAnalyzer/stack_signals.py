@@ -21,8 +21,12 @@ file_names = collections.OrderedDict()
 
 syst = ["","jesAbsoluteup","jesAbsolutedown", "jesAbsolute_ERAup", "jesAbsolute_ERAdown",
         "jesBBEC1up", "jesBBEC1down", "jesBBEC1_ERAup", "jesBBEC1_ERAdown",
-        "jesFlavorQCDup", "jesFlavorQCDdown", "jesRelativeBalup", "jesRelativeBaldown",
+        "jesRelativeBalup", "jesRelativeBaldown",
         "jesRelativeSample_ERAup", "jesRelativeSample_ERAdown",
+        "jesFlavorPureGluonup", "jesFlavorPureGluondown",
+        "jesFlavorPureQuarkup", "jesFlavorPureQuarkdown",
+        "jesFlavorPureCharmup", "jesFlavorPureCharmdown",
+        "jesFlavorPureBottomup", "jesFlavorPureBottomdown",
         "jerup", "jerdown", "tesup", "tesdown",
         "hdampup", "hdampdown", "tuneup", "tunedown"]
 syst2 = []

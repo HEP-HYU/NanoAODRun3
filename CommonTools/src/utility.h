@@ -28,8 +28,9 @@
 ///          Their signatures and return types are part of the flat-ntuple contract
 ///          and must NOT be changed without updating all downstream Define() calls.
 
-extern std::map<int,float> btagNormFactors;
-float getBTagNormFactor(int njet);
+// Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+// extern std::map<int,float> btagNormFactors;
+// float getBTagNormFactor(int njet);
 
 /// @name RVec type aliases
 /// Shorthand names for ROOT::VecOps::RVec specialisations used as column types

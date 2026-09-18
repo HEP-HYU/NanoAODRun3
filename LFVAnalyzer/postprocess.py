@@ -97,33 +97,36 @@ if not options.noHadd:
 #print(file_list)
 #print(split_list)
 
-def get_bSFratio(inputf, inputh):
-    # ref: https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagShapeCalibration
-    # rescale histogram by Sum(event weights before applying b weight)/Sum(weights with b weight)
-    # This should be done per jet bin - nojet / 3jet
-
-    step = inputh[inputh.rfind('_S')+1:inputh.rfind('_S')+3]
-
-    # This depends on cutflow
-    if int(step[-1]) < 4: step = 'S' + step[-1]
-    else                : step = 'S4'
-
-    if isFFcalc: step = 'S2'
-
-    posthist = inputf.Get('h_nevents_' + step)
-    prehist = inputf.Get('h_nevents_' + step + '_nobtag')
-    if '__btag' in inputh:
-        posthist = inputf.Get('h_nevents_' + step + '__' + str(inputh.split('__')[-1]))
-    if prehist.Integral() * posthist.Integral() == 0:
-        return 1.0
-    #print(prehist.Integral() / posthist.Integral())
-    return prehist.Integral(0, prehist.GetNbinsX()+1) / posthist.Integral(0, prehist.GetNbinsX()+1)
+# Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+# def get_bSFratio(inputf, inputh):
+#     # ref: https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagShapeCalibration
+#     # rescale histogram by Sum(event weights before applying b weight)/Sum(weights with b weight)
+#     # This should be done per jet bin - nojet / 3jet
+# 
+#     step = inputh[inputh.rfind('_S')+1:inputh.rfind('_S')+3]
+# 
+#     # This depends on cutflow
+#     if int(step[-1]) < 4: step = 'S' + step[-1]
+#     else                : step = 'S4'
+# 
+#     if isFFcalc: step = 'S2'
+# 
+#     posthist = inputf.Get('h_nevents_' + step)
+#     prehist = inputf.Get('h_nevents_' + step + '_nobtag')
+#     if '__btag' in inputh:
+#         posthist = inputf.Get('h_nevents_' + step + '__' + str(inputh.split('__')[-1]))
+#     if prehist.Integral() * posthist.Integral() == 0:
+#         return 1.0
+#     #print(prehist.Integral() / posthist.Integral())
+#     return prehist.Integral(0, prehist.GetNbinsX()+1) / posthist.Integral(0, prehist.GetNbinsX()+1)
 
 
 def rescale(inputh, inputf, bsff, sumW, nom_sumW): # rescale up/dn histos
 
     #Only for ext syst. such as tune and hdamp, not jes/jer/tes
     h = inputf.Get(inputh)
+    if not h: return
+    h = h.Clone()
 
     if "dnn_pred" in inputh:
         # No negative bin (underflow) by definition
@@ -131,11 +134,14 @@ def rescale(inputh, inputf, bsff, sumW, nom_sumW): # rescale up/dn histos
         h.SetBinError(2, sqrt(pow(h.GetBinError(1), 2) + pow(h.GetBinError(2), 2)))
         h.SetBinContent(1, 0.)
         h.SetBinError(1, 0.)
-        h = h.Rebin(len(rebin_arr)-1, h.GetName(), rebin_arr)
+        if "_st" not in inputh and "_tt" not in inputh and "_bkg" not in inputh:
+            h = h.Rebin(len(rebin_arr)-1, h.GetName(), rebin_arr)
 
     if not any(i in inputh for i in ['event', 'counter', '_nobtag', 'LHEPdfWeightSum', 'PSWeightSum', 'ScaleWeightSum']):
-        h.Scale(get_bSFratio(bsff, inputh))
-        h.Scale(nom_sumW.GetBinContent(2) / sumW.GetBinContent(2))
+        # Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+        # h.Scale(get_bSFratio(bsff, inputh))
+        if sumW and nom_sumW and sumW.GetBinContent(2) > 0:
+            h.Scale(nom_sumW.GetBinContent(2) / sumW.GetBinContent(2))
         #h.Rebin(nrebin)
         #h = h.Rebin(len(rebin[h.GetName().split('_')[2]])-1, h.GetName(), array.array('d',rebin[h.GetName().split('_')[2]]))
         if yield_name in inputh:
@@ -182,16 +188,16 @@ def write_envelope(inputh, inputf, bsff, syst, nhists, gen_sumW, wgt_sumW, do_re
         if up == None: return 1
         up.SetDirectory(ROOT.nullptr)
         dn.SetDirectory(ROOT.nullptr)
-        #print("gen_sumW.GetBinContent(2)", gen_sumW.GetBinContent(2))
-        #Zero sum weight means no variation, especially for alphas
+        # Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
         if wgt_sumW.GetBinContent(sum_weights_dict[syst_type][0]) * wgt_sumW.GetBinContent(sum_weights_dict[syst_type][1]) > 0 and do_renorm:
             up.Scale(gen_sumW.GetBinContent(2)/wgt_sumW.GetBinContent(sum_weights_dict[syst_type][0]))
             dn.Scale(gen_sumW.GetBinContent(2)/wgt_sumW.GetBinContent(sum_weights_dict[syst_type][1]))
-            up.Scale(get_bSFratio(bsff, up.GetName()))
-            dn.Scale(get_bSFratio(bsff, dn.GetName()))
+            # up.Scale(get_bSFratio(bsff, up.GetName()))
+            # dn.Scale(get_bSFratio(bsff, dn.GetName()))
         elif not do_renorm:
-            up.Scale(get_bSFratio(bsff, up.GetName()))
-            dn.Scale(get_bSFratio(bsff, dn.GetName()))
+            pass
+            # up.Scale(get_bSFratio(bsff, up.GetName()))
+            # dn.Scale(get_bSFratio(bsff, dn.GetName()))
         else:
             print("!!!! Zero sum of weight detected: ", syst)
         up.SetName(inputh + "__" + syst + "up")
@@ -245,8 +251,9 @@ def write_envelope(inputh, inputf, bsff, syst, nhists, gen_sumW, wgt_sumW, do_re
             up.SetBinContent(i, maximum)
             dn.SetBinContent(i, minimum)
 
-        up.Scale(get_bSFratio(bsff, up.GetName()))
-        dn.Scale(get_bSFratio(bsff, dn.GetName()))
+        # Dead code: b-tag SF changed from Shape to Fixed WP (Method 1a), so b-tag normalization is no longer used.
+        # up.Scale(get_bSFratio(bsff, up.GetName()))
+        # dn.Scale(get_bSFratio(bsff, dn.GetName()))
         up.SetName(inputh + "__" + syst + "up")
         dn.SetName(inputh + "__" + syst + "down")
         #We don't draw pdf in full ana due to computing resources
@@ -287,34 +294,29 @@ for fname in file_list:
 
     #flag for ext. syst with different normalization
     run_on_syst = False
+    nom_file = None
+    hcounter_nom = None
     if any(i in fname for i in ['hdamp', 'tune']):
         run_on_syst = True
         nom_fname = fname.replace('__' + fname.split('__')[1], '')
-        nom_file = TFile.Open(os.path.join(nom_path, nom_fname + '.root'), 'READ')
-        hcounter_nom = nom_file.Get("hcounter")
+        nom_file_path = os.path.join(nom_path, nom_fname + '.root')
+        if os.path.exists(nom_file_path):
+            nom_file = TFile.Open(nom_file_path, 'READ')
+            hcounter_nom = nom_file.Get("hcounter")
+        else:
+            print("Warning: Nominal file '{}' not found. Rescaling cannot be applied.".format(nom_file_path))
 
     infile = TFile.Open(os.path.join(nom_path, fname + '.root'), 'READ')
-    hlists = [ h.GetName() for h in infile.GetListOfKeys() if '_S' in h.GetName() ]
+    hlists = list(dict.fromkeys([ h.GetName() for h in infile.GetListOfKeys() if '_S' in h.GetName() ]))
     hlists.append("hcounter")
 
-    # Get ratio for rescaling with b-tagSF.
-    if not '__' in fname:
-        bSFfile = infile
-        if isFFapply:
-            bSFfile = TFile.Open(os.path.join(nom_path.replace("_FF",""), fname + '.root'), 'READ')
-            #bSFfile = TFile.Open(os.path.join(nom_path.replace("v2_FF",""), fname + '.root'), 'READ')
-    elif '__' in fname and any(i in fname for i in ['hdamp', 'tune', 'jes']):#JES uses different bSF per source!
-        bSFfile = infile
-        if isFFapply:
-            bSFfile = TFile.Open(os.path.join(nom_path.replace("_FF",""), fname + '.root'), 'READ')
-            #bSFfile = TFile.Open(os.path.join(nom_path.replace("v2_FF",""), fname + '.root'), 'READ')
-    else:
-        bSFfname = fname.replace('__' + fname.split('__')[1], '')
-        bSFfile = TFile.Open(os.path.join(nom_path, bSFfname + '.root'), 'READ')
-        if isFFapply:
-            bSFfile = TFile.Open(os.path.join(nom_path.replace("_FF",""), bSFfname + '.root'), 'READ')
-            #bSFfile = TFile.Open(os.path.join(nom_path.replace("v2_FF",""), bSFfname + '.root'), 'READ')
-    #FIXME - ugly...
+    hcounter = infile.Get('hcounter')
+    ScaleWeightSum = infile.Get('ScaleWeightSum')
+    PSWeightSum = infile.Get('PSWeightSum')
+    LHEPdfWeightSum = infile.Get('LHEPdfWeightSum')
+
+    # Note: b-tag SF changed from Shape to Fixed WP (Method 1a) in Run 3.
+    # Event weights already include btagWeight[0], so b-tag normalization / bSFfile rescaling is no longer used.
 
     # Collecting Histograms in outfile.
     print("Saving histograms at {}/{}.root".format(out_path, fname))
@@ -343,7 +345,9 @@ for fname in file_list:
 
     for hname in hlists:
         if "__" not in hname: nominal_list.append(hname)
-        if run_on_syst: continue
+        if run_on_syst:
+            rescale(hname, infile, None, hcounter, hcounter_nom)
+            continue
         print ("hname: ", hname)
         h = infile.Get(hname)
         print ("h: ", h)
@@ -363,17 +367,8 @@ for fname in file_list:
             h1.Write()
         if any(i in hname for i in ['event', 'counter', '_nobtag', 'LHEPdfWeightSum', 'PSWeightSum', 'ScaleWeightSum']): pass
         elif any(i in hname for i in ['__mescale', '__renscale', '__facscale', '__isr', '__fsr', '__pdfalphas']): continue
-        elif ('Muon' in fname or 'egamma' in fname.lower()) and 'jes' not in fname: pass
-        else:
-            print ("bSFfile: ", bSFfile, hname)
-            #ratio = get_bSFratio(bSFfile, hname)
-            #h.Scale(ratio)
         h.Write()
 
-    hcounter = infile.Get('hcounter')
-    ScaleWeightSum = infile.Get('ScaleWeightSum')
-    PSWeightSum = infile.Get('PSWeightSum')
-    LHEPdfWeightSum = infile.Get('LHEPdfWeightSum')
     nominal_list = list(set(nominal_list))
 
     #for hname2 in nominal_list:
@@ -404,11 +399,12 @@ for fname in file_list:
     #  #For PDF: we take 101-102 only for control plots from ttbar
     #  #if isPDF: write_envelope(hname2, infile, bSFfile, "pdf", 101, hcounter, LHEPdfWeightSum, do_renorm) #sig: 101 / bkg: 101 + 2 (as)
     #  if isPDFas: write_envelope(hname2, infile, bSFfile, "pdfalphas", 2, hcounter, LHEPdfWeightSum, do_renorm)
-    #  if run_on_syst: rescale(hname2, infile, bSFfile, hcounter, hcounter_nom) #placeholder for hdamp and tune
-
+    #  # Note: for run_on_syst (hdamp and tune), rescale() is now invoked in the main hlists loop above.
 
     infile.Close()
     outfile.Close()
+    if run_on_syst and nom_file:
+        nom_file.Close()
 
 
 for dataname in data_list:
