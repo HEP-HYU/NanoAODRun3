@@ -245,10 +245,10 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
 
     if (_isMuonCh){
         selectElectrons(cut, s_vetoelec);
-        selectTaus(s_taucut, tauYear, s_mu_vsjet, s_mu_vsmu, s_mu_vse); //VSjet VVTight, VSmu Tight, VSe VVLoose
+        selectTaus(s_taucut, tauYear, s_mu_vsjet, s_mu_vsmu, s_mu_vse); //VSjet VTight, VSmu Tight, VSe VVLoose
     } else {
         selectMuons(cut, s_vetomuon);
-        selectTaus(s_taucut, tauYear, s_el_vsjet, s_el_vsmu, s_el_vse); //VSjet VVTight, VSmu VLoose, VSe VTight
+        selectTaus(s_taucut, tauYear, s_el_vsjet, s_el_vsmu, s_el_vse); //VSjet VTight, VSmu VLoose, VSe Tight
     }
     selectJets(jes_var, jes_var_flav, s_jetcut);
     if (!_isData){
@@ -1055,6 +1055,7 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
     const int dm = static_cast<int>(tau_dm_[0]);
     if      (dm == 0)  dmKey = "dm0";
     else if (dm == 1)  dmKey = "dm1";
+    else if (dm == 2)  dmKey = "dm1";  // 1-prong + 2 pi0: physically close to dm1, hedge against rare occurrences
     else if (dm == 10) dmKey = "dm10";
     else if (dm == 11) dmKey = "dm11";
     else {

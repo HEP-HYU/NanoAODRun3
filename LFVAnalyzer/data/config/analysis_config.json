@@ -7,7 +7,7 @@
     "muon_veto_cut":     "Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25",
     "electron_veto_cut": "Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1",
     "jet_cut":           "Jet_pt>40.0 && abs(Jet_eta)<2.5 && Jet_passJetIdTightLepVeto==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8",
-    "tau_cut":           "Tau_pt>40.0 && abs(Tau_eta)<2.5  && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6"
+    "tau_cut":           "Tau_pt>40.0 && abs(Tau_eta)<2.5 && abs(Tau_dz)<0.2 && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6"
   },
 
   "deeptau_wp": {
@@ -15,13 +15,13 @@
       "vsjet": "7",
       "vsmu":  "4",
       "vse":   "2",
-      "_comment": "VSjet VTight, VSmu Tight, VSe VLoose"
+      "_comment": "VSjet VTight, VSmu Tight, VSe VVLoose"
     },
     "electron_ch": {
       "vsjet": "7",
       "vsmu":  "1",
       "vse":   "6",
-      "_comment": "VSjet VTight, VSmu Loose, VSe Tight"
+      "_comment": "VSjet VTight, VSmu VLoose, VSe Tight"
     }
   },
 

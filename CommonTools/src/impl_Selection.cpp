@@ -477,10 +477,10 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         // To apply the up/down variation: rescale by Tau_ES_up/Tau_ES_nom or Tau_ES_down/Tau_ES_nom.
         // Guard against Tau_ES_nom == 0 (unshifted jet) and against old skim files that
         // pre-date Tau_ES_* columns.
-        const bool hasTauES = isDefined("Tau_ES_nom");
+        const bool hasTauES = isDefined("Tau_ES_nom") && isDefined("Tau_ES_up") && isDefined("Tau_ES_down");
         if (!hasTauES && _syst.find("tes") != std::string::npos) {
             std::cerr << "[WARN] selectTaus: syst=" << _syst
-                      << " but Tau_ES_nom not found in input — skim may be outdated. "
+                      << " but Tau_ES_nom/up/down not found in input — skim may be outdated. "
                       << "TES variation will NOT be applied.\n";
         }
         if (hasTauES && _syst.find("tesup") != std::string::npos) {
@@ -629,6 +629,20 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         auto _tauidSFele = tauSFreader->at("DeepTau2018v2p5VSe");
         auto _tauidSFmu  = tauSFreader->at("DeepTau2018v2p5VSmu");
 
+        // Dynamic WP fallback for DeepTau2018v2p5VSjet:
+        // Current 2022/2023 tau POG JSONs provide only 'Medium' WP, while 2024 has 'Loose', 'Medium', 'Tight', 'VTight'.
+        // If the requested WP (e.g. 'VTight') is not present in the JSON, probe throws and we fall back to 'Medium'.
+        // When an updated JSON containing 'VTight' is provided, the probe will succeed and 'VTight' will automatically be used.
+        std::string active_tauid_vsjet = tauid_vsjet;
+        try {
+            _tauidSFjet->evaluate({40.0, 0, 5, active_tauid_vsjet, tauid_vse, "nom", "dm"});
+            std::cout << "[INFO] DeepTau2018v2p5VSjet: successfully loaded requested WP '" << active_tauid_vsjet << "'" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "[WARN] DeepTau2018v2p5VSjet: requested WP '" << active_tauid_vsjet
+                      << "' not available in " << tauFolder << " (" << e.what() << "). Falling back to 'Medium'." << std::endl;
+            active_tauid_vsjet = "Medium";
+        }
+
         std::vector<std::string> systNamesVsJet = {
             "nom",                                     // 0
             "up", "down",                              // 1, 2
@@ -653,7 +667,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         };
         const size_t nSystVsJet = systNamesVsJet.size(); // 39
 
-        auto tauSFIdVsJet = [this, _tauidSFjet, tauid_vsjet, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
+        auto tauSFIdVsJet = [this, _tauidSFjet, active_tauid_vsjet, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
             // CMS tau POG: DeepTauVSjet SF applies ONLY to real hadronic taus (genmatch==5).
             floats uncSources;
             uncSources.reserve(nSystVsJet);
@@ -667,17 +681,36 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                     if (gm == 5) {  // real hadronic tau only
                         float nom_sf = 1.0f;
                         try {
-                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, "nom", "dm"});
+                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet, tauid_vse, "nom", "dm"});
                         } catch (...) {
                             nom_sf = 1.0f;
                         }
-                        for (const auto &sname : systNamesVsJet) {
+                        uncSources.assign(nSystVsJet, nom_sf);
+                        uncSources[0] = nom_sf;
+
+                        for (size_t s = 1; s < nSystVsJet; ++s) {
                             try {
-                                float val = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet, tauid_vse, sname, "dm"});
-                                uncSources.emplace_back(val);
+                                uncSources[s] = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet, tauid_vse, systNamesVsJet[s], "dm"});
                             } catch (...) {
-                                uncSources.emplace_back(nom_sf);
+                                uncSources[s] = nom_sf;
                             }
+                        }
+
+                        // Inclusive up/down harmonization:
+                        // In 2024, systNamesVsJet[1] ("up") and [2] ("down") are natively provided by POG.
+                        // In 2022/2023, POG only provides 32 DM-binned sub-sources (indices 3..38), so evaluate("up")
+                        // defaults to nom_sf. If [1] and [2] equal nom_sf, synthesize inclusive up/down via quadrature sum
+                        // of the sub-source deviations so that Y<year>_tauidjet is physically consistent across all eras.
+                        if (std::abs(uncSources[1] - nom_sf) < 1e-6f && std::abs(uncSources[2] - nom_sf) < 1e-6f) {
+                            float sum_sq_up = 0.0f;
+                            float sum_sq_dn = 0.0f;
+                            for (size_t s = 3; s < nSystVsJet; ++s) {
+                                float diff = uncSources[s] - nom_sf;
+                                if (diff > 0.0f) sum_sq_up += diff * diff;
+                                else             sum_sq_dn += diff * diff;
+                            }
+                            uncSources[1] = nom_sf + std::sqrt(sum_sq_up);
+                            uncSources[2] = nom_sf - std::sqrt(sum_sq_dn);
                         }
                     } else {
                         // SF = 1.0 for non-real-tau objects (jets, electrons, muons faking tau)
@@ -798,10 +831,20 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                    .Redefine("Tau_pt_gen", "Tau_pt[taugencut]");
 
         // --- Loose tau SFs: all columns aligned to Loose selection ---
-        // A NEW lambda is needed because tauSFIdVsJet captures tauid_vsjet by value at
-        // definition time (Tight WP). Reassigning the local variable has no effect on it.
+        // A NEW lambda is needed because tauSFIdVsJet captures active_tauid_vsjet by value at
+        // definition time. Reassigning the local variable has no effect on it.
         const std::string tauid_vsjet_loose = "Loose";
-        auto tauSFIdVsJet_loose = [this, _tauidSFjet, tauid_vsjet_loose, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
+        std::string active_tauid_vsjet_loose = tauid_vsjet_loose;
+        try {
+            _tauidSFjet->evaluate({40.0, 0, 5, active_tauid_vsjet_loose, tauid_vse, "nom", "dm"});
+            std::cout << "[INFO] DeepTau2018v2p5VSjet (loose): successfully loaded requested WP '" << active_tauid_vsjet_loose << "'" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "[WARN] DeepTau2018v2p5VSjet (loose): requested WP '" << active_tauid_vsjet_loose
+                      << "' not available in " << tauFolder << " (" << e.what() << "). Falling back to 'Medium'." << std::endl;
+            active_tauid_vsjet_loose = "Medium";
+        }
+
+        auto tauSFIdVsJet_loose = [this, _tauidSFjet, active_tauid_vsjet_loose, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
             floats uncSources;
             uncSources.reserve(nSystVsJet);
             floatsVec wVec;
@@ -813,14 +856,31 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                     if (gm == 5) {
                         float nom_sf = 1.0f;
                         try {
-                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet_loose, tauid_vse, "nom", "dm"});
+                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet_loose, tauid_vse, "nom", "dm"});
                         } catch (...) { nom_sf = 1.0f; }
-                        for (const auto &sname : systNamesVsJet) {
+
+                        uncSources.assign(nSystVsJet, nom_sf);
+                        uncSources[0] = nom_sf;
+
+                        for (size_t s = 1; s < nSystVsJet; ++s) {
                             try {
-                                uncSources.emplace_back(_tauidSFjet->evaluate({pt[i], int(dm[i]), gm, tauid_vsjet_loose, tauid_vse, sname, "dm"}));
+                                uncSources[s] = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet_loose, tauid_vse, systNamesVsJet[s], "dm"});
                             } catch (...) {
-                                uncSources.emplace_back(nom_sf);
+                                uncSources[s] = nom_sf;
                             }
+                        }
+
+                        // Inclusive up/down harmonization:
+                        if (std::abs(uncSources[1] - nom_sf) < 1e-6f && std::abs(uncSources[2] - nom_sf) < 1e-6f) {
+                            float sum_sq_up = 0.0f;
+                            float sum_sq_dn = 0.0f;
+                            for (size_t s = 3; s < nSystVsJet; ++s) {
+                                float diff = uncSources[s] - nom_sf;
+                                if (diff > 0.0f) sum_sq_up += diff * diff;
+                                else             sum_sq_dn += diff * diff;
+                            }
+                            uncSources[1] = nom_sf + std::sqrt(sum_sq_up);
+                            uncSources[2] = nom_sf - std::sqrt(sum_sq_dn);
                         }
                     } else {
                         uncSources.assign(nSystVsJet, 1.0f);

@@ -38,10 +38,10 @@ void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, 
             size_t n = std::min({pts.size(), etas.size(), dms.size(), genids.size()});
             xout.reserve(n);
             for (size_t i=0; i<n; i++) {
-                float es = 1.0;
+                float es = 1.0f;
                 int dm_tmp = int (dms[i]);
                 try{
-                    if (dm_tmp!=5 && dm_tmp!=6 && int(genids[i])!=2 && int(genids[i])!=4 && int(genids[i])!=6){
+                    if (dm_tmp!=5 && dm_tmp!=6 && int(genids[i])!=2 && int(genids[i])!=4 && int(genids[i])!=6 && int(genids[i])!=0){
                         if (dm_tmp == 2) dm_tmp = 1;
                         es = _testool->evaluate({pts[i], etas[i], dm_tmp, int(genids[i]), "DeepTau2018v2p5", tauid_vsjet, tauid_vse, var});
                     }
