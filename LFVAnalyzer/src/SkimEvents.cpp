@@ -285,6 +285,7 @@ void SkimEvents::defineMoreVars()
         addVartoStore("Electron_pf.*");
         addVartoStore("Electron_phi");
         addVartoStore("Electron_pt");
+        addVartoStore("Electron_r9");
         addVartoStore("nMuon");
         addVartoStore("Muon_charge");
         addVartoStore("Muon_eta");

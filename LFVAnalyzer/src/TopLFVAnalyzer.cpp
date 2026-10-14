@@ -30,6 +30,7 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
     if(syst.find("jes") != std::string::npos or syst.find("jer") != std::string::npos or syst.find("metUnclust") != std::string::npos or
             syst.find("tes") != std::string::npos or syst.find("hdamp") != std::string::npos or syst.find("tune") != std::string::npos or
             syst.find("muonscale") != std::string::npos or syst.find("muonsmear") != std::string::npos or
+            syst.find("elescale") != std::string::npos or syst.find("elesmear") != std::string::npos or
             syst.find("muonhighscale") != std::string::npos or syst.find("btag") != std::string::npos) {
         ext_syst = true;
     }
@@ -255,6 +256,28 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
         selectElectrons(cut, s_vetoelec);
         selectTaus(s_taucut, tauYear, s_mu_vsjet, s_mu_vsmu, s_mu_vse); //VSjet VTight, VSmu Tight, VSe VVLoose
     } else {
+        applyElectronScaleSmearing();
+        if (!_isData) {
+            std::string elecFile = "";
+            std::string elecYear = "";
+            if (_isRun22) {
+                elecFile = "2022_Summer22";
+                elecYear = "2022Re-recoBCD";
+            } else if (_isRun22EE) {
+                elecFile = "2022_Summer22EE";
+                elecYear = "2022Re-recoE+PromptFG";
+            } else if (_isRun23) {
+                elecFile = "2023_Summer23";
+                elecYear = "2023PromptC";
+            } else if (_isRun23BPix) {
+                elecFile = "2023_Summer23BPix";
+                elecYear = "2023PromptD";
+            } else if (_isRun24) {
+                elecFile = "2024_Summer24";
+                elecYear = "2024Prompt";
+            }
+            calculateElectronSF(elecFile, elecYear);
+        }
         selectMuons(cut, s_vetomuon);
         selectTaus(s_taucut, tauYear, s_el_vsjet, s_el_vsmu, s_el_vse); //VSjet VTight, VSmu VLoose, VSe Tight
     }
@@ -587,6 +610,17 @@ void TopLFVAnalyzer::defineWeightVars() {
                 addVar({"eventWeight__eleciddown",    "eventWeight_genputau * elecWeightReco[0] * elecWeightId[2] * elecWeightTrg[0] * btagWeight[0]"});
                 addVar({"eventWeight__electrgup",     "eventWeight_genputau * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[1] * btagWeight[0]"});
                 addVar({"eventWeight__electrgdown",   "eventWeight_genputau * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[2] * btagWeight[0]"});
+
+                // Electron SF stat / syst separated variations (POG recommendation)
+                addVar({"eventWeight__elecid_statup",     "eventWeight_genputau * elecWeightReco[0] * elecWeightId[3] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__elecid_statdown",   "eventWeight_genputau * elecWeightReco[0] * elecWeightId[4] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__elecid_systup",     "eventWeight_genputau * elecWeightReco[0] * elecWeightId[5] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__elecid_systdown",   "eventWeight_genputau * elecWeightReco[0] * elecWeightId[6] * elecWeightTrg[0] * btagWeight[0]"});
+
+                addVar({"eventWeight__elecreco_statup",   "eventWeight_genputau * elecWeightReco[3] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__elecreco_statdown", "eventWeight_genputau * elecWeightReco[4] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__elecreco_systup",   "eventWeight_genputau * elecWeightReco[5] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__elecreco_systdown", "eventWeight_genputau * elecWeightReco[6] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
             }
             // muonHighPtAddUncUp/Dn removed: no official Run3 high-pT muon additional uncertainty prescription.
 
@@ -697,6 +731,17 @@ void TopLFVAnalyzer::defineWeightVars() {
                 addVar({"eventWeight_notau__eleciddown",   "eventWeight_genpu * elecWeightReco[0] * elecWeightId[2] * elecWeightTrg[0] * btagWeight[0]"});
                 addVar({"eventWeight_notau__electrgup",    "eventWeight_genpu * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[1] * btagWeight[0]"});
                 addVar({"eventWeight_notau__electrgdown",  "eventWeight_genpu * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[2] * btagWeight[0]"});
+
+                // Electron SF stat / syst separated variations (no-tau variant)
+                addVar({"eventWeight_notau__elecid_statup",     "eventWeight_genpu * elecWeightReco[0] * elecWeightId[3] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__elecid_statdown",   "eventWeight_genpu * elecWeightReco[0] * elecWeightId[4] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__elecid_systup",     "eventWeight_genpu * elecWeightReco[0] * elecWeightId[5] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__elecid_systdown",   "eventWeight_genpu * elecWeightReco[0] * elecWeightId[6] * elecWeightTrg[0] * btagWeight[0]"});
+
+                addVar({"eventWeight_notau__elecreco_statup",   "eventWeight_genpu * elecWeightReco[3] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__elecreco_statdown", "eventWeight_genpu * elecWeightReco[4] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__elecreco_systup",   "eventWeight_genpu * elecWeightReco[5] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__elecreco_systdown", "eventWeight_genpu * elecWeightReco[6] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
             }
             // muonHighPtAddUncUp/Dn removed: no official Run3 high-pT muon additional uncertainty prescription.
 
@@ -828,6 +873,10 @@ void TopLFVAnalyzer::bookHists() {
             "__elecrecoup",  "__elecrecodown",
             "__elecidup",    "__eleciddown",
             "__electrgup",   "__electrgdown",
+            "__elecid_statup",     "__elecid_statdown",
+            "__elecid_systup",     "__elecid_systdown",
+            "__elecreco_statup",   "__elecreco_statdown",
+            "__elecreco_systup",   "__elecreco_systdown",
         });
     }
 

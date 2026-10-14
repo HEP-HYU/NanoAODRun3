@@ -165,6 +165,23 @@ SHAPE_SYSTS = {
         {"type": "object",
          "objects": ["Muon1_pt","PuppiMET_pt"],
          "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    # ── Electron Energy Scale & Resolution Smearing (EGM S&S) ─────────────────
+    "elescaleup":
+        {"type": "object",
+         "objects": ["Electron1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    "elescaledown":
+        {"type": "object",
+         "objects": ["Electron1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    "elesmearup":
+        {"type": "object",
+         "objects": ["Electron1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    "elesmeardown":
+        {"type": "object",
+         "objects": ["Electron1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
 }
 
 # Up/Down pairs for directionality check (base name without up/down suffix)
@@ -173,6 +190,7 @@ SHAPE_SYST_PAIRS = [
     "jesFlavorPureGluon", "jesFlavorPureQuark",
     "jesFlavorPureCharm", "jesFlavorPureBottom",
     "jer", "tes", "metUnclust", "muonscale", "muonsmear", "muonhighscale",
+    "elescale", "elesmear",
 ]
 
 # Weight systematics stored as branches inside the NOMINAL file
@@ -190,6 +208,13 @@ WEIGHT_SYST_BRANCHES = [
     "eventWeight__mutrg_systup", "eventWeight__mutrg_systdown",
     "eventWeight__btagcorrup",     "eventWeight__btagcorrdown",
     "eventWeight__btaguncorrup",   "eventWeight__btaguncorrdown",
+    "eventWeight__elecrecoup",     "eventWeight__elecrecodown",
+    "eventWeight__elecidup",       "eventWeight__eleciddown",
+    "eventWeight__electrgup",      "eventWeight__electrgdown",
+    "eventWeight__elecid_statup",  "eventWeight__elecid_statdown",
+    "eventWeight__elecid_systup",  "eventWeight__elecid_systdown",
+    "eventWeight__elecreco_statup","eventWeight__elecreco_statdown",
+    "eventWeight__elecreco_systup","eventWeight__elecreco_systdown",
     "eventWeight__tauidjetUncert0up",    "eventWeight__tauidjetUncert0down",
     "eventWeight__tauidjetUncert1up",    "eventWeight__tauidjetUncert1down",
     "eventWeight__tauidjetSystallerasup","eventWeight__tauidjetSystallerasdown",
@@ -212,6 +237,13 @@ WEIGHT_SYST_PAIRS = [
     ("eventWeight__mutrg_systup",   "eventWeight__mutrg_systdown"),
     ("eventWeight__btagcorrup",     "eventWeight__btagcorrdown"),
     ("eventWeight__btaguncorrup",   "eventWeight__btaguncorrdown"),
+    ("eventWeight__elecrecoup",     "eventWeight__elecrecodown"),
+    ("eventWeight__elecidup",       "eventWeight__eleciddown"),
+    ("eventWeight__electrgup",      "eventWeight__electrgdown"),
+    ("eventWeight__elecid_statup",  "eventWeight__elecid_statdown"),
+    ("eventWeight__elecid_systup",  "eventWeight__elecid_systdown"),
+    ("eventWeight__elecreco_statup","eventWeight__elecreco_statdown"),
+    ("eventWeight__elecreco_systup","eventWeight__elecreco_systdown"),
 ]
 
 # Kinematic branches that must NOT change for weight-only systematics

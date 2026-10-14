@@ -56,6 +56,8 @@ syst_list.extend(["__metUnclustup", "__metUnclustdown"])
 if ch == "muon":
     syst_list.extend(["__muonscaleup", "__muonscaledown", "__muonsmearup", "__muonsmeardown"])
     syst_list.extend(["__muonhighscaleup", "__muonhighscaledown"])
+elif ch == "electron":
+    syst_list.extend(["__elescaleup", "__elescaledown", "__elesmearup", "__elesmeardown"])
 
 # tune and hdamp will appear as an individual dataset.
 # thus no need to run in loop, but left here for double check

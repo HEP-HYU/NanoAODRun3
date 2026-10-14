@@ -96,6 +96,7 @@ public:
   void calculateMuonSF(std::string muonid, std::string muoniso, std::string muonhlt);
   void applyMuonScaleSmearing();
   void calculateElectronSF(std::string elecFile, std::string elecYear);
+  void applyElectronScaleSmearing();
   void storeEvWeight();
   void topPtReweight();
   virtual void defineMoreVars() = 0; // define higher-level variables from basic ones, you must implement this in your subclassed analysis code
