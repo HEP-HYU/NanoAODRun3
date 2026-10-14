@@ -105,7 +105,7 @@ public:
         double alpha = _cset->at("cb_params")->evaluate({std::abs(eta), (double)nL, 3});
 
         CrystalBall cb(mean, sigma, alpha, n);
-        double rndm = _cset->at("RandomSmearing")->evaluate({(int64_t)evtNumber, (int64_t)lumiNumber, (double)phi});
+        double rndm = _cset->at("RandomSmearing")->evaluate({static_cast<int>(evtNumber), static_cast<int>(lumiNumber), (double)phi});
         return cb.invcdf(rndm);
     }
 
