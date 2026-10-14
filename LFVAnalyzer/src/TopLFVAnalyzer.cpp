@@ -29,6 +29,7 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
 
     if(syst.find("jes") != std::string::npos or syst.find("jer") != std::string::npos or syst.find("metUnclust") != std::string::npos or
             syst.find("tes") != std::string::npos or syst.find("hdamp") != std::string::npos or syst.find("tune") != std::string::npos or
+            syst.find("muonscale") != std::string::npos or syst.find("muonsmear") != std::string::npos or
             syst.find("muonhighscale") != std::string::npos or syst.find("btag") != std::string::npos) {
         ext_syst = true;
     }
@@ -244,6 +245,13 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
     }
 
     if (_isMuonCh){
+        applyMuonScaleSmearing();
+        if (!_isData) {
+            std::string muonid = "NUM_TightID_DEN_TrackerMuons";
+            std::string muoniso = "NUM_TightPFIso_DEN_TightID";
+            std::string muonhlt = "NUM_IsoMu24_or_Mu50_or_CascadeMu100_or_HighPtTkMu100_DEN_CutBasedIdTight_and_PFIsoTight";
+            calculateMuonSF(muonid, muoniso, muonhlt);
+        }
         selectElectrons(cut, s_vetoelec);
         selectTaus(s_taucut, tauYear, s_mu_vsjet, s_mu_vsmu, s_mu_vse); //VSjet VTight, VSmu Tight, VSe VVLoose
     } else {
@@ -555,6 +563,22 @@ void TopLFVAnalyzer::defineWeightVars() {
                 addVar({"eventWeight__muisodown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[2] * muonWeightTrg[0] * btagWeight[0]"});
                 addVar({"eventWeight__mutrgup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[1] * btagWeight[0]"});
                 addVar({"eventWeight__mutrgdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[2] * btagWeight[0]"});
+
+                // Muon SF stat / syst separated variations (POG recommendation)
+                addVar({"eventWeight__muid_statup",     "eventWeight_genputau * muonWeightId[3] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__muid_statdown",   "eventWeight_genputau * muonWeightId[4] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__muid_systup",     "eventWeight_genputau * muonWeightId[5] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__muid_systdown",   "eventWeight_genputau * muonWeightId[6] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+
+                addVar({"eventWeight__muiso_statup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[3] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__muiso_statdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[4] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__muiso_systup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[5] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight__muiso_systdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[6] * muonWeightTrg[0] * btagWeight[0]"});
+
+                addVar({"eventWeight__mutrg_statup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[3] * btagWeight[0]"});
+                addVar({"eventWeight__mutrg_statdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[4] * btagWeight[0]"});
+                addVar({"eventWeight__mutrg_systup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[5] * btagWeight[0]"});
+                addVar({"eventWeight__mutrg_systdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[6] * btagWeight[0]"});
             } else {
                 // Electron SF variations — electron channel
                 addVar({"eventWeight__elecrecoup",    "eventWeight_genputau * elecWeightReco[1] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
@@ -650,6 +674,22 @@ void TopLFVAnalyzer::defineWeightVars() {
                 addVar({"eventWeight_notau__muisodown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[2] * muonWeightTrg[0] * btagWeight[0]"});
                 addVar({"eventWeight_notau__mutrgup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[1] * btagWeight[0]"});
                 addVar({"eventWeight_notau__mutrgdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[2] * btagWeight[0]"});
+
+                // Muon SF stat / syst separated variations (POG recommendation)
+                addVar({"eventWeight_notau__muid_statup",    "eventWeight_genpu * muonWeightId[3] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__muid_statdown",  "eventWeight_genpu * muonWeightId[4] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__muid_systup",    "eventWeight_genpu * muonWeightId[5] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__muid_systdown",  "eventWeight_genpu * muonWeightId[6] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+
+                addVar({"eventWeight_notau__muiso_statup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[3] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__muiso_statdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[4] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__muiso_systup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[5] * muonWeightTrg[0] * btagWeight[0]"});
+                addVar({"eventWeight_notau__muiso_systdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[6] * muonWeightTrg[0] * btagWeight[0]"});
+
+                addVar({"eventWeight_notau__mutrg_statup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[3] * btagWeight[0]"});
+                addVar({"eventWeight_notau__mutrg_statdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[4] * btagWeight[0]"});
+                addVar({"eventWeight_notau__mutrg_systup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[5] * btagWeight[0]"});
+                addVar({"eventWeight_notau__mutrg_systdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[6] * btagWeight[0]"});
             } else {
                 addVar({"eventWeight_notau__elecrecoup",   "eventWeight_genpu * elecWeightReco[1] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
                 addVar({"eventWeight_notau__elecrecodown", "eventWeight_genpu * elecWeightReco[2] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
@@ -775,6 +815,12 @@ void TopLFVAnalyzer::bookHists() {
             "__muidup",   "__muiddown",
             "__muisoup",  "__muisodown",
             "__mutrgup",  "__mutrgdown",
+            "__muid_statup",   "__muid_statdown",
+            "__muid_systup",   "__muid_systdown",
+            "__muiso_statup",  "__muiso_statdown",
+            "__muiso_systup",  "__muiso_systdown",
+            "__mutrg_statup",  "__mutrg_statdown",
+            "__mutrg_systup",  "__mutrg_systdown",
             // Note: __muhighptup/down removed — no official Run3 high-pT muon prescription
         });
     } else {

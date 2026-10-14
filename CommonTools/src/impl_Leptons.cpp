@@ -12,6 +12,7 @@
 #include "utility.h"
 #include "correction.h"
 #include "GEScaleSyst.h"
+#include "MuonScaReHelper.h"
 #include "TCanvas.h"
 #include "ROOT/RDFHelpers.hxx"
 #include "Math/GenVector/VectorUtil.h"
@@ -42,57 +43,81 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
     // We have only one muon!
     auto muonSFId = [this, _muonid, muonEraFolder](floats &pt, floats &eta)->floats {
         floats wVec;
-        wVec.reserve(3); //cent, up, down
+        wVec.reserve(7); // [0]=nom, [1]=tot_up, [2]=tot_dn, [3]=stat_up, [4]=stat_dn, [5]=syst_up, [6]=syst_dn
 
         if (pt.size() == 1){
             float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
             float sf = _muonid->evaluate({tmp_eta, pt[0], "nominal"});
             float sf_up = _muonid->evaluate({tmp_eta, pt[0], "systup"});
             float sf_down = _muonid->evaluate({tmp_eta, pt[0], "systdown"});
+            float sf_stat = _muonid->evaluate({tmp_eta, pt[0], "stat"});
+            float sf_syst = _muonid->evaluate({tmp_eta, pt[0], "syst"});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
-        } else wVec = {1.0, 1.0, 1.0};
+            wVec.emplace_back(sf + sf_stat);
+            wVec.emplace_back(sf - sf_stat);
+            wVec.emplace_back(sf + sf_syst);
+            wVec.emplace_back(sf - sf_syst);
+        } else wVec = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
         return wVec;
     };
 
     // We have only one muon!
     auto muonSFIso = [this, _muoniso, muonEraFolder](floats &pt, floats &eta)->floats {
         floats wVec;
-        wVec.reserve(3); //cent, up, down
+        wVec.reserve(7); // [0]=nom, [1]=tot_up, [2]=tot_dn, [3]=stat_up, [4]=stat_dn, [5]=syst_up, [6]=syst_dn
 
         if (pt.size() == 1){
             float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
             float sf = _muoniso->evaluate({tmp_eta, pt[0], "nominal"});
             float sf_up = _muoniso->evaluate({tmp_eta, pt[0], "systup"});
             float sf_down = _muoniso->evaluate({tmp_eta, pt[0], "systdown"});
+            float sf_stat = _muoniso->evaluate({tmp_eta, pt[0], "stat"});
+            float sf_syst = _muoniso->evaluate({tmp_eta, pt[0], "syst"});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
-        } else wVec = {1.0, 1.0, 1.0};
+            wVec.emplace_back(sf + sf_stat);
+            wVec.emplace_back(sf - sf_stat);
+            wVec.emplace_back(sf + sf_syst);
+            wVec.emplace_back(sf - sf_syst);
+        } else wVec = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
         return wVec;
     };
 
     auto muonSFTrg = [this, _muontrg, muonEraFolder](floats &pt, floats &eta)->floats {
         floats wVec;
-        wVec.reserve(3); //cent, up, down
+        wVec.reserve(7); // [0]=nom, [1]=tot_up, [2]=tot_dn, [3]=stat_up, [4]=stat_dn, [5]=syst_up, [6]=syst_dn
 
         if (pt.size() == 1) {
             float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
             float sf = _muontrg->evaluate({tmp_eta, pt[0], "nominal"});
             float sf_up = _muontrg->evaluate({tmp_eta, pt[0], "systup"});
             float sf_down = _muontrg->evaluate({tmp_eta, pt[0], "systdown"});
+            float sf_stat = _muontrg->evaluate({tmp_eta, pt[0], "stat"});
+            float sf_syst = _muontrg->evaluate({tmp_eta, pt[0], "syst"});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
+            wVec.emplace_back(sf + sf_stat);
+            wVec.emplace_back(sf - sf_stat);
+            wVec.emplace_back(sf + sf_syst);
+            wVec.emplace_back(sf - sf_syst);
         }
-        else wVec = {1.0, 1.0, 1.0};
+        else wVec = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
         return wVec;
     };
 
-    _rlm = _rlm.Define("muonWeightId", muonSFId, {"Muon_pt","Muon_eta"})
-               .Define("muonWeightIso", muonSFIso, {"Muon_pt","Muon_eta"})
-               .Define("muonWeightTrg", muonSFTrg, {"Muon_pt","Muon_eta"});
+    if (isDefined("muonWeightId")) {
+        _rlm = _rlm.Redefine("muonWeightId", muonSFId, {"Muon_pt","Muon_eta"})
+                   .Redefine("muonWeightIso", muonSFIso, {"Muon_pt","Muon_eta"})
+                   .Redefine("muonWeightTrg", muonSFTrg, {"Muon_pt","Muon_eta"});
+    } else {
+        _rlm = _rlm.Define("muonWeightId", muonSFId, {"Muon_pt","Muon_eta"})
+                   .Define("muonWeightIso", muonSFIso, {"Muon_pt","Muon_eta"})
+                   .Define("muonWeightTrg", muonSFTrg, {"Muon_pt","Muon_eta"});
+    }
     
     // GEScaleSyst only has data for Run 2 UL eras (2016_UL_HIPM/2016_UL/2017_UL/2018_UL).
     // For Run 3, no official high-pT recommendation exists yet — return identity.
@@ -175,6 +200,145 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
                    .Redefine("Muon_pt", "Muon_pt_scale"); //order matters
     }
 
+}
+
+void NanoAODAnalyzerrdframe::applyMuonScaleSmearing() {
+    std::string muonEraFolder = "";
+    if (_isRun22) {
+        muonEraFolder = "2022_Summer22";
+    } else if (_isRun22EE) {
+        muonEraFolder = "2022_Summer22EE";
+    } else if (_isRun23) {
+        muonEraFolder = "2023_Summer23";
+    } else if (_isRun23BPix) {
+        muonEraFolder = "2023_Summer23BPix";
+    } else if (_isRun24){
+        muonEraFolder = "2024_Summer24";
+    }
+
+    if (muonEraFolder.empty()) {
+        std::cout << "[ScaReKIT] Era not recognized for Run 3 muon scale/smearing, skipping." << std::endl;
+        return;
+    }
+
+    std::string scareFile = "data/MuonSF/" + muonEraFolder + "/muon_scalesmearing.json.gz";
+    std::cout << "Loading Muon Scale and Smearing (ScaReKIT): " << scareFile << " [syst=" << _syst << "]" << std::endl;
+
+    auto scareReader = loadCorrectionSet(scareFile);
+    auto helper = std::make_shared<MuonScaReHelper>(scareReader);
+    const bool isData = _isData;
+    const std::string systStr = _syst;
+    const bool hasNTrackerLayers = isDefined("Muon_nTrackerLayers");
+
+    auto muonScareLambda = [helper, isData, systStr, hasNTrackerLayers](floats &pts, floats &etas, floats &phis, ints &charges,
+                                                                        unsigned long long evt, unsigned int lumi,
+                                                                        floats &nLayers)->floats {
+        floats out;
+        out.reserve(pts.size());
+        for (size_t i = 0; i < pts.size(); i++) {
+            float pt = pts[i];
+            float eta = etas[i];
+            float phi = phis[i];
+            int charge = charges[i];
+            float nL = (hasNTrackerLayers && i < nLayers.size()) ? nLayers[i] : 11.0f;
+
+            float pt_final = pt;
+            if (isData) {
+                pt_final = helper->pt_scale(true, pt, eta, phi, charge);
+            } else {
+                double pt_scale_corr = helper->pt_scale(false, pt, eta, phi, charge);
+                double pt_corr = helper->pt_resol(pt_scale_corr, eta, phi, nL, evt, lumi);
+
+                if (systStr.find("muonscaleup") != std::string::npos) {
+                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "up");
+                } else if (systStr.find("muonscaledown") != std::string::npos) {
+                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "dn");
+                } else if (systStr.find("muonsmearup") != std::string::npos) {
+                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "up");
+                } else if (systStr.find("muonsmeardown") != std::string::npos) {
+                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "dn");
+                } else {
+                    pt_final = pt_corr;
+                }
+            }
+            out.emplace_back(pt_final);
+        }
+        return out;
+    };
+
+    auto muonScareLambdaNoNLayers = [helper, isData, systStr](floats &pts, floats &etas, floats &phis, ints &charges,
+                                                             unsigned long long evt, unsigned int lumi)->floats {
+        floats out;
+        out.reserve(pts.size());
+        for (size_t i = 0; i < pts.size(); i++) {
+            float pt = pts[i];
+            float eta = etas[i];
+            float phi = phis[i];
+            int charge = charges[i];
+            float nL = 11.0f; // median fallback for tight muons
+
+            float pt_final = pt;
+            if (isData) {
+                pt_final = helper->pt_scale(true, pt, eta, phi, charge);
+            } else {
+                double pt_scale_corr = helper->pt_scale(false, pt, eta, phi, charge);
+                double pt_corr = helper->pt_resol(pt_scale_corr, eta, phi, nL, evt, lumi);
+
+                if (systStr.find("muonscaleup") != std::string::npos) {
+                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "up");
+                } else if (systStr.find("muonscaledown") != std::string::npos) {
+                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "dn");
+                } else if (systStr.find("muonsmearup") != std::string::npos) {
+                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "up");
+                } else if (systStr.find("muonsmeardown") != std::string::npos) {
+                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "dn");
+                } else {
+                    pt_final = pt_corr;
+                }
+            }
+            out.emplace_back(pt_final);
+        }
+        return out;
+    };
+
+    auto muonscaremet = [](floats &pts, floats &ptcors, floats &phis, float met, float metphi)->float {
+        double metx = met * std::cos(metphi);
+        double mety = met * std::sin(metphi);
+        for (size_t i = 0; i < pts.size(); i++) {
+            double dpx = (ptcors[i] - pts[i]) * std::cos(phis[i]);
+            double dpy = (ptcors[i] - pts[i]) * std::sin(phis[i]);
+            metx -= dpx;
+            mety -= dpy;
+        }
+        return float(std::sqrt(metx * metx + mety * mety));
+    };
+
+    auto muonscaremetphi = [](floats &pts, floats &ptcors, floats &phis, float met, float metphi)->float {
+        double metx = met * std::cos(metphi);
+        double mety = met * std::sin(metphi);
+        for (size_t i = 0; i < pts.size(); i++) {
+            double dpx = (ptcors[i] - pts[i]) * std::cos(phis[i]);
+            double dpy = (ptcors[i] - pts[i]) * std::sin(phis[i]);
+            metx -= dpx;
+            mety -= dpy;
+        }
+        return float(std::atan2(mety, metx));
+    };
+
+    if (hasNTrackerLayers) {
+        _rlm = _rlm.Define("Muon_nTrackerLayers_f", "ROOT::VecOps::Cast<float>(Muon_nTrackerLayers)")
+                   .Define("Muon_pt_scare", muonScareLambda, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock", "Muon_nTrackerLayers_f"});
+    } else {
+        _rlm = _rlm.Define("Muon_pt_scare", muonScareLambdaNoNLayers, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock"});
+    }
+
+    _rlm = _rlm.Redefine("PuppiMET_phi", muonscaremetphi, {"Muon_pt", "Muon_pt_scare", "Muon_phi", "PuppiMET_pt", "PuppiMET_phi"})
+               .Redefine("PuppiMET_pt",  muonscaremet,    {"Muon_pt", "Muon_pt_scare", "Muon_phi", "PuppiMET_pt", "PuppiMET_phi"})
+               .Redefine("Muon_pt", "Muon_pt_scare");
+
+    if (isDefined("lep4vecs")) {
+        _rlm = _rlm.Redefine("lep4vecs", ::gen4vec, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+    }
 }
  
 void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYear){

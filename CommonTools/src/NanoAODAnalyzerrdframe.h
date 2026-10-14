@@ -94,6 +94,7 @@ public:
   void matchGenReco();
   void calculateTauES(std::string tauYear, std::string tauid_vsjet, std::string tauid_vsmu, std::string tauid_vse);
   void calculateMuonSF(std::string muonid, std::string muoniso, std::string muonhlt);
+  void applyMuonScaleSmearing();
   void calculateElectronSF(std::string elecFile, std::string elecYear);
   void storeEvWeight();
   void topPtReweight();

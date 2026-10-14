@@ -139,6 +139,23 @@ SHAPE_SYSTS = {
         {"type": "met",
          "objects": ["PuppiMET_pt","PuppiMET_phi"],
          "derived": ["lepMET_mt","st_met"]},
+    # ── Muon ScaReKIT Momentum Scale & Resolution ─────────────────────────────
+    "muonscaleup":
+        {"type": "object",
+         "objects": ["Muon1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    "muonscaledown":
+        {"type": "object",
+         "objects": ["Muon1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    "muonsmearup":
+        {"type": "object",
+         "objects": ["Muon1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    "muonsmeardown":
+        {"type": "object",
+         "objects": ["Muon1_pt","PuppiMET_pt"],
+         "derived": ["leptau_mass","lepMET_mt","st_met"]},
     # ── Muon GE Scale ─────────────────────────────────────────────────────────
     "muonhighscaleup":
         {"type": "object",
@@ -155,7 +172,7 @@ SHAPE_SYST_PAIRS = [
     "jesAbsolute", "jesBBEC1", "jesRelativeBal",
     "jesFlavorPureGluon", "jesFlavorPureQuark",
     "jesFlavorPureCharm", "jesFlavorPureBottom",
-    "jer", "tes", "metUnclust", "muonhighscale",
+    "jer", "tes", "metUnclust", "muonscale", "muonsmear", "muonhighscale",
 ]
 
 # Weight systematics stored as branches inside the NOMINAL file
@@ -165,6 +182,12 @@ WEIGHT_SYST_BRANCHES = [
     "eventWeight__muidup", "eventWeight__muiddown",
     "eventWeight__muisoup", "eventWeight__muisodown",
     "eventWeight__mutrgup", "eventWeight__mutrgdown",
+    "eventWeight__muid_statup", "eventWeight__muid_statdown",
+    "eventWeight__muid_systup", "eventWeight__muid_systdown",
+    "eventWeight__muiso_statup", "eventWeight__muiso_statdown",
+    "eventWeight__muiso_systup", "eventWeight__muiso_systdown",
+    "eventWeight__mutrg_statup", "eventWeight__mutrg_statdown",
+    "eventWeight__mutrg_systup", "eventWeight__mutrg_systdown",
     "eventWeight__btagcorrup",     "eventWeight__btagcorrdown",
     "eventWeight__btaguncorrup",   "eventWeight__btaguncorrdown",
     "eventWeight__tauidjetUncert0up",    "eventWeight__tauidjetUncert0down",
@@ -181,6 +204,12 @@ WEIGHT_SYST_PAIRS = [
     ("eventWeight__muidup",         "eventWeight__muiddown"),
     ("eventWeight__muisoup",        "eventWeight__muisodown"),
     ("eventWeight__mutrgup",        "eventWeight__mutrgdown"),
+    ("eventWeight__muid_statup",    "eventWeight__muid_statdown"),
+    ("eventWeight__muid_systup",    "eventWeight__muid_systdown"),
+    ("eventWeight__muiso_statup",   "eventWeight__muiso_statdown"),
+    ("eventWeight__muiso_systup",   "eventWeight__muiso_systdown"),
+    ("eventWeight__mutrg_statup",   "eventWeight__mutrg_statdown"),
+    ("eventWeight__mutrg_systup",   "eventWeight__mutrg_systdown"),
     ("eventWeight__btagcorrup",     "eventWeight__btagcorrdown"),
     ("eventWeight__btaguncorrup",   "eventWeight__btaguncorrdown"),
 ]

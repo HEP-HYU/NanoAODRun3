@@ -54,6 +54,7 @@ syst_list.extend(["__jesFlavorPureGluonup", "__jesFlavorPureGluondown", "__jesFl
                   "__jesFlavorPureCharmup", "__jesFlavorPureCharmdown", "__jesFlavorPureBottomup", "__jesFlavorPureBottomdown"])
 syst_list.extend(["__metUnclustup", "__metUnclustdown"])
 if ch == "muon":
+    syst_list.extend(["__muonscaleup", "__muonscaledown", "__muonsmearup", "__muonsmeardown"])
     syst_list.extend(["__muonhighscaleup", "__muonhighscaledown"])
 
 # tune and hdamp will appear as an individual dataset.
