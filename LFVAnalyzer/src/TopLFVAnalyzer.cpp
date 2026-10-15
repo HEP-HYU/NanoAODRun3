@@ -11,16 +11,6 @@
 #include <algorithm>
 #include <fstream>
 
-namespace {
-    // Safe-index helper: "((col.size()>n) ? float(col[n]) : fallback)"
-    // Outer parens prevent ?:-vs-* precedence warnings when used as "eventWeight * si(...)".
-    inline std::string si(const std::string& c, int n, const std::string& fb="-1.f") {
-        return "(((" + c + ").size()>" + std::to_string(n) + ") ? float((" + c + ")[" + std::to_string(n) + "]) : " + fb + ")";
-    }
-    inline std::string sii(const std::string& c, int n, const std::string& fb="-1") {
-        return "(((" + c + ").size()>" + std::to_string(n) + ") ? int((" + c + ")[" + std::to_string(n) + "]) : " + fb + ")";
-    }
-}
 
 TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string year, std::string ch, std::string syst, std::string jsonfname, bool applytauFF, string globaltag, int nthreads)
 :NanoAODAnalyzerrdframe(t, outfilename, year, ch, syst, jsonfname, globaltag, nthreads), _applytauFF(applytauFF)
@@ -380,22 +370,22 @@ void TopLFVAnalyzer::defineKinematicVars() {
     }
 
     if (_isMuonCh) {
-        addVar({"Muon1_pt",     si("Muon_pt",     0),        ""});
-        addVar({"Muon1_eta",    si("Muon_eta",    0, "-99.f"), ""});
-        addVar({"Muon1_mass",   si("Muon_mass",   0),        ""});
-        addVar({"Muon1_charge", sii("Muon_charge", 0, "0"),   ""});
+        addVar({"Muon1_pt",     "Muon_pt[0]",     ""});
+        addVar({"Muon1_eta",    "Muon_eta[0]",    ""});
+        addVar({"Muon1_mass",   "Muon_mass[0]",   ""});
+        addVar({"Muon1_charge", "Muon_charge[0]", ""});
     } else {
-        addVar({"Electron1_pt",     si("Electron_pt",     0),        ""});
-        addVar({"Electron1_eta",    si("Electron_eta",    0, "-99.f"), ""});
-        addVar({"Electron1_mass",   si("Electron_mass",   0),        ""});
-        addVar({"Electron1_charge", sii("Electron_charge", 0, "0"),   ""});
+        addVar({"Electron1_pt",     "Electron_pt[0]",     ""});
+        addVar({"Electron1_eta",    "Electron_eta[0]",    ""});
+        addVar({"Electron1_mass",   "Electron_mass[0]",   ""});
+        addVar({"Electron1_charge", "Electron_charge[0]", ""});
     }
 
-    addVar({"Tau1_pt",        si("Tau_pt",       0),        ""});
-    addVar({"Tau1_eta",       si("Tau_eta",      0, "-99.f"), ""});
-    addVar({"Tau1_mass",      si("Tau_mass",     0),        ""});
-    addVar({"Tau1_charge",    sii("Tau_charge",  0, "0"),   ""});
-    addVar({"Tau1_decayMode", sii("Tau_decayMode",0, "-1"), ""});
+    addVar({"Tau1_pt",        "Tau_pt[0]",        ""});
+    addVar({"Tau1_eta",       "Tau_eta[0]",       ""});
+    addVar({"Tau1_mass",      "Tau_mass[0]",      ""});
+    addVar({"Tau1_charge",    "Tau_charge[0]",    ""});
+    addVar({"Tau1_decayMode", "Tau_decayMode[0]", ""});
 
     if (_isMuonCh) {
         addVar({"leptau_charge", "Muon1_charge * Tau1_charge", ""});
@@ -409,10 +399,10 @@ void TopLFVAnalyzer::defineKinematicVars() {
     const std::string bTagColCvB = _isRun24 ? "Jet_btagUParTAK4CvB" : "Jet_btagPNetCvB";
     const std::string bTagColCvL = _isRun24 ? "Jet_btagUParTAK4CvL" : "Jet_btagPNetCvL";
 
-    addVar({"Jet1_pt",   si("Jet_pt",   0),        ""});
-    addVar({"Jet1_eta",  si("Jet_eta",  0, "-99.f"), ""});
-    addVar({"Jet1_mass", si("Jet_mass", 0),        ""});
-    addVar({"Jet1_btagPNetB", si(bTagCol, 0), ""});
+    addVar({"Jet1_pt",   "Jet_pt[0]",   ""});
+    addVar({"Jet1_eta",  "Jet_eta[0]",  ""});
+    addVar({"Jet1_mass", "Jet_mass[0]", ""});
+    addVar({"Jet1_btagPNetB", bTagCol + "[0]", ""});
 
     // Read btag medium WP from config per era
     std::string btagEra = "";
@@ -440,48 +430,43 @@ void TopLFVAnalyzer::defineKinematicVars() {
     float _btagcutKin = s_btagcut_kin_map.count(btagEra) ? s_btagcut_kin_map[btagEra] : 0.1272f;
     const std::string bWP = std::to_string(_btagcutKin);
 
-    // Safe boolean index helper: "(col.size()>n) ? (col[n] op thr) : false"
-    auto sib = [](const std::string& c, int n, const std::string& op, const std::string& thr) -> std::string {
-        return "(" + c + ".size()>" + std::to_string(n) + ") ? (" + c + "[" + std::to_string(n) + "] " + op + " " + thr + ") : false";
-    };
+    addVar({"Jet1_btagUParTAK4B",   bTagCol + "[0]",    ""});
+    addVar({"Jet1_btagUParTAK4CvB", bTagColCvB + "[0]", ""});
+    addVar({"Jet1_btagUParTAK4CvL", bTagColCvL + "[0]", ""});
+    addVar({"Jet1_btag", bTagCol + "[0] > " + bWP, ""});
 
-    addVar({"Jet1_btagUParTAK4B",   si(bTagCol,    0), ""});
-    addVar({"Jet1_btagUParTAK4CvB", si(bTagColCvB, 0), ""});
-    addVar({"Jet1_btagUParTAK4CvL", si(bTagColCvL, 0), ""});
-    addVar({"Jet1_btag", sib(bTagCol, 0, ">", bWP), ""});
+    addVar({"Jet2_pt",   "Jet_pt[1]",   ""});
+    addVar({"Jet2_eta",  "Jet_eta[1]",  ""});
+    addVar({"Jet2_mass", "Jet_mass[1]", ""});
+    addVar({"Jet2_btagPNetB",        bTagCol + "[1]",    ""});
+    addVar({"Jet2_btagUParTAK4B",   bTagCol + "[1]",    ""});
+    addVar({"Jet2_btagUParTAK4CvB", bTagColCvB + "[1]", ""});
+    addVar({"Jet2_btagUParTAK4CvL", bTagColCvL + "[1]", ""});
+    addVar({"Jet2_btag", bTagCol + "[1] > " + bWP, ""});
 
-    addVar({"Jet2_pt",   si("Jet_pt",   1),        ""});
-    addVar({"Jet2_eta",  si("Jet_eta",  1, "-99.f"), ""});
-    addVar({"Jet2_mass", si("Jet_mass", 1),        ""});
-    addVar({"Jet2_btagPNetB",        si(bTagCol, 1), ""});
-    addVar({"Jet2_btagUParTAK4B",   si(bTagCol,    1), ""});
-    addVar({"Jet2_btagUParTAK4CvB", si(bTagColCvB, 1), ""});
-    addVar({"Jet2_btagUParTAK4CvL", si(bTagColCvL, 1), ""});
-    addVar({"Jet2_btag", sib(bTagCol, 1, ">", bWP), ""});
+    addVar({"Jet3_pt",   "Jet_pt[2]",   ""});
+    addVar({"Jet3_eta",  "Jet_eta[2]",  ""});
+    addVar({"Jet3_mass", "Jet_mass[2]", ""});
+    addVar({"Jet3_btagPNetB",        bTagCol + "[2]",    ""});
+    addVar({"Jet3_btagUParTAK4B",   bTagCol + "[2]",    ""});
+    addVar({"Jet3_btagUParTAK4CvB", bTagColCvB + "[2]", ""});
+    addVar({"Jet3_btagUParTAK4CvL", bTagColCvL + "[2]", ""});
+    addVar({"Jet3_btag", bTagCol + "[2] > " + bWP, ""});
 
-    addVar({"Jet3_pt",   si("Jet_pt",   2),        ""});
-    addVar({"Jet3_eta",  si("Jet_eta",  2, "-99.f"), ""});
-    addVar({"Jet3_mass", si("Jet_mass", 2),        ""});
-    addVar({"Jet3_btagPNetB",        si(bTagCol, 2), ""});
-    addVar({"Jet3_btagUParTAK4B",   si(bTagCol,    2), ""});
-    addVar({"Jet3_btagUParTAK4CvB", si(bTagColCvB, 2), ""});
-    addVar({"Jet3_btagUParTAK4CvL", si(bTagColCvL, 2), ""});
-    addVar({"Jet3_btag", sib(bTagCol, 2, ">", bWP), ""});
-
-    addVar({"bJet1_pt",   si("bJet_pt",   0), ""});
-    addVar({"bJet1_eta",  si("bJet_eta",  0, "-99.f"), ""});
-    addVar({"bJet1_mass", si("bJet_mass", 0), ""});
+    addVar({"bJet1_pt",   "bJet_pt[0]",   ""});
+    addVar({"bJet1_eta",  "bJet_eta[0]",  ""});
+    addVar({"bJet1_mass", "bJet_mass[0]", ""});
     // Additional angular/btag branches for DNN
-    addVar({"bJet1_phi",       si("bJet_phi", 0, "-99.f"), ""});
-    addVar({"bJet1_btagScore", si(bTagCol, 0, "0.f"),      ""});
+    addVar({"bJet1_phi",       "bJet_phi[0]",   ""});
+    addVar({"bJet1_btagScore", bTagCol + "[0]", ""});
 
     // Lepton and tau phi (angular inputs for DNN)
     if (_isMuonCh) {
-        addVar({"Lep1_phi", si("Muon_phi",     0, "-99.f"), ""});
+        addVar({"Lep1_phi", "Muon_phi[0]", ""});
     } else {
-        addVar({"Lep1_phi", si("Electron_phi", 0, "-99.f"), ""});
+        addVar({"Lep1_phi", "Electron_phi[0]", ""});
     }
-    addVar({"Tau1_phi", si("Tau_phi", 0, "-99.f"), ""});
+    addVar({"Tau1_phi", "Tau_phi[0]", ""});
 
     //if (_syst == "data") {
     //    defineVar("tauWeightIdVsJetFIX", ::fixtausf, {"tauWeightIdVsJet", "Tau_pt"});
@@ -755,38 +740,38 @@ void TopLFVAnalyzer::defineWeightVars() {
             if (_syst == "theory") {
                 // ME: [0] is renscfact=0.5d0 facscfact=0.5d0 ; [1] is renscfact=0.5d0 facscfact=1d0 ; [3] is renscfact=1d0 facscfact=0.5d0 ;
                 //     [5] is renscfact=1d0 facscfact=2d0 ; [7] is renscfact=2d0 facscfact=1d0 ; [8] is renscfact=2d0 facscfact=2d0
-                addVar({"eventWeight__mescaledown", "eventWeight * " + si("LHEScaleWeight", 0, "1.f")});
-                addVar({"eventWeight__renscaledown", "eventWeight * " + si("LHEScaleWeight", 1, "1.f")});
-                addVar({"eventWeight__facscaledown", "eventWeight * " + si("LHEScaleWeight", 3, "1.f")});
-                addVar({"eventWeight__facscaleup",   "eventWeight * " + si("LHEScaleWeight", 5, "1.f")});
-                addVar({"eventWeight__renscaleup",   "eventWeight * " + si("LHEScaleWeight", 7, "1.f")});
-                addVar({"eventWeight__mescaleup",     "eventWeight * " + si("LHEScaleWeight", 8, "1.f")});
+                addVar({"eventWeight__mescaledown", "eventWeight * LHEScaleWeight[0]"});
+                addVar({"eventWeight__renscaledown", "eventWeight * LHEScaleWeight[1]"});
+                addVar({"eventWeight__facscaledown", "eventWeight * LHEScaleWeight[3]"});
+                addVar({"eventWeight__facscaleup",   "eventWeight * LHEScaleWeight[5]"});
+                addVar({"eventWeight__renscaleup",   "eventWeight * LHEScaleWeight[7]"});
+                addVar({"eventWeight__mescaleup",     "eventWeight * LHEScaleWeight[8]"});
                 // notau
-                addVar({"eventWeight_notau__mescaledown", "eventWeight_notau * " + si("LHEScaleWeight", 0, "1.f")});
-                addVar({"eventWeight_notau__renscaledown", "eventWeight_notau * " + si("LHEScaleWeight", 1, "1.f")});
-                addVar({"eventWeight_notau__facscaledown", "eventWeight_notau * " + si("LHEScaleWeight", 3, "1.f")});
-                addVar({"eventWeight_notau__facscaleup",   "eventWeight_notau * " + si("LHEScaleWeight", 5, "1.f")});
-                addVar({"eventWeight_notau__renscaleup",   "eventWeight_notau * " + si("LHEScaleWeight", 7, "1.f")});
-                addVar({"eventWeight_notau__mescaleup",     "eventWeight_notau * " + si("LHEScaleWeight", 8, "1.f")});
+                addVar({"eventWeight_notau__mescaledown", "eventWeight_notau * LHEScaleWeight[0]"});
+                addVar({"eventWeight_notau__renscaledown", "eventWeight_notau * LHEScaleWeight[1]"});
+                addVar({"eventWeight_notau__facscaledown", "eventWeight_notau * LHEScaleWeight[3]"});
+                addVar({"eventWeight_notau__facscaleup",   "eventWeight_notau * LHEScaleWeight[5]"});
+                addVar({"eventWeight_notau__renscaleup",   "eventWeight_notau * LHEScaleWeight[7]"});
+                addVar({"eventWeight_notau__mescaleup",     "eventWeight_notau * LHEScaleWeight[8]"});
                 // PS: [0] is ISR=2 FSR=1; [1] is ISR=1 FSR=2; [2] is ISR=0.5 FSR=1; [3] is ISR=1 FSR=0.5;
-                addVar({"eventWeight__isrup",   "eventWeight * " + si("PSWeight", 0, "1.f")});
-                addVar({"eventWeight__fsrup",   "eventWeight * " + si("PSWeight", 1, "1.f")});
-                addVar({"eventWeight__isrdown", "eventWeight * " + si("PSWeight", 2, "1.f")});
-                addVar({"eventWeight__fsrdown", "eventWeight * " + si("PSWeight", 3, "1.f")});
+                addVar({"eventWeight__isrup",   "eventWeight * PSWeight[0]"});
+                addVar({"eventWeight__fsrup",   "eventWeight * PSWeight[1]"});
+                addVar({"eventWeight__isrdown", "eventWeight * PSWeight[2]"});
+                addVar({"eventWeight__fsrdown", "eventWeight * PSWeight[3]"});
                 // notau
-                addVar({"eventWeight_notau__isrup",   "eventWeight_notau * " + si("PSWeight", 0, "1.f")});
-                addVar({"eventWeight_notau__fsrup",   "eventWeight_notau * " + si("PSWeight", 1, "1.f")});
-                addVar({"eventWeight_notau__isrdown", "eventWeight_notau * " + si("PSWeight", 2, "1.f")});
-                addVar({"eventWeight_notau__fsrdown", "eventWeight_notau * " + si("PSWeight", 3, "1.f")});
+                addVar({"eventWeight_notau__isrup",   "eventWeight_notau * PSWeight[0]"});
+                addVar({"eventWeight_notau__fsrup",   "eventWeight_notau * PSWeight[1]"});
+                addVar({"eventWeight_notau__isrdown", "eventWeight_notau * PSWeight[2]"});
+                addVar({"eventWeight_notau__fsrdown", "eventWeight_notau * PSWeight[3]"});
                 // PDF: LHA IDs 306000 - 306102. 306000 = nominal.
                 for (int i=1; i<=102; i++) {
-                    addVar({"eventWeight__pdf" + std::to_string(i), "eventWeight * " + si("LHEPdfWeight", i, "1.f")});
-                    addVar({"eventWeight_notau__pdf" + std::to_string(i), "eventWeight_notau * " + si("LHEPdfWeight", i, "1.f")});
+                    addVar({"eventWeight__pdf" + std::to_string(i), "eventWeight * LHEPdfWeight[" + std::to_string(i) + "]"});
+                    addVar({"eventWeight_notau__pdf" + std::to_string(i), "eventWeight_notau * LHEPdfWeight[" + std::to_string(i) + "]"});
                 }
-                addVar({"eventWeight__pdfalphasup",     "eventWeight * " + si("LHEPdfWeight", 102, "1.f")});
-                addVar({"eventWeight__pdfalphasdown",   "eventWeight * " + si("LHEPdfWeight", 101, "1.f")});
-                addVar({"eventWeight_notau__pdfalphasup",   "eventWeight_notau * " + si("LHEPdfWeight", 102, "1.f")});
-                addVar({"eventWeight_notau__pdfalphasdown", "eventWeight_notau * " + si("LHEPdfWeight", 101, "1.f")});
+                addVar({"eventWeight__pdfalphasup",     "eventWeight * LHEPdfWeight[102]"});
+                addVar({"eventWeight__pdfalphasdown",   "eventWeight * LHEPdfWeight[101]"});
+                addVar({"eventWeight_notau__pdfalphasup",   "eventWeight_notau * LHEPdfWeight[102]"});
+                addVar({"eventWeight_notau__pdfalphasdown", "eventWeight_notau * LHEPdfWeight[101]"});
             }
         }
     }

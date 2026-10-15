@@ -24,8 +24,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Inject external systematic histograms into nominal ROOT files.")
     parser.add_argument("-d", "--dir", dest="directories", action="append", required=True,
                         help="Directory containing ROOT files (can be specified multiple times)")
-    parser.add_argument("--systs", nargs="+", default=["hdamp", "tune"],
-                        help="List of external systematics to inject (default: hdamp tune)")
+    parser.add_argument("--systs", nargs="+",
+                        default=["hdamp", "tune", "tes", "muonscale", "muonsmear", "elescale", "elesmear"],
+                        help="List of external systematics to inject (default: hdamp tune tes muonscale muonsmear elescale elesmear)")
     parser.add_argument("--filter", dest="filter_pattern", default="",
                         help="Optional regex pattern to filter files (e.g., 'TTto')")
     parser.add_argument("--dry-run", dest="dry_run", action="store_true", default=False,
@@ -116,7 +117,7 @@ def process_directory(directory, systs, filter_pattern, dry_run=False):
     total_injected = 0
 
     # Build regex to match: hist_<process>__<syst><var>.root
-    syst_regex = re.compile(r"^(hist_.*)__(" + "|".join(systs) + r")(up|down)\.root$")
+    syst_regex = re.compile(r"^(hist_.*)__(" + "|".join(systs) + r")(up|down)\.root$", re.IGNORECASE)
 
     # Group external files by nominal file
     matched_pairs = []
@@ -125,7 +126,7 @@ def process_directory(directory, systs, filter_pattern, dry_run=False):
         if m:
             nom_base = m.group(1)
             syst_name = m.group(2)
-            var_name = m.group(3)
+            var_name = m.group(3).lower()
             syst_tag = f"{syst_name}{var_name}"
 
             if filter_pattern and not re.search(filter_pattern, nom_base):

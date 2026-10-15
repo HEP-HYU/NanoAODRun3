@@ -682,8 +682,10 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                         float nom_sf = 1.0f;
                         try {
                             nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet, tauid_vse, "nom", "dm"});
-                        } catch (...) {
-                            nom_sf = 1.0f;
+                        } catch (const std::exception &e) {
+                            throw std::runtime_error("tauSFIdVsJet evaluate failed (pt=" + std::to_string(pt[i]) +
+                                                     ", dm=" + std::to_string(int(dm[i])) + ", gm=" + std::to_string(gm) +
+                                                     ", vsjet=" + active_tauid_vsjet + ", vse=" + tauid_vse + "): " + e.what());
                         }
                         uncSources.assign(nSystVsJet, nom_sf);
                         uncSources[0] = nom_sf;
@@ -691,8 +693,10 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                         for (size_t s = 1; s < nSystVsJet; ++s) {
                             try {
                                 uncSources[s] = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet, tauid_vse, systNamesVsJet[s], "dm"});
-                            } catch (...) {
-                                uncSources[s] = nom_sf;
+                            } catch (const std::exception &e) {
+                                throw std::runtime_error("tauSFIdVsJet evaluate failed for systematic '" + systNamesVsJet[s] +
+                                                         "' (pt=" + std::to_string(pt[i]) + ", dm=" + std::to_string(int(dm[i])) +
+                                                         ", gm=" + std::to_string(gm) + "): " + e.what());
                             }
                         }
 
@@ -746,9 +750,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                             uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "up"}));
                             uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "down"}));
                         } catch (const std::exception &e) {
-                            std::cerr << "[WARN] tauSFIdVsEl evaluate failed (eta=" << eta[i]
-                                      << " dm=" << int(dm[i]) << " gm=" << gm << "): " << e.what() << "\n";
-                            uncSources.assign(3, 1.0f);
+                            throw std::runtime_error("tauSFIdVsEl evaluate failed (eta=" + std::to_string(eta[i]) +
+                                                     " dm=" + std::to_string(int(dm[i])) + " gm=" + std::to_string(gm) + "): " + e.what());
                         }
                     } else {
                         uncSources.assign(3, 1.0f);
@@ -793,9 +796,8 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                                 uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, "down"}));
                             }
                         } catch (const std::exception &e) {
-                            std::cerr << "[WARN] tauSFIdVsMu evaluate failed (eta=" << eta[i]
-                                      << " gm=" << gm << "): " << e.what() << "\n";
-                            uncSources.assign(3, 1.0f);
+                            throw std::runtime_error("tauSFIdVsMu evaluate failed (eta=" + std::to_string(eta[i]) +
+                                                     " gm=" + std::to_string(gm) + "): " + e.what());
                         }
                     } else {
                         uncSources.assign(3, 1.0f);
@@ -857,7 +859,11 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                         float nom_sf = 1.0f;
                         try {
                             nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet_loose, tauid_vse, "nom", "dm"});
-                        } catch (...) { nom_sf = 1.0f; }
+                        } catch (const std::exception &e) {
+                            throw std::runtime_error("tauSFIdVsJetLoose evaluate failed (pt=" + std::to_string(pt[i]) +
+                                                     ", dm=" + std::to_string(int(dm[i])) + ", gm=" + std::to_string(gm) +
+                                                     ", vsjet=" + active_tauid_vsjet_loose + ", vse=" + tauid_vse + "): " + e.what());
+                        }
 
                         uncSources.assign(nSystVsJet, nom_sf);
                         uncSources[0] = nom_sf;
@@ -865,8 +871,10 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                         for (size_t s = 1; s < nSystVsJet; ++s) {
                             try {
                                 uncSources[s] = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet_loose, tauid_vse, systNamesVsJet[s], "dm"});
-                            } catch (...) {
-                                uncSources[s] = nom_sf;
+                            } catch (const std::exception &e) {
+                                throw std::runtime_error("tauSFIdVsJetLoose evaluate failed for systematic '" + systNamesVsJet[s] +
+                                                         "' (pt=" + std::to_string(pt[i]) + ", dm=" + std::to_string(int(dm[i])) +
+                                                         ", gm=" + std::to_string(gm) + "): " + e.what());
                             }
                         }
 

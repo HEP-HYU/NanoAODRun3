@@ -38,9 +38,16 @@ if os.path.exists(config_path + tmp_file_name):
     os.remove(config_path + tmp_file_name)
 #shutil.copy2(config_path + 'config_' + year + '.yml', config_path + tmp_file_name)
 
+if channel == "muon":
+    lep_systs = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear']
+elif channel == "electron":
+    lep_systs = ['elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
+else:
+    lep_systs = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear',
+                 'elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
+
 unc_cat = OrderedDict([
-('all', ['xsec', 'pu', 'toppt',
-         #'muid', 'muiso', 'mutrg', 'muExtra', 'muhighpt', 'muonhighscale',
+('all', ['xsec', 'pu', 'toppt'] + lep_systs + [
          'tauidjet', 'tauidel', 'tauidmu', 'tes',
          'tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
          'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
@@ -58,9 +65,29 @@ unc_cat = OrderedDict([
 ('pu', ['pu']),
 ('toppt', ['toppt']),
 ('xsec', ['xsec']),
-('muon', ['muid', 'muiso', 'mutrg', 'muExtra', 'muhighpt', 'muonhighscale']),
-('muhighpt', ['muhighpt']),
-('muonhighscale', ['muonhighscale']),
+])
+
+if channel == "muon":
+    unc_cat['muon'] = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear']
+    unc_cat['muid'] = ['muid']
+    unc_cat['muiso'] = ['muiso']
+    unc_cat['mutrg'] = ['mutrg']
+    unc_cat['muhighpt'] = ['muhighpt']
+    unc_cat['muonhighscale'] = ['muonhighscale']
+    unc_cat['muonscale'] = ['muonscale']
+    unc_cat['muonsmear'] = ['muonsmear']
+elif channel == "electron":
+    unc_cat['electron'] = ['elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
+    unc_cat['elecreco'] = ['elecreco']
+    unc_cat['elecid'] = ['elecid']
+    unc_cat['electrg'] = ['electrg']
+    unc_cat['elescale'] = ['elescale']
+    unc_cat['elesmear'] = ['elesmear']
+else:
+    unc_cat['muon'] = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear']
+    unc_cat['electron'] = ['elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
+
+unc_cat.update(OrderedDict([
 #('tauid', ['tauidjet', 'tauidel', 'tauidmu']),
 ('tauid', ['tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
 	   'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
@@ -117,7 +144,7 @@ unc_cat = OrderedDict([
 ('btagcorr', ['btagcorr']),
 ('btaguncorr', ['btaguncorr']),
 ('bAll', ['btagcorr', 'btaguncorr']),
-])
+]))
 
 if year == "2018":
   unc_cat['jesHEM'] = ['jesHEM']
@@ -164,16 +191,26 @@ for key, value in unc_cat.items():
 
     with open(config_path + "syst_all_" + year + ".yml") as f:
         lines = f.readlines()
+        matched_lines = []
+        for line in lines:
+            if any(x in line for x in value):
+                matched_lines.append(str(line))
+        if not matched_lines:
+            print("  Skipping source: " + key + " (not present in config)")
+            continue
         with open(config_path + tmp_file_name, "a") as f1:
             f1.writelines(plot_to_add)
-            for line in lines:
-                if any(x in line for x in value): string_to_add += str(line)
-            f1.writelines(string_to_add)
+            f1.writelines(string_to_add + "".join(matched_lines))
     syst_postfix = key
     call(['../plotIt/plotIt', '-o ' + os.path.join(dest_path, 'figure_' + year + options.postfix), config_path + tmp_file_name, '-s', '-a'], shell=False)
 
+    syst_raw = os.path.join(dest_path, 'figure_' + year + options.postfix, 'systematics.tex')
+    if not os.path.exists(syst_raw):
+        print("  Warning: " + syst_raw + " was not created, skipping")
+        continue
+
     #Remove signals in TT specific sources
-    with open(os.path.join(dest_path, 'figure_' + year + options.postfix, 'systematics.tex'), 'r') as f:
+    with open(syst_raw, 'r') as f:
     #with open(os.path.join(dest_path, 'figure_' + year + options.postfix +'_org', 'systematics_' + syst_postfix + '.tex'), 'r') as f:
         with open(os.path.join(dest_path, 'figure_' + year + options.postfix, 'systematics_' + syst_postfix + '.tex'), 'w+') as f1:
             isTheorySyst = False
@@ -200,14 +237,21 @@ for key, value in unc_cat.items():
 
 unc_summary = OrderedDict([
 ('xsec', 'Cross section'), ('pu', 'Pileup'),
-('toppt', 'Top pT reweighting'), ('muon', 'Muon SF'),
+('toppt', 'Top pT reweighting'),
+])
+if channel == "electron":
+    unc_summary['electron'] = 'Electron SF'
+else:
+    unc_summary['muon'] = 'Muon SF'
+
+unc_summary.update(OrderedDict([
 ('tauid', 'Tau ID'), ('tes', 'TES'), ('tauFF', 'Tau Fake Factor'),
 ('jesAll', 'JES'), ('jer', 'JER'), ('metUnclust', 'Unclustered energy'),
 ('mescale', 'Scale $\mu$F and $\mu$R'), ('renscale', 'Scale $\mu$R'), ('facscale', 'Scale $\mu$F'),
 ('isr', 'ISR'), ('fsr', 'FSR'),
 ('hdamp', 'ME-PS matching'), ('pdfalphas', 'PDF alphaS'), ('tune', 'Underlying event'),
 ('bAll', 'b-tagging shape'), ('all', 'Total sys. unc.'),
-])
+]))
 
 print("Generating summary table...")
 #Gather all results into one summary table
@@ -217,11 +261,16 @@ with open(template_path) as f:
     lines = f.readlines()
     with open(os.path.join(dest_path, 'figure_' + year + options.postfix, 'total_syst.tex'), "w") as f1:
         for line in lines:
+            if channel == "electron" and "Muon SF" in line:
+                line = line.replace("Muon SF", "Electron SF")
             for key, value in unc_summary.items():
                 if value == line.replace("&", "").rstrip().lstrip():
-                    with open(os.path.join(dest_path, 'figure_' + year + options.postfix, 'systematics_' + key + '.tex'),'r') as f2:
-                        lines = f2.read().splitlines()
-                        last_line = lines[-1]
-                        last_line = last_line[last_line.find("&")+1:]
-                        line = line.rstrip('\n') + last_line + '\n'
+                    syst_file = os.path.join(dest_path, 'figure_' + year + options.postfix, 'systematics_' + key + '.tex')
+                    if os.path.exists(syst_file):
+                        with open(syst_file, 'r') as f2:
+                            lines2 = f2.read().splitlines()
+                            if lines2:
+                                last_line = lines2[-1]
+                                last_line = last_line[last_line.find("&")+1:]
+                                line = line.rstrip('\n') + last_line + '\n'
             f1.write(line)
