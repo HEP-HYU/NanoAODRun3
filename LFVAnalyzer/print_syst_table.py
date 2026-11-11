@@ -202,7 +202,7 @@ if year == "2018":
   unc_cat['all'].append('jesHEM')
 
 #Create syst yaml everytime, to avoid crash due to different treatments
-with open(config_path + "config_" + year + ".yml") as f:
+with open(config_path + "config_" + year[4:] + ".yml") as f:
     lines = f.readlines()
     with open(config_path + "syst_all_" + year + ".yml", 'w+') as f1:
         write_lines = False
@@ -218,7 +218,7 @@ with open(config_path + "config_" + year + ".yml") as f:
 for key, value in unc_cat.items():
     print("Print yield tables with source: " + key)
     #prep for systematics
-    with open(config_path + 'config_' + year + '.yml', 'r') as f:
+    with open(config_path + 'config_' + year[4:] + '.yml', 'r') as f:
         with open(config_path + tmp_file_name, 'w') as f1:
             syst_delete = False
             plot_delete = False

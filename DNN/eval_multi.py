@@ -29,7 +29,7 @@ if gpus:
 
 default_proj_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "process_0715_v4")
 parser = argparse.ArgumentParser(usage="%prog [options]")
-parser.add_argument("-O", "--outdir", dest="outdir", type=str, default="DNN_", help="Evaluation folder in your working directory")
+parser.add_argument("-O", "--outdir", dest="outdir", type=str, default="", help="Evaluation folder in your working directory")
 parser.add_argument("-I", "--indir", dest="indir", type=str, default="top_lfv_0715_v4", help="Training folder in your working directory")
 parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon")
 parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/anti_NanoAODRun3/LFVAnalyzer/process_0715_v4/", help="Processed NanoAOD histogram base directory")
@@ -37,7 +37,11 @@ parser.add_argument("--xsecfile", dest="xsecfile", type=str, default="", help="O
 parser.add_argument("--alpha", dest="alpha", type=float, default=0.1, help="DNN score mixing: ((1-alpha)*p_ST + alpha*p_TT)/p_bkg")
 options = parser.parse_args()
 ch = options.ch
-outdir = options.outdir+datetime.now().strftime("%m%d")
+outdir = "DNN_"+datetime.now().strftime("%m%d")
+if options.outdir:
+    outdir = options.outdir
+
+print ("outdir: ", outdir)
 
 def min_max_scaling(series):
     return (series - series.min()) / (series.max() - series.min())
@@ -94,7 +98,7 @@ def run(inputs):
 
     outf_dir = os.path.join(hists_path, input_file.split("/")[-1:][0])
 
-    #print("IN PATH : ", input_file) 
+    print("IN PATH : ", input_file)
     print("OUT PATH : ", outf_dir)
 
     infile = uproot.open(input_file)
@@ -113,7 +117,7 @@ def run(inputs):
     PSWeightSum = None
     LHEPdfWeightSum = None
     if (not "Muon" in input_file) and (not "egamma" in input_file.lower()):
-        infile_forS = uproot.open(input_file.replace("_FF", ""))
+        infile_forS = uproot.open(input_file.replace("_tauff", ""))
         h_nevents_S4 = infile_forS["h_nevents_S4"]
         h_nevents_S2 = infile_forS["h_nevents_S2"]
         in_keys = [k.split(";")[0] for k in infile.keys()]

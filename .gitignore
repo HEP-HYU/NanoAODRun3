@@ -5,6 +5,8 @@
 CMSSW*
 plotIt
 
+LFVAnalyzer/*.txt
+
 # ── C++ build artifacts ────────────────────────────────────────────
 *.o
 *.so

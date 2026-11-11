@@ -29,6 +29,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-C", "--ch", dest="ch", type=str, default="muon")
 parser.add_argument("-P", "--project-dir", dest="project_dir", type=str, default="/home/itseyes/github/anti_NanoAODRun3/LFVAnalyzer/process_0715_v9/", help="Processed NanoAOD histogram base directory")
+parser.add_argument("-O", "--outdir", dest="outdir", type=str, default="", help="Evaluation folder in your working directory")
 parser.add_argument("--seed", dest="seed", type=int, default=42)
 args = parser.parse_args()
 ch = args.ch
@@ -58,6 +59,8 @@ processed = datetime.now().strftime("%m%d_%H%M")
 sbratio = 1 # sig:bkg = 1:1
 
 train_outdir = label+"_"+processed+"/"+ch+"_"+syst+"/"
+if args.outdir:
+    train_outdir = args.outdir+"/"+ch+"_"+syst+"/"
 os.makedirs(train_outdir, exist_ok=True)
 print ("output dir: ", train_outdir)
 
