@@ -41,13 +41,14 @@ void NanoAODAnalyzerrdframe::calculateTauES(string tauYear, string tauid_vsjet, 
                 float es = 1.0f;
                 int dm_tmp = int (dms[i]);
                 try{
-                    if (dm_tmp!=5 && dm_tmp!=6 && int(genids[i])!=2 && int(genids[i])!=4 && int(genids[i])!=6 && int(genids[i])!=0){
+                    if (dm_tmp != 5 && dm_tmp != 6 && int(genids[i]) != 6 && int(genids[i]) != 0){
                         if (dm_tmp == 2) dm_tmp = 1;
                         es = _testool->evaluate({pts[i], etas[i], dm_tmp, int(genids[i]), "DeepTau2018v2p5", tauid_vsjet, tauid_vse, var});
                     }
                 } catch (const exception &e) {
-                    std::cout << "e: " << e.what() <<std::endl;
-                    std::cout << "pt : " << pts[i] << " eta " << etas[i] << " dm " << int(dms[i]) << " genid " << int(genids[i]) << std::endl;
+                    std::cerr << "[ERROR] calculateTauES: evaluate failed: " << e.what() << std::endl;
+                    std::cerr << "[ERROR] pt: " << pts[i] << " eta: " << etas[i] << " dm: " << int(dms[i]) << " genid: " << int(genids[i]) << " var: " << var << std::endl;
+                    throw runtime_error(std::string("[ERROR] [calculateTauES] evaluate failed: ") + e.what());
                 }
                 xout.emplace_back(es);
             }
@@ -90,6 +91,17 @@ void NanoAODAnalyzerrdframe::skimJets(string cut) {
                .Redefine("Jet_btagPNetCvB", "Jet_btagPNetCvB[jetcuts]")
                .Redefine("Jet_btagPNetCvL", "Jet_btagPNetCvL[jetcuts]")
                .Redefine("nJet", "int(Jet_pt.size())");
+
+    // [JME-02] Synchronously skim energy fractions and ID branches to preserve vector length alignment with nJet
+    if (isDefined("Jet_jetId"))            _rlm = _rlm.Redefine("Jet_jetId",            "Jet_jetId[jetcuts]");
+    if (isDefined("Jet_muEF"))             _rlm = _rlm.Redefine("Jet_muEF",             "Jet_muEF[jetcuts]");
+    if (isDefined("Jet_chEmEF"))           _rlm = _rlm.Redefine("Jet_chEmEF",           "Jet_chEmEF[jetcuts]");
+    if (isDefined("Jet_neEmEF"))           _rlm = _rlm.Redefine("Jet_neEmEF",           "Jet_neEmEF[jetcuts]");
+    if (isDefined("Jet_chHEF"))            _rlm = _rlm.Redefine("Jet_chHEF",            "Jet_chHEF[jetcuts]");
+    if (isDefined("Jet_neHEF"))            _rlm = _rlm.Redefine("Jet_neHEF",            "Jet_neHEF[jetcuts]");
+    if (isDefined("Jet_chMultiplicity"))   _rlm = _rlm.Redefine("Jet_chMultiplicity",   "Jet_chMultiplicity[jetcuts]");
+    if (isDefined("Jet_neMultiplicity"))   _rlm = _rlm.Redefine("Jet_neMultiplicity",   "Jet_neMultiplicity[jetcuts]");
+    if (isDefined("Jet_muonSubtrFactor"))  _rlm = _rlm.Redefine("Jet_muonSubtrFactor",  "Jet_muonSubtrFactor[jetcuts]");
     if (_isRun24){
         _rlm = _rlm.Redefine("Jet_btagUParTAK4B", "Jet_btagUParTAK4B[jetcuts]");
         _rlm = _rlm.Redefine("Jet_btagUParTAK4CvB", "Jet_btagUParTAK4CvB[jetcuts]");
@@ -99,6 +111,7 @@ void NanoAODAnalyzerrdframe::skimJets(string cut) {
         //_rlm = _rlm.Redefine("Jet_pt_unc", skimCol, {"Jet_pt_unc", "jetcuts"})
         //           .Redefine("Jet_jer", skimCol, {"Jet_jer", "jetcuts"})
         _rlm = _rlm.Redefine("Jet_hadronFlavour","Jet_hadronFlavour[jetcuts]")
+                   .Redefine("Jet_partonFlavour","Jet_partonFlavour[jetcuts]")
                    .Redefine("Jet_genJetIdx","Jet_genJetIdx[jetcuts]");
     }
 }

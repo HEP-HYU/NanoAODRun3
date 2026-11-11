@@ -88,7 +88,11 @@ struct CrystalBall {
 class MuonScaReHelper {
 public:
     MuonScaReHelper(std::shared_ptr<correction::CorrectionSet> cset)
-        : _cset(cset) {}
+        : _cset(cset) {
+        if (!_cset) {
+            std::cerr << "[ERROR] [ScaReKIT] MuonScaReHelper initialized with null CorrectionSet!" << std::endl;
+        }
+    }
 
     double get_rndm(double eta, double phi, float nL, unsigned long long evtNumber, unsigned int lumiNumber) const {
         double mean  = _cset->at("cb_params")->evaluate({std::abs(eta), (double)nL, 0});

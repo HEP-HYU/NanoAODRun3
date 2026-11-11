@@ -75,10 +75,11 @@ for fn in os.listdir("data/dataset/" + year):
                 continue
 
             if options.local:
+                nano_ver = year.split('_')[0] if '_' in year else "v12"
                 if "data" in infile:
-                    infile = os.path.join(_NANO_BASE, "data/v15", infile[len("/store/data/"):])
+                    infile = os.path.join(_NANO_BASE, "data", nano_ver, infile[len("/store/data/"):])
                 elif "mc" in infile:
-                    infile = os.path.join(_NANO_BASE, "mc/v15",   infile[len("/store/mc/"):])
+                    infile = os.path.join(_NANO_BASE, "mc", nano_ver, infile[len("/store/mc/"):])
             elif options.path=="fnal":
                 infile = "root://cmsxrootd.fnal.gov/"+infile
             else: infile = "root://xrootd-cms.infn.it/"+infile

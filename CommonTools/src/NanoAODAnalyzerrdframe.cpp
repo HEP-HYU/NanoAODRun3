@@ -137,8 +137,7 @@ void NanoAODAnalyzerrdframe::setupAnalysis() {
 
     // Object selection will be defined in sequence.
     // Selected objects will be stored in new vectors.
-    std::vector<std::string> jes_var;
-    defineObjectSelection(jes_var);
+    defineObjectSelection();
 
     defineMoreVars();
     defineCuts();
@@ -179,16 +178,17 @@ bool NanoAODAnalyzerrdframe::readjson() {
             _jsonOK = true;
             return true;
         } else {
-            cout << "Problem reading json file " << _jsonfname << endl;
-            return false;
+            std::cerr << "[ERROR] readjson: Problem reading json file " << _jsonfname << std::endl;
+            throw std::runtime_error("[ERROR] readjson: Problem reading json file: " + _jsonfname);
         }
     } else {
         cout << "no JSON file given" << endl;
-        return true;
+        _jsonOK = false;
+        return false;
     }
 }
 
-void NanoAODAnalyzerrdframe::defineObjectSelection(std::vector<std::string> jes_var){
+void NanoAODAnalyzerrdframe::defineObjectSelection(){
     //Override at SkimEvents.cpp and analysisAnalyzer.cpp
     std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
     std::string vetomuon = "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";

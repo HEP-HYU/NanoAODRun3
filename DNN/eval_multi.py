@@ -109,14 +109,20 @@ def run(inputs):
     hist_nevents_S4_dict = {}
     hist_nevents_S5_dict = {}
 
+    ScaleWeightSum = None
+    PSWeightSum = None
+    LHEPdfWeightSum = None
     if (not "Muon" in input_file) and (not "egamma" in input_file.lower()):
         infile_forS = uproot.open(input_file.replace("_FF", ""))
         h_nevents_S4 = infile_forS["h_nevents_S4"]
         h_nevents_S2 = infile_forS["h_nevents_S2"]
-        #if any(string in input_file for string in ["Tau-LFV", "TTt", "_ST_t"]) and "__" not in input_file:
-        #    ScaleWeightSum = infile['ScaleWeightSum']
-        #    PSWeightSum = infile['PSWeightSum']
-        #    LHEPdfWeightSum = infile['LHEPdfWeightSum']
+        in_keys = [k.split(";")[0] for k in infile.keys()]
+        if "ScaleWeightSum" in in_keys:
+            ScaleWeightSum = infile["ScaleWeightSum"]
+        if "PSWeightSum" in in_keys:
+            PSWeightSum = infile["PSWeightSum"]
+        if "LHEPdfWeightSum" in in_keys:
+            LHEPdfWeightSum = infile["LHEPdfWeightSum"]
 
     if nEvents == 0:
         print("No events : "+input_file)
@@ -262,10 +268,12 @@ def run(inputs):
             outf["h_nevents_S4"] = h_nevents_S4
             outf["h_nevents_S2"] = h_nevents_S2
 
-            #if any(string in input_file for string in ["Tau-LFV","TTt","_ST_t"]) and "__" not in input_file:
-            #    outf["ScaleWeightSum"] = ScaleWeightSum
-            #    outf["PSWeightSum"] = PSWeightSum
-            #    outf["LHEPdfWeightSum"] = LHEPdfWeightSum
+            if ScaleWeightSum is not None:
+                outf["ScaleWeightSum"] = ScaleWeightSum
+            if PSWeightSum is not None:
+                outf["PSWeightSum"] = PSWeightSum
+            if LHEPdfWeightSum is not None:
+                outf["LHEPdfWeightSum"] = LHEPdfWeightSum
 
         for syst in syst_list:
             if 'pdf' in syst and not 'alphas' in syst:

@@ -1,6 +1,7 @@
 #include "NanoAODAnalyzerrdframe.h"
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -41,6 +42,44 @@ void NanoAODAnalyzerrdframe::selectElectrons(string cut, string vetocut) {
                    .Define("Sel_eleidx", ::good_idx, {"elecuts"})
                    .Define("nelepass", "int(Electron_pt.size())")
                    .Define("lep4vecs", ::gen4vec, {"Electron_pt", "Electron_eta", "Electron_phi", "Electron_mass"});
+        if (isDefined("Electron_deltaEtaSC")) {
+            _rlm = _rlm.Redefine("Electron_deltaEtaSC", "Electron_deltaEtaSC[elecuts]");
+        }
+        if (isDefined("Electron_r9")) {
+            _rlm = _rlm.Redefine("Electron_r9", "Electron_r9[elecuts]");
+        }
+        if (isDefined("Electron_seedGain")) {
+            _rlm = _rlm.Redefine("Electron_seedGain", "Electron_seedGain[elecuts]");
+        }
+        if (isDefined("Electron_pt_uncor")) {
+            auto elescaremet = [](const floats &pts_uncor, const floats &pts_corr, const floats &phis, float met, float metphi)->float {
+                double metx = met * std::cos(metphi);
+                double mety = met * std::sin(metphi);
+                for (size_t i = 0; i < pts_uncor.size(); i++) {
+                    double dpx = (pts_corr[i] - pts_uncor[i]) * std::cos(phis[i]);
+                    double dpy = (pts_corr[i] - pts_uncor[i]) * std::sin(phis[i]);
+                    metx -= dpx;
+                    mety -= dpy;
+                }
+                return float(std::sqrt(metx * metx + mety * mety));
+            };
+            auto elescaremetphi = [](const floats &pts_uncor, const floats &pts_corr, const floats &phis, float met, float metphi)->float {
+                double metx = met * std::cos(metphi);
+                double mety = met * std::sin(metphi);
+                for (size_t i = 0; i < pts_uncor.size(); i++) {
+                    double dpx = (pts_corr[i] - pts_uncor[i]) * std::cos(phis[i]);
+                    double dpy = (pts_corr[i] - pts_uncor[i]) * std::sin(phis[i]);
+                    metx -= dpx;
+                    mety -= dpy;
+                }
+                return float(std::atan2(mety, metx));
+            };
+            _rlm = _rlm.Redefine("Electron_pt_uncor", "Electron_pt_uncor[elecuts]")
+                       .Define("skim_PuppiMET_pt_ele_unsmear", "PuppiMET_pt")
+                       .Define("skim_PuppiMET_phi_ele_unsmear", "PuppiMET_phi")
+                       .Redefine("PuppiMET_phi", elescaremetphi, {"Electron_pt_uncor", "Electron_pt", "Electron_phi", "skim_PuppiMET_pt_ele_unsmear", "skim_PuppiMET_phi_ele_unsmear"})
+                       .Redefine("PuppiMET_pt",  elescaremet,    {"Electron_pt_uncor", "Electron_pt", "Electron_phi", "skim_PuppiMET_pt_ele_unsmear", "skim_PuppiMET_phi_ele_unsmear"});
+        }
     }
 }
 
@@ -65,12 +104,49 @@ void NanoAODAnalyzerrdframe::selectMuons(string cut, string vetocut) {
                    .Define("Sel_muonidx", ::good_idx, {"muoncuts"})
                    .Define("nmuonpass", "int(Muon_pt.size())")
                    .Define("lep4vecs", ::gen4vec, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+        if (isDefined("Muon_tightId")) {
+            _rlm = _rlm.Redefine("Muon_tightId", "Muon_tightId[muoncuts]");
+        }
+        if (isDefined("Muon_nTrackerLayers")) {
+            _rlm = _rlm.Redefine("Muon_nTrackerLayers", "Muon_nTrackerLayers[muoncuts]");
+        }
+        if (isDefined("Muon_pt_uncor")) {
+            auto muonscaremet = [](const floats &pts_uncor, const floats &pts_corr, const floats &phis, float met, float metphi)->float {
+                double metx = met * std::cos(metphi);
+                double mety = met * std::sin(metphi);
+                for (size_t i = 0; i < pts_uncor.size(); i++) {
+                    double dpx = (pts_corr[i] - pts_uncor[i]) * std::cos(phis[i]);
+                    double dpy = (pts_corr[i] - pts_uncor[i]) * std::sin(phis[i]);
+                    metx -= dpx;
+                    mety -= dpy;
+                }
+                return float(std::sqrt(metx * metx + mety * mety));
+            };
+            auto muonscaremetphi = [](const floats &pts_uncor, const floats &pts_corr, const floats &phis, float met, float metphi)->float {
+                double metx = met * std::cos(metphi);
+                double mety = met * std::sin(metphi);
+                for (size_t i = 0; i < pts_uncor.size(); i++) {
+                    double dpx = (pts_corr[i] - pts_uncor[i]) * std::cos(phis[i]);
+                    double dpy = (pts_corr[i] - pts_uncor[i]) * std::sin(phis[i]);
+                    metx -= dpx;
+                    mety -= dpy;
+                }
+                return float(std::atan2(mety, metx));
+            };
+            _rlm = _rlm.Redefine("Muon_pt_uncor", "Muon_pt_uncor[muoncuts]")
+                       .Define("skim_PuppiMET_pt_mu_unsmear", "PuppiMET_pt")
+                       .Define("skim_PuppiMET_phi_mu_unsmear", "PuppiMET_phi")
+                       .Redefine("PuppiMET_phi", muonscaremetphi, {"Muon_pt_uncor", "Muon_pt", "Muon_phi", "skim_PuppiMET_pt_mu_unsmear", "skim_PuppiMET_phi_mu_unsmear"})
+                       .Redefine("PuppiMET_pt",  muonscaremet,    {"Muon_pt_uncor", "Muon_pt", "Muon_phi", "skim_PuppiMET_pt_mu_unsmear", "skim_PuppiMET_phi_mu_unsmear"});
+        }
     }
 }
 
-void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagYear, string btagMap, string btagMapLight, float btagcut) {
+void NanoAODAnalyzerrdframe::applyBSFs(string btagYear, string btagMap, string btagMapLight, float btagcut) {
     cout << "Loading Btag SF (fixed WP, Method 1a): " << btagYear << "  comb=" << btagMap << "  light=" << btagMapLight << endl;
-    // btag_var / btag_jes_var columns not needed for fixed-WP SF (shape-only).
+    // Fixed-WP Method 1a uses the multi-era uncertainty scheme (up/down_correlated and up/down_uncorrelated),
+    // where the SF's own JES/JER calibration uncertainties are already included in quadrature inside
+    // up/down_uncorrelated (btagSFbc_<era>); JME jet pT shifts propagate automatically via cleanjet4vecs.
 
     auto bSFreader = loadCorrectionSet("data/BTV/" + btagYear + "/btagging.json.gz");
     // Fixed-WP corrections:
@@ -80,14 +156,30 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     auto _btagSF      = bSFreader->at(btagMap);
     auto _btagSFlight = bSFreader->at(btagMapLight);
 
+    // Cross-validate btagcut against the official POG *_wp_values ("M") in btagging.json.gz
+    if (btagcut <= 0.0f || !std::isfinite(btagcut)) {
+        std::string msg = "[ERROR] applyBSFs: Invalid btagcut (" + std::to_string(btagcut) + ") for " + btagYear;
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+    const std::string wpValName = _isRun24 ? "UParTAK4_wp_values" : "particleNet_wp_values";
+    float wpJsonVal = static_cast<float>(bSFreader->at(wpValName)->evaluate({"M"}));
+    if (std::abs(btagcut - wpJsonVal) > 1e-5f) {
+        std::string msg = "[ERROR] applyBSFs: btagcut from analysis_config.json (" + std::to_string(btagcut) +
+                          ") mismatches " + wpValName + "(\"M\") = " + std::to_string(wpJsonVal) +
+                          " in data/BTV/" + btagYear + "/btagging.json.gz";
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+
     // -----------------------------------------------------------------------
     // BTV Method 1a (Event Reweighting) MC Efficiency Map Loading
     // Weight = Prod_{tagged} SF_i * Prod_{untagged} (1 - SF_j * eff_j) / (1 - eff_j)
     // Hierarchical search:
-    //   1. Process-specific map: data/BTV/<year>/btag_eff_<proc>.root (e.g. ttbar, qcd, wjets)
-    //   2. Sample-specific map:  data/BTV/<year>/btag_eff_<sample>.root
-    //   3. Inclusive map:        data/BTV/<year>/btag_eff.root (or btag_eff_inclusive.root)
-    //   4. Graceful fallback:    Simple product (tagged jets only)
+    //   1. Process-specific map: data/BTV/<ch>/<year>/btag_eff_<proc>.root (e.g. ttbar, qcd, wjets)
+    //   2. Sample-specific map:  data/BTV/<ch>/<year>/btag_eff_<sample>.root
+    //   3. Inclusive map:        data/BTV/<ch>/<year>/btag_eff.root (or btag_eff_inclusive.root)
+    //   4. Missing/invalid map:  Explicit [ERROR] + std::runtime_error on evaluation
     // -----------------------------------------------------------------------
     std::shared_ptr<TH2> sp_eff_b = nullptr;
     std::shared_ptr<TH2> sp_eff_c = nullptr;
@@ -115,12 +207,20 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
     std::string procGroup = "";
 
     // 1. Signal (type: signal, groups: GLFVST*, GLFVTT*)
-    //    e.g. hist_TUMuTau-LFV-*, hist_TCMuTau-LFV-*, hist_TTtoUMuTau-LFV-*, hist_TTtoCMuTau-LFV-*,
-    //         hist_TUETau-LFV-*, hist_TCETau-LFV-*, hist_TTtoUETau-LFV-*, hist_TTtoCETau-LFV-*
+    //    Split into signal_tc (tc coupling: TCMuTau, TCETau, TTtoCMuTau, TTtoCETau)
+    //    and signal_tu (tu coupling: TUMuTau, TUETau, TTtoUMuTau, TTtoUETau).
     //    MUST check before ttbar because TTto*LFV contains "ttto".
-    if (lowerName.find("lfv") != std::string::npos ||
-        lowerName.find("tumutau") != std::string::npos || lowerName.find("tcmutau") != std::string::npos ||
-        lowerName.find("tuetau") != std::string::npos || lowerName.find("tcetau") != std::string::npos) {
+    if (lowerName.find("tcmutau") != std::string::npos || lowerName.find("tcetau") != std::string::npos ||
+        lowerName.find("tttocmutau") != std::string::npos || lowerName.find("tttocetau") != std::string::npos ||
+        lowerName.find("signal_tc") != std::string::npos) {
+        procGroup = "signal_tc";
+    }
+    else if (lowerName.find("tumutau") != std::string::npos || lowerName.find("tuetau") != std::string::npos ||
+             lowerName.find("tttoumutau") != std::string::npos || lowerName.find("tttouetau") != std::string::npos ||
+             lowerName.find("signal_tu") != std::string::npos) {
+        procGroup = "signal_tu";
+    }
+    else if (lowerName.find("lfv") != std::string::npos) {
         procGroup = "signal";
     }
     // 2. tt+X / ttV (group: GttV, yields-group: '7tt+X')
@@ -199,26 +299,30 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
 
     // 1. Channel-specific candidates (highest priority)
     for (const auto &y : yearList) {
-        if (!procGroup.empty()) {
+        if (!procGroup.empty() && procGroup != "inclusive") {
             effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff_" + procGroup + ".root");
         }
         if (!cleanName.empty() && cleanName != procGroup) {
             effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff_" + cleanName + ".root");
         }
-        effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff.root");
-        effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff_inclusive.root");
+        if (procGroup.empty() || procGroup == "inclusive") {
+            effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff.root");
+            effCandidates.push_back("data/BTV/" + chName + "/" + y + "/btag_eff_inclusive.root");
+        }
     }
 
     // 2. Legacy / channel-agnostic fallback candidates
     for (const auto &y : yearList) {
-        if (!procGroup.empty()) {
+        if (!procGroup.empty() && procGroup != "inclusive") {
             effCandidates.push_back("data/BTV/" + y + "/btag_eff_" + procGroup + ".root");
         }
         if (!cleanName.empty() && cleanName != procGroup) {
             effCandidates.push_back("data/BTV/" + y + "/btag_eff_" + cleanName + ".root");
         }
-        effCandidates.push_back("data/BTV/" + y + "/btag_eff.root");
-        effCandidates.push_back("data/BTV/" + y + "/btag_eff_inclusive.root");
+        if (procGroup.empty() || procGroup == "inclusive") {
+            effCandidates.push_back("data/BTV/" + y + "/btag_eff.root");
+            effCandidates.push_back("data/BTV/" + y + "/btag_eff_inclusive.root");
+        }
     }
 
     std::string chosenEffPath = "";
@@ -251,47 +355,51 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
         cout << "[INFO] Loaded BTV Method 1a efficiency maps from " << chosenEffPath
              << " (process group: " << (procGroup.empty() ? "unclassified" : procGroup) << ")" << endl;
     } else {
-        cout << "[INFO] No b-tag efficiency map found for " << btagYear
-             << " in candidates (btag_eff_" << procGroup << ".root / btag_eff.root). Falling back to simple method (tagged jets only)." << endl;
+        cerr << "[WARN] No b-tag efficiency map found for " << btagYear
+             << " in candidates (btag_eff_" << procGroup << ".root / btag_eff.root). "
+             << "Evaluating btagWeight will throw an error unless running BTagEfficiencyAnalyzer." << endl;
     }
 
     // -----------------------------------------------------------------------
     // BTV POG Multi-era Standard Scheme (correlated + uncorrelated):
     //   0: central
-    //   1/2: up/down_correlated   (correlated across all Run 3 eras)
-    //   3/4: up/down_uncorrelated (uncorrelated per data-taking era)
-    //
-    // Applied to both b/c jets (_comb) and light jets (_light).
+    //   1/2: up/down_correlated   (legacy combined HF+LF, preserved)
+    //   3/4: up/down_uncorrelated (legacy combined HF+LF, preserved)
+    //   5/6: btagSFbc_correlated up/down     (HF _comb up/down_correlated, LF fixed to central)
+    //   7/8: btagSFbc_<era> up/down          (HF _comb up/down_uncorrelated, LF fixed to central)
+    //   9/10: btagSFlight_correlated up/down (LF _light up/down_correlated, HF fixed to central)
+    //   11/12: btagSFlight_<era> up/down     (LF _light up/down_uncorrelated, HF fixed to central)
     // -----------------------------------------------------------------------
     const std::string wp = "M";  // Medium WP
-    const std::vector<std::string> systs_hfbc = {
+    const std::vector<std::string> systs_btag = {
         "central",
         "up_correlated",   "down_correlated",    // 1/2
         "up_uncorrelated", "down_uncorrelated"   // 3/4
     };
-    const std::vector<std::string> systs_light = {
-        "central",
-        "up_correlated",   "down_correlated",    // 1/2
-        "up_uncorrelated", "down_uncorrelated"   // 3/4
-    };
-    const int n_systs = static_cast<int>(systs_hfbc.size()); // 5
+    const int n_base_systs = static_cast<int>(systs_btag.size()); // 5
+    const int n_systs = 13;
 
     // Helper lambda to query efficiency from 2D map with boundary clamping
-    auto get_efficiency = [has_eff, sp_eff_b, sp_eff_c, sp_eff_light](int flav, float pt, float abseta) -> float {
-        if (!has_eff) return 1.0f;
+    auto get_efficiency = [has_eff, sp_eff_b, sp_eff_c, sp_eff_light, chosenEffPath](int flav, float pt, float abseta) -> float {
+        if (!has_eff) {
+            std::string msg = "[ERROR] get_efficiency: BTV Method 1a efficiency map is missing.";
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
+        }
         TH2 *h = nullptr;
-        float def_eff = 0.65f;
         if (flav == 5) {
             h = sp_eff_b.get();
-            def_eff = 0.65f;
         } else if (flav == 4) {
             h = sp_eff_c.get();
-            def_eff = 0.15f;
         } else {
             h = sp_eff_light.get();
-            def_eff = 0.01f;
         }
-        if (!h) return def_eff;
+        if (!h) {
+            std::string msg = "[ERROR] get_efficiency: Null TH2 efficiency histogram for flav=" + std::to_string(flav) +
+                              " in " + chosenEffPath;
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
+        }
 
         float minPt  = h->GetXaxis()->GetXmin();
         float maxPt  = h->GetXaxis()->GetXmax() - 1e-3f;
@@ -304,74 +412,107 @@ void NanoAODAnalyzerrdframe::applyBSFs(std::vector<string> jes_var, string btagY
         int bx = h->GetXaxis()->FindFixBin(clampedPt);
         int by = h->GetYaxis()->FindFixBin(clampedEta);
         float val = h->GetBinContent(bx, by);
-        if (val <= 0.0f || val > 1.0f) val = def_eff;
+        if (!std::isfinite(val) || val <= 0.0f || val >= 1.0f) {
+            std::string msg = "[ERROR] get_efficiency: Invalid BTV MC efficiency value (" + std::to_string(val) +
+                              ") at flav=" + std::to_string(flav) + ", pt=" + std::to_string(pt) +
+                              ", abseta=" + std::to_string(abseta) + " (bin " + std::to_string(bx) + "," +
+                              std::to_string(by) + ") in " + chosenEffPath +
+                              ". Method 1a requires 0 < eff < 1.";
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
+        }
         return val;
     };
 
-    auto btagSF_fixedWP = [this, _btagSF, _btagSFlight, wp, systs_hfbc, systs_light, n_systs, btagcut, has_eff, get_efficiency]
+    auto btagSF_fixedWP = [this, _btagSF, _btagSFlight, wp, systs_btag, n_base_systs, n_systs, btagcut, has_eff, btagYear, procGroup, get_efficiency]
                           (floats &pts, floats &etas, uchars &hadflav, floats &bscores) -> floats {
-        // Returns event-level weight vector [n_systs].
-        // Under Method 1a:
+        // Returns event-level weight vector [n_systs = 13].
+        // Under BTV Method 1a:
         //   Tagged jets: multiply SF
         //   Untagged jets: multiply (1 - SF * eff) / (1 - eff)
-        // Under simple fallback (has_eff == false):
-        //   Tagged jets: multiply SF
-        //   Untagged jets: weight = 1.0
+        if (!has_eff) {
+            std::string msg = "[ERROR] btagSF_fixedWP: No b-tag efficiency map found for " + btagYear +
+                              " (process group: " + procGroup + "). Method 1a requires efficiency maps.";
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
+        }
         floats out(n_systs, 1.0f);
         size_t n_jets = std::min({pts.size(), etas.size(), hadflav.size(), bscores.size()});
         for (size_t j = 0; j < n_jets; j++) {
-            float pt    = pts[j];
+            float pt     = pts[j];
             float abseta = std::abs(etas[j]);
-            int   flav  = static_cast<int>(hadflav[j]);
-            float score = bscores[j];
+            int   flav   = static_cast<int>(hadflav[j]);
+            float score  = bscores[j];
 
             // Skip jets outside kinematic range
-            if (pt < 20.f || abseta > 2.5f) continue;
-            bool is_tagged = (score >= btagcut);
-
-            // If efficiency map not available, untagged jets do not contribute (SF=1)
-            if (!has_eff && !is_tagged) continue;
+            if (pt < 20.f || abseta >= 2.5f) continue;
+            bool is_tagged = (score > btagcut);
 
             float eff = get_efficiency(flav, pt, abseta);
+            float denom = 1.0f - eff;
 
-            for (int s = 0; s < n_systs; s++) {
-                float sf = 1.0f;
-                try {
-                    if (flav == 0) {
-                        // Light jets: use _light correction; only 5 systs available
-                        const auto &syst_light = (s < static_cast<int>(systs_light.size()))
-                                                  ? systs_light[s] : systs_light[0];
-                        sf = _btagSFlight->evaluate({syst_light, wp, flav, abseta, pt});
-                    } else {
-                        // b/c jets: use _comb correction
-                        sf = _btagSF->evaluate({systs_hfbc[s], wp, flav, abseta, pt});
-                    }
-                } catch (const std::exception &e) {
-                    std::cerr << "[WARN] btagSF_fixedWP evaluate failed"
-                              << " syst=" << systs_hfbc[s]
-                              << " wp=" << wp << " flav=" << flav
-                              << " eta=" << abseta << " pt=" << pt
-                              << ": " << e.what() << "\n";
-                    sf = 1.0f;
-                }
+            float w_jet[5];
+            for (int s = 0; s < n_base_systs; s++) {
+                float sf = (flav == 0)
+                    ? _btagSFlight->evaluate({systs_btag[s], wp, flav, abseta, pt})
+                    : _btagSF->evaluate({systs_btag[s], wp, flav, abseta, pt});
 
                 if (is_tagged) {
-                    out[s] *= sf;
+                    w_jet[s] = sf;
                 } else {
                     // Method 1a: Untagged jet factor
-                    float denom = std::max(1e-4f, 1.0f - eff);
-                    float w_fail = (1.0f - sf * eff) / denom;
-                    out[s] *= std::clamp(w_fail, 0.0f, 10.0f);
+                    w_jet[s] = (1.0f - sf * eff) / denom;
                 }
+            }
+
+            // 0: central, 1/2: combined corr up/dn, 3/4: combined uncorr up/dn
+            for (int s = 0; s < n_base_systs; s++) {
+                out[s] *= w_jet[s];
+            }
+
+            if (flav != 0) {
+                // Heavy-flavour (b/c) jet: varies for HF systematics [5..8], central for LF [9..12]
+                out[5]  *= w_jet[1];
+                out[6]  *= w_jet[2];
+                out[7]  *= w_jet[3];
+                out[8]  *= w_jet[4];
+                out[9]  *= w_jet[0];
+                out[10] *= w_jet[0];
+                out[11] *= w_jet[0];
+                out[12] *= w_jet[0];
+            } else {
+                // Light-flavour (udsg) jet: central for HF [5..8], varies for LF systematics [9..12]
+                out[5]  *= w_jet[0];
+                out[6]  *= w_jet[0];
+                out[7]  *= w_jet[0];
+                out[8]  *= w_jet[0];
+                out[9]  *= w_jet[1];
+                out[10] *= w_jet[2];
+                out[11] *= w_jet[3];
+                out[12] *= w_jet[4];
             }
         }
         return out;
     };
 
-    // btagWeight[0] = central, [1/2] = corr up/dn, [3/4] = uncorr up/dn
+    // btagWeight[0] = central, [1/2] = corr up/dn, [3/4] = uncorr up/dn,
+    // [5/6] = btagSFbc_correlated up/dn, [7/8] = btagSFbc_<era> up/dn,
+    // [9/10] = btagSFlight_correlated up/dn, [11/12] = btagSFlight_<era> up/dn
     const std::string bTagCol = _isRun24 ? "Jet_btagUParTAK4B" : "Jet_btagPNetB";
-    _rlm = _rlm.Define("btagWeight", btagSF_fixedWP,
-                        {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", bTagCol});
+    if (isDefined("btagWeight")) {
+        _rlm = _rlm.Redefine("btagWeight", btagSF_fixedWP,
+                             {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", bTagCol});
+    } else {
+        _rlm = _rlm.Define("btagWeight", btagSF_fixedWP,
+                           {"Jet_pt", "Jet_eta", "Jet_hadronFlavour", bTagCol});
+    }
+    if (isDefined("btagWeight_loose")) {
+        _rlm = _rlm.Redefine("btagWeight_loose", btagSF_fixedWP,
+                             {"Jet_pt_loose", "Jet_eta_loose", "Jet_hadronFlavour_loose", bTagCol + "_loose"});
+    } else {
+        _rlm = _rlm.Define("btagWeight_loose", btagSF_fixedWP,
+                           {"Jet_pt_loose", "Jet_eta_loose", "Jet_hadronFlavour_loose", bTagCol + "_loose"});
+    }
     // Note: btagNormalization is NOT needed for fixed-WP SFs.
     // The direct event weight btagWeight[0] is used in defineWeightVars().
 
@@ -471,6 +612,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
     auto syst_unc = _syst;
 
     //TES var.
+    _rlm = _rlm.Define("Tau_pt_nom_tes", "Tau_pt");
     if (!_isData) {
         // In the Process stage, Tau_pt has already been corrected by Tau_ES_nom in the skim.
         // Tau_ES_up and Tau_ES_down are stored as flat float vectors in the skim tree.
@@ -479,9 +621,10 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         // pre-date Tau_ES_* columns.
         const bool hasTauES = isDefined("Tau_ES_nom") && isDefined("Tau_ES_up") && isDefined("Tau_ES_down");
         if (!hasTauES && _syst.find("tes") != std::string::npos) {
-            std::cerr << "[WARN] selectTaus: syst=" << _syst
-                      << " but Tau_ES_nom/up/down not found in input — skim may be outdated. "
-                      << "TES variation will NOT be applied.\n";
+            std::cerr << "[ERROR] selectTaus: syst=" << _syst
+                      << " requested, but Tau_ES_nom/up/down branches are not found in input skim! "
+                      << "Skim must contain Tau_ES_* branches to apply TES variation." << std::endl;
+            throw std::runtime_error("[ERROR] [selectTaus] Missing Tau_ES_nom/up/down in skimmed input for " + _syst);
         }
         if (hasTauES && _syst.find("tesup") != std::string::npos) {
             _rlm = _rlm.Define("Tau_pt_unc_toapply",
@@ -572,6 +715,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
 
     _rlm = _rlm.Define("seltaucuts","taucuts && deeptauidcuts && leptauoverlap")
                .Define("Tau_pt_gen", "Tau_pt[seltaucuts]")
+               .Define("sel_Tau_pt_nom", "Tau_pt_nom_tes[seltaucuts]")
                .Redefine("Tau_pt", "Tau_pt[seltaucuts]")
                .Redefine("Tau_eta", "Tau_eta[seltaucuts]")
                .Redefine("Tau_phi", "Tau_phi[seltaucuts]")
@@ -581,6 +725,47 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                .Redefine("Tau_decayMode", "Tau_decayMode[seltaucuts]")
                .Define("ncleantaupass", "int(Tau_pt.size())")
                .Define("cleantau4vecs", ::gen4vec, {"Tau_pt", "Tau_eta", "Tau_phi", "Tau_mass"});
+
+    if (!_isData && (_syst.find("tesup") != std::string::npos || _syst.find("tesdown") != std::string::npos)) {
+        auto tesMetPt = [](const floats &pts_nom, const floats &pts_tes, const floats &phis, float met, float metphi) -> float {
+            double metx = met * std::cos(metphi);
+            double mety = met * std::sin(metphi);
+            size_t n = std::min({pts_nom.size(), pts_tes.size(), phis.size()});
+            for (size_t i = 0; i < n; i++) {
+                double dpx = (pts_tes[i] - pts_nom[i]) * std::cos(phis[i]);
+                double dpy = (pts_tes[i] - pts_nom[i]) * std::sin(phis[i]);
+                metx -= dpx;
+                mety -= dpy;
+            }
+            return static_cast<float>(std::sqrt(metx * metx + mety * mety));
+        };
+
+        auto tesMetPhi = [](const floats &pts_nom, const floats &pts_tes, const floats &phis, float met, float metphi) -> float {
+            double metx = met * std::cos(metphi);
+            double mety = met * std::sin(metphi);
+            size_t n = std::min({pts_nom.size(), pts_tes.size(), phis.size()});
+            for (size_t i = 0; i < n; i++) {
+                double dpx = (pts_tes[i] - pts_nom[i]) * std::cos(phis[i]);
+                double dpy = (pts_tes[i] - pts_nom[i]) * std::sin(phis[i]);
+                metx -= dpx;
+                mety -= dpy;
+            }
+            return static_cast<float>(std::atan2(mety, metx));
+        };
+
+        _rlm = _rlm.Define("PuppiMET_pt_tes_uncorr",  "PuppiMET_pt")
+                   .Define("PuppiMET_phi_tes_uncorr", "PuppiMET_phi")
+                   .Redefine("PuppiMET_phi", tesMetPhi, {"sel_Tau_pt_nom", "Tau_pt", "Tau_phi", "PuppiMET_pt_tes_uncorr", "PuppiMET_phi_tes_uncorr"})
+                   .Redefine("PuppiMET_pt",  tesMetPt,  {"sel_Tau_pt_nom", "Tau_pt", "Tau_phi", "PuppiMET_pt_tes_uncorr", "PuppiMET_phi_tes_uncorr"});
+
+        if (isDefined("MET_pt") && isDefined("MET_phi")) {
+            _rlm = _rlm.Define("MET_pt_tes_uncorr",  "MET_pt")
+                       .Define("MET_phi_tes_uncorr", "MET_phi")
+                       .Redefine("MET_phi", tesMetPhi, {"sel_Tau_pt_nom", "Tau_pt", "Tau_phi", "MET_pt_tes_uncorr", "MET_phi_tes_uncorr"})
+                       .Redefine("MET_pt",  tesMetPt,  {"sel_Tau_pt_nom", "Tau_pt", "Tau_phi", "MET_pt_tes_uncorr", "MET_phi_tes_uncorr"});
+        }
+        std::cout << "[TES] Propagated tau energy scale variation to PuppiMET (and MET) for selected taus (" << _syst << ")\n";
+    }
 
     if (!_isData) {
         // Tau SF
@@ -631,16 +816,30 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
 
         // Dynamic WP fallback for DeepTau2018v2p5VSjet:
         // Current 2022/2023 tau POG JSONs provide only 'Medium' WP, while 2024 has 'Loose', 'Medium', 'Tight', 'VTight'.
-        // If the requested WP (e.g. 'VTight') is not present in the JSON, probe throws and we fall back to 'Medium'.
-        // When an updated JSON containing 'VTight' is provided, the probe will succeed and 'VTight' will automatically be used.
+        // If the requested WP (e.g. 'VTight') is not present in the JSON, probe throws.
+        // For 2022/2023, this is an expected official limitation of the central Tau POG release, so we fall back to 'Medium'.
+        // For 2024 (or if 'Medium' also fails), an explicit [ERROR] is thrown per Principle 4.
         std::string active_tauid_vsjet = tauid_vsjet;
         try {
             _tauidSFjet->evaluate({40.0, 0, 5, active_tauid_vsjet, tauid_vse, "nom", "dm"});
             std::cout << "[INFO] DeepTau2018v2p5VSjet: successfully loaded requested WP '" << active_tauid_vsjet << "'" << std::endl;
         } catch (const std::exception& e) {
-            std::cout << "[WARN] DeepTau2018v2p5VSjet: requested WP '" << active_tauid_vsjet
-                      << "' not available in " << tauFolder << " (" << e.what() << "). Falling back to 'Medium'." << std::endl;
-            active_tauid_vsjet = "Medium";
+            if (tauYear != "2024") {
+                std::cout << "[INFO] DeepTau2018v2p5VSjet: requested WP '" << active_tauid_vsjet
+                          << "' not provided in central " << tauFolder << " release (only 'Medium' is available). "
+                          << "Using 'Medium' SF per Tau POG recommendation." << std::endl;
+                active_tauid_vsjet = "Medium";
+                try {
+                    _tauidSFjet->evaluate({40.0, 0, 5, active_tauid_vsjet, tauid_vse, "nom", "dm"});
+                } catch (const std::exception& e2) {
+                    std::cerr << "[ERROR] DeepTau2018v2p5VSjet: fallback 'Medium' WP also failed in " << tauFolder << ": " << e2.what() << std::endl;
+                    throw std::runtime_error("DeepTau2018v2p5VSjet failed for fallback Medium WP in " + tauFolder + ": " + e2.what());
+                }
+            } else {
+                std::cerr << "[ERROR] DeepTau2018v2p5VSjet: requested WP '" << active_tauid_vsjet
+                          << "' failed in " << tauFolder << ": " << e.what() << std::endl;
+                throw std::runtime_error("DeepTau2018v2p5VSjet failed for requested WP " + active_tauid_vsjet + " in " + tauFolder + ": " + e.what());
+            }
         }
 
         std::vector<std::string> systNamesVsJet = {
@@ -667,7 +866,27 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         };
         const size_t nSystVsJet = systNamesVsJet.size(); // 39
 
-        auto tauSFIdVsJet = [this, _tauidSFjet, active_tauid_vsjet, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
+        // [TAU-02] 2024_Summer24 DeepTau2018v2p5VSjet (flag="dm") schema:
+        //   2022/2023: per-DM TFormula with decomposed keys (stat1/stat2_dm*, syst_alleras, syst_<era>, syst_TES_<era>_dm*) + 'default'.
+        //   2024     : per-DM pT-binned [20,40,60,200] constants with ONLY 'nom', 'up', 'down' (no decomposed keys, no 'default').
+        // For 2024, only 'nom'/'up'/'down' are evaluated. [TAU-01] option A-1: the DM-binned 2024 up/down is routed into the
+        // matching stat1_dm<DM> slot (DM 0 -> [3,4], 1 -> [5,6], 10 -> [7,8], 11 -> [9,10]) so that the 4 DMs are treated
+        // as uncorrelated nuisances (tauidjetStat1dm{0,1,10,11}2024). All other decomposed slots stay at nom_sf in 2024.
+        const bool isVsJetSchema2024 = (tauYear == "2024");
+        std::cout << "[INFO] DeepTau2018v2p5VSjet: " << (isVsJetSchema2024
+                      ? "2024 schema (nom/up/down per DM -> stat1_dm<DM> slots)"
+                      : "2022/2023 schema (decomposed DM-binned sub-sources)") << std::endl;
+
+        // [TAU-01/02] Map HPS decay mode -> first index of its stat1_dm<DM> up/down slot in systNamesVsJet.
+        auto stat1SlotForDM = [](int dmv) -> int {
+            if (dmv == 0)  return 3;
+            if (dmv == 1)  return 5;
+            if (dmv == 10) return 7;
+            if (dmv == 11) return 9;
+            return -1;
+        };
+
+        auto tauSFIdVsJet = [this, _tauidSFjet, active_tauid_vsjet, tauid_vse, systNamesVsJet, nSystVsJet, isVsJetSchema2024, stat1SlotForDM](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
             // CMS tau POG: DeepTauVSjet SF applies ONLY to real hadronic taus (genmatch==5).
             floats uncSources;
             uncSources.reserve(nSystVsJet);
@@ -679,23 +898,59 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                 for (size_t i=0; i<n; i++) {
                     int gm = int(genmatch[i]);
                     if (gm == 5) {  // real hadronic tau only
+                        int dm_val = int(dm[i]);
+                        // [TAU-03] CMS Tau POG DeepTau2018v2p5 only supports HPS decay modes 0, 1, 10, 11.
+                        if (dm_val != 0 && dm_val != 1 && dm_val != 10 && dm_val != 11) {
+                            std::cerr << "[ERROR] tauSFIdVsJet: unsupported decay mode dm=" << dm_val
+                                      << " for genmatch=5 (expected 0, 1, 10, 11; pt=" << pt[i] << ")" << std::endl;
+                            throw std::runtime_error("tauSFIdVsJet: unsupported decay mode dm=" + std::to_string(dm_val));
+                        }
                         float nom_sf = 1.0f;
                         try {
-                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet, tauid_vse, "nom", "dm"});
+                            nom_sf = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet, tauid_vse, "nom", "dm"});
                         } catch (const std::exception &e) {
+                            std::cerr << "[ERROR] tauSFIdVsJet evaluate failed (pt=" << pt[i] << ", dm=" << dm_val
+                                      << ", gm=" << gm << ", vsjet=" << active_tauid_vsjet << ", vse=" << tauid_vse << "): " << e.what() << std::endl;
                             throw std::runtime_error("tauSFIdVsJet evaluate failed (pt=" + std::to_string(pt[i]) +
-                                                     ", dm=" + std::to_string(int(dm[i])) + ", gm=" + std::to_string(gm) +
+                                                     ", dm=" + std::to_string(dm_val) + ", gm=" + std::to_string(gm) +
                                                      ", vsjet=" + active_tauid_vsjet + ", vse=" + tauid_vse + "): " + e.what());
                         }
                         uncSources.assign(nSystVsJet, nom_sf);
                         uncSources[0] = nom_sf;
 
+                        if (isVsJetSchema2024) {
+                            // [TAU-02] 2024: JSON provides only 'nom'/'up'/'down' per (DM, pT bin).
+                            float up_sf = nom_sf, dn_sf = nom_sf;
+                            try {
+                                up_sf = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet, tauid_vse, "up",   "dm"});
+                                dn_sf = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet, tauid_vse, "down", "dm"});
+                            } catch (const std::exception &e) {
+                                std::cerr << "[ERROR] tauSFIdVsJet (2024) evaluate failed for up/down (pt=" << pt[i]
+                                          << ", dm=" << dm_val << ", gm=" << gm << "): " << e.what() << std::endl;
+                                throw std::runtime_error("tauSFIdVsJet (2024) evaluate failed for up/down (pt=" + std::to_string(pt[i]) +
+                                                         ", dm=" + std::to_string(dm_val) + ", gm=" + std::to_string(gm) + "): " + e.what());
+                            }
+                            // Inclusive up/down (indices 1, 2) = native 2024 POG total variation.
+                            uncSources[1] = up_sf;
+                            uncSources[2] = dn_sf;
+                            // [TAU-01] option A-1: route into the DM-specific stat1_dm<DM> slot.
+                            const int slot = stat1SlotForDM(dm_val);
+                            if (slot < 0) {
+                                std::cerr << "[ERROR] tauSFIdVsJet (2024): unsupported decay mode dm=" << dm_val
+                                          << " (expected 0, 1, 10, 11)" << std::endl;
+                                throw std::runtime_error("tauSFIdVsJet (2024): unsupported decay mode dm=" + std::to_string(dm_val));
+                            }
+                            uncSources[slot]     = up_sf;
+                            uncSources[slot + 1] = dn_sf;
+                        } else {
                         for (size_t s = 1; s < nSystVsJet; ++s) {
                             try {
-                                uncSources[s] = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet, tauid_vse, systNamesVsJet[s], "dm"});
+                                uncSources[s] = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet, tauid_vse, systNamesVsJet[s], "dm"});
                             } catch (const std::exception &e) {
+                                std::cerr << "[ERROR] tauSFIdVsJet evaluate failed for systematic '" << systNamesVsJet[s]
+                                          << "' (pt=" << pt[i] << ", dm=" << dm_val << ", gm=" << gm << "): " << e.what() << std::endl;
                                 throw std::runtime_error("tauSFIdVsJet evaluate failed for systematic '" + systNamesVsJet[s] +
-                                                         "' (pt=" + std::to_string(pt[i]) + ", dm=" + std::to_string(int(dm[i])) +
+                                                         "' (pt=" + std::to_string(pt[i]) + ", dm=" + std::to_string(dm_val) +
                                                          ", gm=" + std::to_string(gm) + "): " + e.what());
                             }
                         }
@@ -716,6 +971,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                             uncSources[1] = nom_sf + std::sqrt(sum_sq_up);
                             uncSources[2] = nom_sf - std::sqrt(sum_sq_dn);
                         }
+                        } // end 2022/2023 schema
                     } else {
                         // SF = 1.0 for non-real-tau objects (jets, electrons, muons faking tau)
                         uncSources.assign(nSystVsJet, 1.0f);
@@ -745,13 +1001,22 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                 for (size_t i=0; i<n; i++) {
                     int gm = int(genmatch[i]);
                     if (gm == 1 || gm == 3) {  // prompt e or tau→e
+                        int dm_val = int(dm[i]);
+                        // [TAU-03] CMS Tau POG DeepTau2018v2p5 only supports HPS decay modes 0, 1, 10, 11.
+                        if (dm_val != 0 && dm_val != 1 && dm_val != 10 && dm_val != 11) {
+                            std::cerr << "[ERROR] tauSFIdVsEl: unsupported decay mode dm=" << dm_val
+                                      << " for genmatch=" << gm << " (expected 0, 1, 10, 11; eta=" << eta[i] << ")" << std::endl;
+                            throw std::runtime_error("tauSFIdVsEl: unsupported decay mode dm=" + std::to_string(dm_val));
+                        }
                         try {
-                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "nom"}));
-                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "up"}));
-                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], int(dm[i]), gm, tauid_vse, "down"}));
+                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], dm_val, gm, tauid_vse, "nom"}));
+                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], dm_val, gm, tauid_vse, "up"}));
+                            uncSources.emplace_back(_tauidSFele->evaluate({eta[i], dm_val, gm, tauid_vse, "down"}));
                         } catch (const std::exception &e) {
+                            std::cerr << "[ERROR] tauSFIdVsEl evaluate failed (eta=" << eta[i] << " dm=" << dm_val
+                                      << " gm=" << gm << " vse=" << tauid_vse << "): " << e.what() << std::endl;
                             throw std::runtime_error("tauSFIdVsEl evaluate failed (eta=" + std::to_string(eta[i]) +
-                                                     " dm=" + std::to_string(int(dm[i])) + " gm=" + std::to_string(gm) + "): " + e.what());
+                                                     " dm=" + std::to_string(dm_val) + " gm=" + std::to_string(gm) + "): " + e.what());
                         }
                     } else {
                         uncSources.assign(3, 1.0f);
@@ -771,7 +1036,15 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
         // 2024:     [eta, genmatch, wp, wp_VSe, wp_VSjet, syst]    → 6 inputs
         const bool isVsMuSchema6 = (_tauidSFmu->inputs().size() == 6);
         std::string tauid_vsjet_for_vsmu = (tauid_vsjet == "VTight" || tauid_vsjet == "VVTight") ? "Tight" : tauid_vsjet;
-        auto tauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet_for_vsmu, isVsMuSchema6](floats &eta, uchars &genmatch)->floatsVec {
+        // [TAU-02] Loose-tau (FF, VSjet >= Loose) wp_VSjet for the 2024 6-input VSmu schema.
+        // 2024 JSON: wp(VSmu)=VLoose/Tight -> wp_VSjet in {Loose, Medium, Tight}; wp(VSmu)=Loose/Medium -> wp_VSjet = Medium only.
+        std::string tauid_vsjet_for_vsmu_loose = (tauid_vsmu == "Loose" || tauid_vsmu == "Medium") ? "Medium" : "Loose";
+        if (isVsMuSchema6) {
+            std::cout << "[INFO] DeepTau2018v2p5VSmu (6-input schema): wp_VSjet tight='" << tauid_vsjet_for_vsmu
+                      << "', loose='" << tauid_vsjet_for_vsmu_loose << "'" << std::endl;
+        }
+        auto makeTauSFIdVsMu = [this, _tauidSFmu, tauid_vsmu, tauid_vse, isVsMuSchema6](const std::string tauid_vsjet_for_vsmu) {
+        return [this, _tauidSFmu, tauid_vsmu, tauid_vse, tauid_vsjet_for_vsmu, isVsMuSchema6](floats &eta, uchars &genmatch)->floatsVec {
             // CMS tau POG: DeepTauVSmu SF applies to muons faking tau:
             //   genmatch=2 (prompt μ), genmatch=4 (tau→μ).
             // Other genmatch values are not in the JSON → exception.
@@ -796,6 +1069,9 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                                 uncSources.emplace_back(_tauidSFmu->evaluate({eta[i], gm, tauid_vsmu, "down"}));
                             }
                         } catch (const std::exception &e) {
+                            std::cerr << "[ERROR] tauSFIdVsMu evaluate failed (eta=" << eta[i] << " gm=" << gm << " vsmu=" << tauid_vsmu
+                                      << (isVsMuSchema6 ? (" vse=" + tauid_vse + " vsjet=" + tauid_vsjet_for_vsmu) : std::string(""))
+                                      << "): " << e.what() << std::endl;
                             throw std::runtime_error("tauSFIdVsMu evaluate failed (eta=" + std::to_string(eta[i]) +
                                                      " gm=" + std::to_string(gm) + "): " + e.what());
                         }
@@ -810,6 +1086,9 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             }
             return wVec;
         };
+        };
+        auto tauSFIdVsMu       = makeTauSFIdVsMu(tauid_vsjet_for_vsmu);
+        auto tauSFIdVsMu_loose = makeTauSFIdVsMu(tauid_vsjet_for_vsmu_loose);
 
 
         // ---------------------------------------------------------------
@@ -841,12 +1120,25 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
             _tauidSFjet->evaluate({40.0, 0, 5, active_tauid_vsjet_loose, tauid_vse, "nom", "dm"});
             std::cout << "[INFO] DeepTau2018v2p5VSjet (loose): successfully loaded requested WP '" << active_tauid_vsjet_loose << "'" << std::endl;
         } catch (const std::exception& e) {
-            std::cout << "[WARN] DeepTau2018v2p5VSjet (loose): requested WP '" << active_tauid_vsjet_loose
-                      << "' not available in " << tauFolder << " (" << e.what() << "). Falling back to 'Medium'." << std::endl;
-            active_tauid_vsjet_loose = "Medium";
+            if (tauYear != "2024") {
+                std::cout << "[INFO] DeepTau2018v2p5VSjet (loose): requested WP '" << active_tauid_vsjet_loose
+                          << "' not provided in central " << tauFolder << " release (only 'Medium' is available). "
+                          << "Using 'Medium' SF per Tau POG recommendation." << std::endl;
+                active_tauid_vsjet_loose = "Medium";
+                try {
+                    _tauidSFjet->evaluate({40.0, 0, 5, active_tauid_vsjet_loose, tauid_vse, "nom", "dm"});
+                } catch (const std::exception& e2) {
+                    std::cerr << "[ERROR] DeepTau2018v2p5VSjet (loose): fallback 'Medium' WP also failed in " << tauFolder << ": " << e2.what() << std::endl;
+                    throw std::runtime_error("DeepTau2018v2p5VSjet (loose) failed for fallback Medium WP in " + tauFolder + ": " + e2.what());
+                }
+            } else {
+                std::cerr << "[ERROR] DeepTau2018v2p5VSjet (loose): requested WP '" << active_tauid_vsjet_loose
+                          << "' failed in " << tauFolder << ": " << e.what() << std::endl;
+                throw std::runtime_error("DeepTau2018v2p5VSjet (loose) failed for requested WP " + active_tauid_vsjet_loose + " in " + tauFolder + ": " + e.what());
+            }
         }
 
-        auto tauSFIdVsJet_loose = [this, _tauidSFjet, active_tauid_vsjet_loose, tauid_vse, systNamesVsJet, nSystVsJet](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
+        auto tauSFIdVsJet_loose = [this, _tauidSFjet, active_tauid_vsjet_loose, tauid_vse, systNamesVsJet, nSystVsJet, isVsJetSchema2024, stat1SlotForDM](floats &pt, uchars &dm, uchars &genmatch)->floatsVec {
             floats uncSources;
             uncSources.reserve(nSystVsJet);
             floatsVec wVec;
@@ -856,24 +1148,59 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                 for (size_t i=0; i<n; i++) {
                     int gm = int(genmatch[i]);
                     if (gm == 5) {
+                        int dm_val = int(dm[i]);
+                        // [TAU-03] CMS Tau POG DeepTau2018v2p5 only supports HPS decay modes 0, 1, 10, 11.
+                        if (dm_val != 0 && dm_val != 1 && dm_val != 10 && dm_val != 11) {
+                            std::cerr << "[ERROR] tauSFIdVsJetLoose: unsupported decay mode dm=" << dm_val
+                                      << " for genmatch=5 (expected 0, 1, 10, 11; pt=" << pt[i] << ")" << std::endl;
+                            throw std::runtime_error("tauSFIdVsJetLoose: unsupported decay mode dm=" + std::to_string(dm_val));
+                        }
                         float nom_sf = 1.0f;
                         try {
-                            nom_sf = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet_loose, tauid_vse, "nom", "dm"});
+                            nom_sf = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet_loose, tauid_vse, "nom", "dm"});
                         } catch (const std::exception &e) {
+                            std::cerr << "[ERROR] tauSFIdVsJetLoose evaluate failed (pt=" << pt[i] << ", dm=" << dm_val
+                                      << ", gm=" << gm << ", vsjet=" << active_tauid_vsjet_loose << ", vse=" << tauid_vse << "): " << e.what() << std::endl;
                             throw std::runtime_error("tauSFIdVsJetLoose evaluate failed (pt=" + std::to_string(pt[i]) +
-                                                     ", dm=" + std::to_string(int(dm[i])) + ", gm=" + std::to_string(gm) +
+                                                     ", dm=" + std::to_string(dm_val) + ", gm=" + std::to_string(gm) +
                                                      ", vsjet=" + active_tauid_vsjet_loose + ", vse=" + tauid_vse + "): " + e.what());
                         }
 
                         uncSources.assign(nSystVsJet, nom_sf);
                         uncSources[0] = nom_sf;
 
+                        if (isVsJetSchema2024) {
+                            // [TAU-02] 2024: JSON provides only 'nom'/'up'/'down' per (DM, pT bin).
+                            float up_sf = nom_sf, dn_sf = nom_sf;
+                            try {
+                                up_sf = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet_loose, tauid_vse, "up",   "dm"});
+                                dn_sf = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet_loose, tauid_vse, "down", "dm"});
+                            } catch (const std::exception &e) {
+                                std::cerr << "[ERROR] tauSFIdVsJetLoose (2024) evaluate failed for up/down (pt=" << pt[i]
+                                          << ", dm=" << dm_val << ", gm=" << gm << "): " << e.what() << std::endl;
+                                throw std::runtime_error("tauSFIdVsJetLoose (2024) evaluate failed for up/down (pt=" + std::to_string(pt[i]) +
+                                                         ", dm=" + std::to_string(dm_val) + ", gm=" + std::to_string(gm) + "): " + e.what());
+                            }
+                            uncSources[1] = up_sf;
+                            uncSources[2] = dn_sf;
+                            // [TAU-01] option A-1: route into the DM-specific stat1_dm<DM> slot.
+                            const int slot = stat1SlotForDM(dm_val);
+                            if (slot < 0) {
+                                std::cerr << "[ERROR] tauSFIdVsJetLoose (2024): unsupported decay mode dm=" << dm_val
+                                          << " (expected 0, 1, 10, 11)" << std::endl;
+                                throw std::runtime_error("tauSFIdVsJetLoose (2024): unsupported decay mode dm=" + std::to_string(dm_val));
+                            }
+                            uncSources[slot]     = up_sf;
+                            uncSources[slot + 1] = dn_sf;
+                        } else {
                         for (size_t s = 1; s < nSystVsJet; ++s) {
                             try {
-                                uncSources[s] = _tauidSFjet->evaluate({pt[i], int(dm[i]), gm, active_tauid_vsjet_loose, tauid_vse, systNamesVsJet[s], "dm"});
+                                uncSources[s] = _tauidSFjet->evaluate({pt[i], dm_val, gm, active_tauid_vsjet_loose, tauid_vse, systNamesVsJet[s], "dm"});
                             } catch (const std::exception &e) {
+                                std::cerr << "[ERROR] tauSFIdVsJetLoose evaluate failed for systematic '" << systNamesVsJet[s]
+                                          << "' (pt=" << pt[i] << ", dm=" << dm_val << ", gm=" << gm << "): " << e.what() << std::endl;
                                 throw std::runtime_error("tauSFIdVsJetLoose evaluate failed for systematic '" + systNamesVsJet[s] +
-                                                         "' (pt=" + std::to_string(pt[i]) + ", dm=" + std::to_string(int(dm[i])) +
+                                                         "' (pt=" + std::to_string(pt[i]) + ", dm=" + std::to_string(dm_val) +
                                                          ", gm=" + std::to_string(gm) + "): " + e.what());
                             }
                         }
@@ -890,6 +1217,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                             uncSources[1] = nom_sf + std::sqrt(sum_sq_up);
                             uncSources[2] = nom_sf - std::sqrt(sum_sq_dn);
                         }
+                        } // end 2022/2023 schema
                     } else {
                         uncSources.assign(nSystVsJet, 1.0f);
                     }
@@ -906,7 +1234,7 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
                             {"Tau_pt_loose","Tau_decayMode_loose","Tau_genPartFlav_loose"})
                    .Define("tauWeightIdVsEl_loose",  tauSFIdVsEl,
                             {"Tau_eta_loose","Tau_decayMode_loose","Tau_genPartFlav_loose"})
-                   .Define("tauWeightIdVsMu_loose",  tauSFIdVsMu,
+                   .Define("tauWeightIdVsMu_loose",  tauSFIdVsMu_loose,
                             {"Tau_eta_loose","Tau_genPartFlav_loose"});
 
         _rlm = _rlm.Define("taugencut_loose","Tau_genPartFlav_loose == 5")
@@ -914,9 +1242,360 @@ void NanoAODAnalyzerrdframe::selectTaus(string cut, string tauYear, string vsjet
     }
 }
 
-void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut) {
+void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
     //https://twiki.cern.ch/twiki/bin/view/CMS/JetID13p6TeV
     //nanoAOD Flags
+
+    // -------------------------------------------------------------------------
+    // JES Systematic 4-Vector Variation & Type-1 MET Propagation (MC only)
+    // Applied before jetcuts (Jet_pt > 40 GeV) so jets in the skim buffer zone
+    // (30 < Jet_pt < 40 GeV) can properly migrate into/out of the selection.
+    // -------------------------------------------------------------------------
+    if (!_isData && _syst.find("jes") != std::string::npos) {
+        std::string jecFile   = "";
+        std::string jecPrefix = "";
+        std::string eraTag    = "";
+        if (_isRun22) {
+            jecFile   = "2022_Summer22";
+            jecPrefix = "Summer22_22Sep2023_V4_MC_";
+            eraTag    = "2022";
+        } else if (_isRun22EE) {
+            jecFile   = "2022_Summer22EE";
+            jecPrefix = "Summer22EE_22Sep2023_V4_MC_";
+            eraTag    = "2022EE";
+        } else if (_isRun23) {
+            jecFile   = "2023_Summer23";
+            jecPrefix = "Summer23Prompt23_V4_MC_";
+            eraTag    = "2023";
+        } else if (_isRun23BPix) {
+            jecFile   = "2023_Summer23BPix";
+            jecPrefix = "Summer23BPixPrompt23_V4_MC_";
+            eraTag    = "2023BPix";
+        } else if (_isRun24) {
+            jecFile   = "2024_Summer24";
+            jecPrefix = "Summer24Prompt24_V5_MC_";
+            eraTag    = "2024";
+        }
+
+        std::string systClean = _syst;
+        while (systClean.rfind("__", 0) == 0) {
+            systClean = systClean.substr(2);
+        }
+
+        float jesDir = 0.0f;
+        std::string jesBase = systClean;
+        if (jesBase.size() >= 2 && jesBase.substr(jesBase.size() - 2) == "up") {
+            jesDir  = +1.0f;
+            jesBase = jesBase.substr(0, jesBase.size() - 2);
+        } else if (jesBase.size() >= 4 && jesBase.substr(jesBase.size() - 4) == "down") {
+            jesDir  = -1.0f;
+            jesBase = jesBase.substr(0, jesBase.size() - 4);
+        }
+
+        std::string srcName = jesBase;
+        if (srcName.rfind("jes", 0) == 0) {
+            srcName = srcName.substr(3);
+        }
+        for (const std::string &vtag : {"_v12_", "_v15_"}) {
+            size_t vpos = srcName.find(vtag);
+            if (vpos != std::string::npos) {
+                srcName.erase(vpos, vtag.size());
+            }
+        }
+        if (srcName.empty()) {
+            srcName = "Total";
+        }
+
+        // flavMode: 0 = all jets (Regrouped_*), 1 = Gluon (21 or 0),
+        //           2 = Light Quark (1, 2, 3), 3 = Charm (4), 4 = Bottom (5)
+        int flavMode = 0;
+        std::string corrKey = "";
+        if (srcName.rfind("FlavorPure", 0) == 0) {
+            corrKey = jecPrefix + srcName + "_AK4PFPuppi";
+            if      (srcName == "FlavorPureGluon")  flavMode = 1;
+            else if (srcName == "FlavorPureQuark")  flavMode = 2;
+            else if (srcName == "FlavorPureCharm")  flavMode = 3;
+            else if (srcName == "FlavorPureBottom") flavMode = 4;
+        } else {
+            size_t yearPos = srcName.find("_20");
+            if (yearPos != std::string::npos) {
+                std::string comp = srcName.substr(0, yearPos);
+                corrKey = jecPrefix + "Regrouped_" + comp + "_" + eraTag + "_AK4PFPuppi";
+            } else {
+                corrKey = jecPrefix + "Regrouped_" + srcName + "_AK4PFPuppi";
+            }
+        }
+
+        if (!jecFile.empty() && jesDir != 0.0f) {
+            std::string jercPath = "data/JME/" + jecFile + "/jet_jerc.json.gz";
+            std::cout << "[JES] Applying " << _syst << " -> key=" << corrKey
+                      << " from " << jercPath << " (dir=" << (jesDir > 0.0f ? "+1" : "-1") << ")" << std::endl;
+            auto jercReader = loadCorrectionSet(jercPath);
+            Correction::Ref _jesUnc;
+            try {
+                _jesUnc = jercReader->at(corrKey);
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] JES correction key '" << corrKey << "' not found in " << jercPath << ": " << e.what() << std::endl;
+                throw std::runtime_error("[ERROR] JES correction key '" + corrKey + "' not found in " + jercPath + ": " + e.what());
+            }
+
+            if (flavMode == 0) {
+                auto calcJesScale = [_jesUnc, jesDir, corrKey](const floats &pts, const floats &etas) -> floats {
+                    floats scales;
+                    scales.reserve(pts.size());
+                    for (size_t i = 0; i < pts.size(); i++) {
+                        float unc = 0.0f;
+                        try {
+                            unc = _jesUnc->evaluate({etas[i], pts[i]});
+                        } catch (const std::exception &e) {
+                            std::cerr << "[ERROR] JES unc evaluate failed for key '" << corrKey
+                                      << "' (eta=" << etas[i] << ", pt=" << pts[i] << "): " << e.what() << std::endl;
+                            throw;
+                        }
+                        float scale = std::max(0.0f, 1.0f + jesDir * unc);
+                        scales.emplace_back(scale);
+                    }
+                    return scales;
+                };
+                _rlm = _rlm.Define("Jet_jes_scale", calcJesScale, {"Jet_pt", "Jet_eta"});
+            } else {
+                // Cast flavor/index columns to int (RVec<int>) for uniform v9/v12/v15 compatibility
+                const std::string partFlavExpr = isDefined("Jet_partonFlavour")
+                    ? "ROOT::VecOps::Cast<int>(Jet_partonFlavour)" : "ROOT::VecOps::RVec<int>{}";
+                const std::string genIdxExpr = isDefined("Jet_genJetIdx")
+                    ? "ROOT::VecOps::Cast<int>(Jet_genJetIdx)" : "ROOT::VecOps::RVec<int>{}";
+                const std::string genPartFlavExpr = isDefined("GenJet_partonFlavour")
+                    ? "ROOT::VecOps::Cast<int>(GenJet_partonFlavour)" : "ROOT::VecOps::RVec<int>{}";
+                const std::string hadFlavExpr = isDefined("Jet_hadronFlavour")
+                    ? "ROOT::VecOps::Cast<int>(Jet_hadronFlavour)" : "ROOT::VecOps::RVec<int>{}";
+
+                _rlm = _rlm.Define("Jet_partonFlavour_jes_i",    partFlavExpr)
+                           .Define("Jet_genJetIdx_jes_i",        genIdxExpr)
+                           .Define("GenJet_partonFlavour_jes_i", genPartFlavExpr)
+                           .Define("Jet_hadronFlavour_jes_i",    hadFlavExpr);
+
+                auto calcJesScaleFlav = [_jesUnc, jesDir, flavMode, corrKey](const floats &pts, const floats &etas,
+                                                                    const ints &partflavs, const ints &genIdxs,
+                                                                    const ints &genPartflavs, const ints &hadflavs) -> floats {
+                    floats scales;
+                    scales.reserve(pts.size());
+                    const bool alignedPartFlav = (partflavs.size() == pts.size());
+                    for (size_t i = 0; i < pts.size(); i++) {
+                        int pf = 0;
+                        if (alignedPartFlav) {
+                            pf = std::abs(partflavs[i]);
+                        } else if (i < genIdxs.size() && genIdxs[i] >= 0 && static_cast<size_t>(genIdxs[i]) < genPartflavs.size()) {
+                            pf = std::abs(genPartflavs[genIdxs[i]]);
+                        } else if (i < hadflavs.size() && (std::abs(hadflavs[i]) == 5 || std::abs(hadflavs[i]) == 4)) {
+                            pf = std::abs(hadflavs[i]);
+                        }
+
+                        bool isTargetFlav = false;
+                        // Order matches Run 2 JME POG definition: Gluon / Quark / Charm / Bottom
+                        if      (flavMode == 1 && (pf == 21 || pf == 0))           isTargetFlav = true;
+                        else if (flavMode == 2 && (pf == 1 || pf == 2 || pf == 3)) isTargetFlav = true;
+                        else if (flavMode == 3 && (pf == 4))                       isTargetFlav = true;
+                        else if (flavMode == 4 && (pf == 5))                       isTargetFlav = true;
+
+                        if (isTargetFlav) {
+                            float unc = 0.0f;
+                            try {
+                                unc = _jesUnc->evaluate({etas[i], pts[i]});
+                            } catch (const std::exception &e) {
+                                std::cerr << "[ERROR] JES flav unc evaluate failed for key '" << corrKey
+                                          << "' (eta=" << etas[i] << ", pt=" << pts[i] << "): " << e.what() << std::endl;
+                                throw;
+                            }
+                            float scale = std::max(0.0f, 1.0f + jesDir * unc);
+                            scales.emplace_back(scale);
+                        } else {
+                            scales.emplace_back(1.0f);
+                        }
+                    }
+                    return scales;
+                };
+
+                _rlm = _rlm.Define("Jet_jes_scale", calcJesScaleFlav,
+                                   {"Jet_pt", "Jet_eta", "Jet_partonFlavour_jes_i",
+                                    "Jet_genJetIdx_jes_i", "GenJet_partonFlavour_jes_i", "Jet_hadronFlavour_jes_i"});
+            }
+
+            _rlm = _rlm.Define("Jet_pt_jes_shifted",   "Jet_pt * Jet_jes_scale")
+                       .Define("Jet_mass_jes_shifted", "Jet_mass * Jet_jes_scale");
+
+            auto jesMetPt = [](const floats &pts_orig, const floats &pts_shifted, const floats &phis, float met_pt, float met_phi) -> float {
+                double metx = met_pt * std::cos(met_phi);
+                double mety = met_pt * std::sin(met_phi);
+                for (size_t i = 0; i < pts_orig.size(); i++) {
+                    if (pts_orig[i] > 15.0f || pts_shifted[i] > 15.0f) {
+                        double dpt = static_cast<double>(pts_shifted[i]) - static_cast<double>(pts_orig[i]);
+                        metx -= dpt * std::cos(phis[i]);
+                        mety -= dpt * std::sin(phis[i]);
+                    }
+                }
+                return static_cast<float>(std::sqrt(metx * metx + mety * mety));
+            };
+
+            auto jesMetPhi = [](const floats &pts_orig, const floats &pts_shifted, const floats &phis, float met_pt, float met_phi) -> float {
+                double metx = met_pt * std::cos(met_phi);
+                double mety = met_pt * std::sin(met_phi);
+                for (size_t i = 0; i < pts_orig.size(); i++) {
+                    if (pts_orig[i] > 15.0f || pts_shifted[i] > 15.0f) {
+                        double dpt = static_cast<double>(pts_shifted[i]) - static_cast<double>(pts_orig[i]);
+                        metx -= dpt * std::cos(phis[i]);
+                        mety -= dpt * std::sin(phis[i]);
+                    }
+                }
+                return static_cast<float>(std::atan2(mety, metx));
+            };
+
+            _rlm = _rlm.Define("PuppiMET_pt_jes_uncorr",  "PuppiMET_pt")
+                       .Define("PuppiMET_phi_jes_uncorr", "PuppiMET_phi")
+                       .Redefine("PuppiMET_phi", jesMetPhi, {"Jet_pt", "Jet_pt_jes_shifted", "Jet_phi", "PuppiMET_pt_jes_uncorr", "PuppiMET_phi_jes_uncorr"})
+                       .Redefine("PuppiMET_pt",  jesMetPt,  {"Jet_pt", "Jet_pt_jes_shifted", "Jet_phi", "PuppiMET_pt_jes_uncorr", "PuppiMET_phi_jes_uncorr"});
+
+            if (isDefined("MET_pt") && isDefined("MET_phi")) {
+                _rlm = _rlm.Define("MET_pt_jes_uncorr",  "MET_pt")
+                           .Define("MET_phi_jes_uncorr", "MET_phi")
+                           .Redefine("MET_phi", jesMetPhi, {"Jet_pt", "Jet_pt_jes_shifted", "Jet_phi", "MET_pt_jes_uncorr", "MET_phi_jes_uncorr"})
+                           .Redefine("MET_pt",  jesMetPt,  {"Jet_pt", "Jet_pt_jes_shifted", "Jet_phi", "MET_pt_jes_uncorr", "MET_phi_jes_uncorr"});
+            }
+
+            _rlm = _rlm.Redefine("Jet_pt",   "Jet_pt_jes_shifted")
+                       .Redefine("Jet_mass", "Jet_mass_jes_shifted");
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // JER Systematic 4-Vector Variation & Type-1 MET Propagation (MC only)
+    // Uses relative ratio c_JER(s_var) / c_JER(s_nom) on top of skimmed jets
+    // before jetcuts (Jet_pt > 40 GeV) so jets in the skim buffer zone
+    // (30 < Jet_pt < 40 GeV) can properly migrate into/out of the selection.
+    // -------------------------------------------------------------------------
+    if (!_isData && _syst.find("jer") != std::string::npos) {
+        std::string jecFile   = "";
+        std::string jerPrefix = "";
+        if (_isRun22) {
+            jecFile   = "2022_Summer22";
+            jerPrefix = "Summer22_22Sep2023_JRV2";
+        } else if (_isRun22EE) {
+            jecFile   = "2022_Summer22EE";
+            jerPrefix = "Summer22EE_22Sep2023_JRV2";
+        } else if (_isRun23) {
+            jecFile   = "2023_Summer23";
+            jerPrefix = "Summer23Prompt23_RunCv1234_JRV3";
+        } else if (_isRun23BPix) {
+            jecFile   = "2023_Summer23BPix";
+            jerPrefix = "Summer23BPixPrompt23_RunD_JRV3";
+        } else if (_isRun24) {
+            jecFile   = "2024_Summer24";
+            jerPrefix = "Summer24Prompt24_JRV2";
+        }
+
+        float jerDir = 0.0f;
+        if (_syst.find("jerup") != std::string::npos) {
+            jerDir = +1.0f;
+        } else if (_syst.find("jerdown") != std::string::npos) {
+            jerDir = -1.0f;
+        }
+
+        if (!jecFile.empty() && jerDir != 0.0f) {
+            std::string jercPath = "data/JME/" + jecFile + "/jet_jerc.json.gz";
+            std::cout << "[JER] Applying " << _syst << " -> prefix=" << jerPrefix
+                      << " from " << jercPath << " (dir=" << (jerDir > 0.0f ? "+1" : "-1") << ")" << std::endl;
+            auto jercReader = loadCorrectionSet(jercPath);
+            auto _jerReso   = jercReader->at(jerPrefix + "_MC_PtResolution_AK4PFPuppi");
+            auto _jerSF     = jercReader->at(jerPrefix + "_MC_ScaleFactor_AK4PFPuppi");
+            auto _jerUnc    = jercReader->at(jerPrefix + "_MC_SFUncertainty_AK4PFPuppi");
+            auto jerReader  = loadCorrectionSet("data/JME/jer_smear.json.gz");
+            auto _jerSmear  = jerReader->at("JERSmear");
+
+            _rlm = _rlm.Define("Jet_genJetIdx_jer_i", "ROOT::VecOps::Cast<int>(Jet_genJetIdx)");
+
+            auto calcJerScale = [_jerReso, _jerSF, _jerUnc, _jerSmear, jerDir](
+                                    const floats &pts, const floats &etas, const floats &phis,
+                                    const ints &genidxs, const floats &genpts,
+                                    const floats &genetas, const floats &genphis,
+                                    float rho, ULong64_t event) -> floats {
+                floats scales;
+                scales.reserve(pts.size());
+                for (size_t i = 0; i < pts.size(); i++) {
+                    float reso   = _jerReso->evaluate({etas[i], pts[i], rho});
+                    float sf_nom = _jerSF->evaluate({etas[i], pts[i]});
+                    float sf_unc = _jerUnc->evaluate({etas[i], pts[i]});
+                    float sf_var = std::max(0.0f, sf_nom + jerDir * sf_unc);
+
+                    float genPtForSmear = -1.0f;
+                    int genidx = (i < genidxs.size()) ? genidxs[i] : -1;
+                    if (genidx >= 0 && static_cast<size_t>(genidx) < genpts.size()) {
+                        float dPhi = std::abs(genphis[genidx] - phis[i]);
+                        float dEta = std::abs(genetas[genidx] - etas[i]);
+                        float dR2  = dPhi * dPhi + dEta * dEta;
+                        if (dR2 < 0.04f && std::abs(pts[i] - genpts[genidx]) < (3.0f * reso * pts[i])) {
+                            genPtForSmear = genpts[genidx];
+                        }
+                    }
+
+                    float smear_nom = _jerSmear->evaluate({pts[i], etas[i], genPtForSmear, rho, int(event), reso, sf_nom});
+                    float smear_var = _jerSmear->evaluate({pts[i], etas[i], genPtForSmear, rho, int(event), reso, sf_var});
+                    float c_nom = (std::isfinite(smear_nom) && smear_nom > 0.0f) ? smear_nom : 1.0f;
+                    float c_var = (std::isfinite(smear_var) && smear_var > 0.0f) ? smear_var : 1.0f;
+                    float scale = (c_nom > 0.0f) ? (c_var / c_nom) : 1.0f;
+                    scales.emplace_back(scale);
+                }
+                return scales;
+            };
+
+            _rlm = _rlm.Define("Jet_jer_scale", calcJerScale,
+                               {"Jet_pt", "Jet_eta", "Jet_phi", "Jet_genJetIdx_jer_i",
+                                "GenJet_pt", "GenJet_eta", "GenJet_phi",
+                                "Rho_fixedGridRhoFastjetAll", "event"})
+                       .Define("Jet_pt_jer_shifted",   "Jet_pt * Jet_jer_scale")
+                       .Define("Jet_mass_jer_shifted", "Jet_mass * Jet_jer_scale");
+
+            auto jerMetPt = [](const floats &pts_orig, const floats &pts_shifted, const floats &phis, float met_pt, float met_phi) -> float {
+                double metx = met_pt * std::cos(met_phi);
+                double mety = met_pt * std::sin(met_phi);
+                for (size_t i = 0; i < pts_orig.size(); i++) {
+                    if (pts_orig[i] > 15.0f || pts_shifted[i] > 15.0f) {
+                        double dpt = static_cast<double>(pts_shifted[i]) - static_cast<double>(pts_orig[i]);
+                        metx -= dpt * std::cos(phis[i]);
+                        mety -= dpt * std::sin(phis[i]);
+                    }
+                }
+                return static_cast<float>(std::sqrt(metx * metx + mety * mety));
+            };
+
+            auto jerMetPhi = [](const floats &pts_orig, const floats &pts_shifted, const floats &phis, float met_pt, float met_phi) -> float {
+                double metx = met_pt * std::cos(met_phi);
+                double mety = met_pt * std::sin(met_phi);
+                for (size_t i = 0; i < pts_orig.size(); i++) {
+                    if (pts_orig[i] > 15.0f || pts_shifted[i] > 15.0f) {
+                        double dpt = static_cast<double>(pts_shifted[i]) - static_cast<double>(pts_orig[i]);
+                        metx -= dpt * std::cos(phis[i]);
+                        mety -= dpt * std::sin(phis[i]);
+                    }
+                }
+                return static_cast<float>(std::atan2(mety, metx));
+            };
+
+            _rlm = _rlm.Define("PuppiMET_pt_jer_uncorr",  "PuppiMET_pt")
+                       .Define("PuppiMET_phi_jer_uncorr", "PuppiMET_phi")
+                       .Redefine("PuppiMET_phi", jerMetPhi, {"Jet_pt", "Jet_pt_jer_shifted", "Jet_phi", "PuppiMET_pt_jer_uncorr", "PuppiMET_phi_jer_uncorr"})
+                       .Redefine("PuppiMET_pt",  jerMetPt,  {"Jet_pt", "Jet_pt_jer_shifted", "Jet_phi", "PuppiMET_pt_jer_uncorr", "PuppiMET_phi_jer_uncorr"});
+
+            if (isDefined("MET_pt") && isDefined("MET_phi")) {
+                _rlm = _rlm.Define("MET_pt_jer_uncorr",  "MET_pt")
+                           .Define("MET_phi_jer_uncorr", "MET_phi")
+                           .Redefine("MET_phi", jerMetPhi, {"Jet_pt", "Jet_pt_jer_shifted", "Jet_phi", "MET_pt_jer_uncorr", "MET_phi_jer_uncorr"})
+                           .Redefine("MET_pt",  jerMetPt,  {"Jet_pt", "Jet_pt_jer_shifted", "Jet_phi", "MET_pt_jer_uncorr", "MET_phi_jer_uncorr"});
+            }
+
+            _rlm = _rlm.Redefine("Jet_pt",   "Jet_pt_jer_shifted")
+                       .Redefine("Jet_mass", "Jet_mass_jer_shifted");
+        }
+    }
+
     _rlm = _rlm.Define("jetcuts", cut);
     _rlm = _rlm.Redefine("Jet_pt", "Jet_pt[jetcuts]")
                .Redefine("Jet_eta", "Jet_eta[jetcuts]")
@@ -967,6 +1646,7 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
         _rlm = _rlm.Define("jetoverlaploose", checkoverlap, {"jet4vecs","lep4vecs"});
     }
     _rlm = _rlm.Define("Jet_pt_loose", "Jet_pt[jetoverlaploose]")
+               .Define("Jet_eta_loose", "Jet_eta[jetoverlaploose]")
                .Define("Jet_btagPNetB_loose", "Jet_btagPNetB[jetoverlaploose]")
                .Define("Jet_btagPNetCvB_loose", "Jet_btagPNetCvB[jetoverlaploose]")
                .Define("Jet_btagPNetCvL_loose", "Jet_btagPNetCvL[jetoverlaploose]")
@@ -994,7 +1674,8 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
     }
 
     if (!_isData) {
-        _rlm = _rlm.Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetoverlap]");
+        _rlm = _rlm.Define("Jet_hadronFlavour_loose", "Jet_hadronFlavour[jetoverlaploose]")
+                   .Redefine("Jet_hadronFlavour", "Jet_hadronFlavour[jetoverlap]");
         //int nbsf_var = btag_var.size();
         //int njes_var = jes_var.size();
         //_rlm = _rlm.Define("nbsf_var", [nbsf_var](){return int(nbsf_var);})
@@ -1008,24 +1689,25 @@ void NanoAODAnalyzerrdframe::selectJets(std::vector<std::string> jes_var, std::v
     }
 
 
-    // b-tagging
-    // https://btv-wiki.docs.cern.ch/ScaleFactors/Run3Summer22/#ak4-b-tagging
-    if (_isRun22) { 
-        _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.245") //l: 0.047, m: 0.245, t: 0.6734
-                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.047");
-    } else if (_isRun22EE) { 
-        _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.2605") //l: 0.0499, m: 0.2605, t: 0.6915
-                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.0499");
-    } else if (_isRun23) { 
-        _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.1917") //l: 0.0358, m: 0.1917, t: 0.6172
-                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.0358");
-    } else if (_isRun23BPix) { 
-        _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB>0.1919") //l: 0.0359, m: 0.1919, t: 0.6133
-                   .Define("btagcuts_loose", "Jet_btagPNetB_loose>0.0359");
-    } else if (_isRun24){
-        // TODO: copy from 23BPix
-        _rlm = _rlm.Define("btagcuts", "Jet_btagUParTAK4B>0.1272") //l: 0.0246, m: 0.1272, t: 0.4648
-                   .Define("btagcuts_loose", "Jet_btagUParTAK4B_loose>0.0246");
+    // b-tagging (Medium WP for both tight-tau-cleaned jets and loose-tau-cleaned jets)
+    // Threshold _btagcut is centrally loaded from data/config/analysis_config.json.
+    if (_btagcut <= 0.0f || !std::isfinite(_btagcut)) {
+        std::string msg = "[ERROR] selectJets: Invalid or uninitialized _btagcut (" + std::to_string(_btagcut) +
+                          ") for year=" + _year + ". Ensure _btagcut is loaded from analysis_config.json before calling selectJets.";
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+    const std::string btagCutStr = std::to_string(_btagcut);
+    if (_isRun22 || _isRun22EE || _isRun23 || _isRun23BPix) {
+        _rlm = _rlm.Define("btagcuts", "Jet_btagPNetB > " + btagCutStr)
+                   .Define("btagcuts_loose", "Jet_btagPNetB_loose > " + btagCutStr);
+    } else if (_isRun24) {
+        _rlm = _rlm.Define("btagcuts", "Jet_btagUParTAK4B > " + btagCutStr)
+                   .Define("btagcuts_loose", "Jet_btagUParTAK4B_loose > " + btagCutStr);
+    } else {
+        std::string msg = "[ERROR] selectJets: Unrecognized Run 3 era flag for year=" + _year;
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
     }
 
     _rlm = _rlm.Define("bJet_pt", "Jet_pt[btagcuts]")

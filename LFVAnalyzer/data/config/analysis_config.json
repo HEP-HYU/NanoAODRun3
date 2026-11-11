@@ -1,11 +1,11 @@
 {
   "_comment": "LFV analysis configuration — Run 3.",
   "_comment_deeptau": "WP integers passed as strings to correctionlib. VSjet/VSmu/VSe scale.",
-  "_comment_deeptau_scale": "0=VVVLoose,1=VVLoose,2=VLoose,3=Loose,4=Medium,5=Tight,6=VTight,7=VVTight",
+  "_comment_deeptau_scale": "1-based: VSjet/VSe (1=VVVLoose,2=VVLoose,3=VLoose,4=Loose,5=Medium,6=Tight,7=VTight,8=VVTight); VSmu (1=VLoose,2=Loose,3=Medium,4=Tight)",
 
   "object_selection": {
     "muon_veto_cut":     "Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25",
-    "electron_veto_cut": "Electron_pt>15.0 && abs(Electron_eta)<2.5 && Electron_cutBased == 1",
+    "electron_veto_cut": "Electron_pt>15.0 && abs(Electron_eta)<2.5 && !(abs(Electron_eta + Electron_deltaEtaSC)>1.4442 && abs(Electron_eta + Electron_deltaEtaSC)<1.566) && Electron_cutBased >= 1",
     "jet_cut":           "Jet_pt>40.0 && abs(Jet_eta)<2.5 && Jet_passJetIdTightLepVeto==1.0 && Jet_muEF < 0.8 && Jet_chEmEF < 0.8",
     "tau_cut":           "Tau_pt>40.0 && abs(Tau_eta)<2.5 && abs(Tau_dz)<0.2 && Tau_idDecayModeNewDMs && Tau_decayMode != 5 && Tau_decayMode != 6"
   },

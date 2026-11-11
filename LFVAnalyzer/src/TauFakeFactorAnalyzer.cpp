@@ -88,11 +88,13 @@ void TauFakeFactorAnalyzer::defineMoreVars() {
         }
         if (_mode == "lss" || _mode == "los") {
             addVar({"eventWeight_tau", "tauWeightIdVsJet_loose[0][0] * tauWeightIdVsEl_loose[0][0] * tauWeightIdVsMu_loose[0][0]"});
+            addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_lep * eventWeight_tau"});
+            addVar({"eventWeight", "eventWeight_nobtag * btagWeight_loose[0]"});
         } else {
             addVar({"eventWeight_tau", "tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_lep * eventWeight_tau"});
+            addVar({"eventWeight", "eventWeight_nobtag * btagWeight[0]"});
         }
-        addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_lep * eventWeight_tau"});
-        addVar({"eventWeight", "eventWeight_nobtag * btagWeight[0]"});
     }
 
     // define variables that you want to store

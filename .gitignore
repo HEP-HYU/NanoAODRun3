@@ -18,6 +18,11 @@ JetMETObjects_dict*_rdict.pcm
 *_dictUmbrella.h
 *.C_tmp_*
 
+Run3LFVLimits/
+plotIt/
+tests/
+*.tex
+
 # ── Python cache ───────────────────────────────────────────────────
 __pycache__/
 *.pyc
@@ -26,6 +31,8 @@ __pycache__/
 # ── ROOT analysis output ───────────────────────────────────────────
 # Processed histograms and skimmed NanoAODs are stored separately
 *.root
+!LFVAnalyzer/data/BTV/**/*.root
+LFVAnalyzer/data/BTV/**/raw_*.root
 */process_*
 
 # ── DNN training artifacts ─────────────────────────────────────────

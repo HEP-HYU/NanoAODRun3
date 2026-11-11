@@ -21,29 +21,26 @@ BTagEfficiencyAnalyzer::BTagEfficiencyAnalyzer(TTree *t, std::string outfilename
     std::cout << "  Year    : " << _year << std::endl;
     std::cout << "  Systematic : " << _syst << std::endl;
 
-    // Determine btag cut and column name based on era
-    // 2022: 0.2450, 2022EE: 0.2605, 2023: 0.1919, 2023BPix: 0.1917, 2024: 0.1272
-    if (_year == "2022" || _year == "2022postEE" || _year == "2022EE") {
+    // Determine btag column name based on era; _btagcut is loaded centrally from
+    // data/config/analysis_config.json in TopLFVAnalyzer::defineObjectSelection.
+    if (_isRun22 || _isRun22EE || _isRun23 || _isRun23BPix) {
         _btagCol = "Jet_btagPNetB";
-        _btagcut = (_year == "2022") ? 0.2450f : 0.2605f;
-    } else if (_year == "2023" || _year == "2023BPix") {
-        _btagCol = "Jet_btagPNetB";
-        _btagcut = (_year == "2023") ? 0.1919f : 0.1917f;
-    } else if (_year.find("2024") != std::string::npos) {
+    } else if (_isRun24) {
         _btagCol = "Jet_btagUParTAK4B";
-        _btagcut = 0.1272f;
     } else {
-        _btagCol = "Jet_btagPNetB";
-        _btagcut = 0.2450f;
+        std::string msg = "[ERROR] BTagEfficiencyAnalyzer: Unrecognized Run 3 era flag for year=" + _year;
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
     }
     std::cout << "  B-tag Col  : " << _btagCol << std::endl;
-    std::cout << "  Medium WP  : " << _btagcut << std::endl;
     std::cout << "=========================================================" << std::endl;
 }
 
-void BTagEfficiencyAnalyzer::defineObjectSelection(std::vector<std::string> jes_var) {
+void BTagEfficiencyAnalyzer::defineObjectSelection() {
     // Reuse full TopLFVAnalyzer object selection (muons, electrons, taus, jets, overlap removal)
-    TopLFVAnalyzer::defineObjectSelection(jes_var);
+    // and load centralized _btagcut from data/config/analysis_config.json
+    TopLFVAnalyzer::defineObjectSelection();
+    std::cout << "[BTagEfficiencyAnalyzer] Loaded centralized Medium WP _btagcut = " << _btagcut << std::endl;
 }
 
 void BTagEfficiencyAnalyzer::defineCuts() {
@@ -79,8 +76,14 @@ void BTagEfficiencyAnalyzer::defineMoreVars() {
     addVar({"c_mask", "Jet_hadronFlavour == 4", ""});
     addVar({"l_mask", "Jet_hadronFlavour != 5 && Jet_hadronFlavour != 4", ""});
 
-    // 4. Tagged mask (Medium WP)
-    std::string tagExpr = _btagCol + " >= " + std::to_string(_btagcut) + "f";
+    // 4. Tagged mask (Medium WP, strict > matching selectJets and btagSF_fixedWP)
+    if (_btagcut <= 0.0f || !std::isfinite(_btagcut)) {
+        std::string msg = "[ERROR] BTagEfficiencyAnalyzer::defineMoreVars: Invalid _btagcut (" +
+                          std::to_string(_btagcut) + ") for year=" + _year;
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+    std::string tagExpr = _btagCol + " > " + std::to_string(_btagcut) + "f";
     addVar({"tag_mask", tagExpr, ""});
 
     // 5. Kinematics per flavor (Denominator)

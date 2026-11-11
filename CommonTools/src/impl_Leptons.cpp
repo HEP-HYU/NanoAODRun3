@@ -36,23 +36,38 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
         muonEraFolder = "2024_Summer24";
     }
 
+    if (muonEraFolder.empty() || muonid.empty() || muoniso.empty() || muonhlt.empty()) {
+        std::cerr << "[ERROR] calculateMuonSF: muonEraFolder ('" << muonEraFolder
+                  << "'), muonid ('" << muonid << "'), muoniso ('" << muoniso
+                  << "'), or muonhlt ('" << muonhlt << "') is empty!" << std::endl;
+        return;
+    }
+    if (!isDefined("Muon_pt") || !isDefined("Muon_eta")) {
+        std::cerr << "[ERROR] calculateMuonSF: Missing required Muon_pt or Muon_eta branch!" << std::endl;
+        return;
+    }
+
     auto muonSFreader = loadCorrectionSet("data/MuonSF/" + muonEraFolder + "/muon_Z.json.gz");
     auto _muonid = muonSFreader->at(muonid);
     auto _muoniso = muonSFreader->at(muoniso);
     auto _muontrg = muonSFreader->at(muonhlt);
 
     // We have only one muon!
-    auto muonSFId = [this, _muonid, muonEraFolder](const floats &pt, const floats &eta)->floats {
+    auto muonSFId = [this, _muonid](const floats &pt, const floats &eta)->floats {
         floats wVec;
         wVec.reserve(7); // [0]=nom, [1]=tot_up, [2]=tot_dn, [3]=stat_up, [4]=stat_dn, [5]=syst_up, [6]=syst_dn
 
         if (pt.size() == 1){
-            float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
-            float sf      = _muonid->evaluate({tmp_eta, pt[0], "nominal"});
-            float sf_up   = _muonid->evaluate({tmp_eta, pt[0], "systup"});
-            float sf_down = _muonid->evaluate({tmp_eta, pt[0], "systdown"});
-            float sf_stat = _muonid->evaluate({tmp_eta, pt[0], "stat"});
-            float sf_syst = _muonid->evaluate({tmp_eta, pt[0], "syst"});
+            if (eta.size() != pt.size()) {
+                std::cerr << "[ERROR] calculateMuonSF (ID): Size mismatch between Muon_pt (" << pt.size()
+                          << ") and Muon_eta (" << eta.size() << ")!" << std::endl;
+                return {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+            }
+            float sf      = _muonid->evaluate({eta[0], pt[0], "nominal"});
+            float sf_up   = _muonid->evaluate({eta[0], pt[0], "systup"});
+            float sf_down = _muonid->evaluate({eta[0], pt[0], "systdown"});
+            float sf_stat = _muonid->evaluate({eta[0], pt[0], "stat"});
+            float sf_syst = _muonid->evaluate({eta[0], pt[0], "syst"});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
@@ -67,17 +82,21 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
     };
 
     // We have only one muon!
-    auto muonSFIso = [this, _muoniso, muonEraFolder](const floats &pt, const floats &eta)->floats {
+    auto muonSFIso = [this, _muoniso](const floats &pt, const floats &eta)->floats {
         floats wVec;
         wVec.reserve(7); // [0]=nom, [1]=tot_up, [2]=tot_dn, [3]=stat_up, [4]=stat_dn, [5]=syst_up, [6]=syst_dn
 
         if (pt.size() == 1){
-            float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
-            float sf      = _muoniso->evaluate({tmp_eta, pt[0], "nominal"});
-            float sf_up   = _muoniso->evaluate({tmp_eta, pt[0], "systup"});
-            float sf_down = _muoniso->evaluate({tmp_eta, pt[0], "systdown"});
-            float sf_stat = _muoniso->evaluate({tmp_eta, pt[0], "stat"});
-            float sf_syst = _muoniso->evaluate({tmp_eta, pt[0], "syst"});
+            if (eta.size() != pt.size()) {
+                std::cerr << "[ERROR] calculateMuonSF (Iso): Size mismatch between Muon_pt (" << pt.size()
+                          << ") and Muon_eta (" << eta.size() << ")!" << std::endl;
+                return {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+            }
+            float sf      = _muoniso->evaluate({eta[0], pt[0], "nominal"});
+            float sf_up   = _muoniso->evaluate({eta[0], pt[0], "systup"});
+            float sf_down = _muoniso->evaluate({eta[0], pt[0], "systdown"});
+            float sf_stat = _muoniso->evaluate({eta[0], pt[0], "stat"});
+            float sf_syst = _muoniso->evaluate({eta[0], pt[0], "syst"});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
@@ -91,17 +110,21 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
         return wVec;
     };
 
-    auto muonSFTrg = [this, _muontrg, muonEraFolder](const floats &pt, const floats &eta)->floats {
+    auto muonSFTrg = [this, _muontrg](const floats &pt, const floats &eta)->floats {
         floats wVec;
         wVec.reserve(7); // [0]=nom, [1]=tot_up, [2]=tot_dn, [3]=stat_up, [4]=stat_dn, [5]=syst_up, [6]=syst_dn
 
         if (pt.size() == 1) {
-            float tmp_eta = (muonEraFolder.find("2022") != std::string::npos) ? std::abs(eta[0]) : eta[0];
-            float sf      = _muontrg->evaluate({tmp_eta, pt[0], "nominal"});
-            float sf_up   = _muontrg->evaluate({tmp_eta, pt[0], "systup"});
-            float sf_down = _muontrg->evaluate({tmp_eta, pt[0], "systdown"});
-            float sf_stat = _muontrg->evaluate({tmp_eta, pt[0], "stat"});
-            float sf_syst = _muontrg->evaluate({tmp_eta, pt[0], "syst"});
+            if (eta.size() != pt.size()) {
+                std::cerr << "[ERROR] calculateMuonSF (Trg): Size mismatch between Muon_pt (" << pt.size()
+                          << ") and Muon_eta (" << eta.size() << ")!" << std::endl;
+                return {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+            }
+            float sf      = _muontrg->evaluate({eta[0], pt[0], "nominal"});
+            float sf_up   = _muontrg->evaluate({eta[0], pt[0], "systup"});
+            float sf_down = _muontrg->evaluate({eta[0], pt[0], "systdown"});
+            float sf_stat = _muontrg->evaluate({eta[0], pt[0], "stat"});
+            float sf_syst = _muontrg->evaluate({eta[0], pt[0], "syst"});
             wVec.emplace_back(sf);
             wVec.emplace_back(sf_up);
             wVec.emplace_back(sf_down);
@@ -223,7 +246,26 @@ void NanoAODAnalyzerrdframe::applyMuonScaleSmearing() {
     }
 
     if (muonEraFolder.empty()) {
-        std::cout << "[ScaReKIT] Era not recognized for Run 3 muon scale/smearing, skipping." << std::endl;
+        std::cerr << "[ERROR] [ScaReKIT] Era not recognized for Run 3 muon scale/smearing!" << std::endl;
+        return;
+    }
+
+    const bool isPostSkim = isDefined("nmuonpass");
+    const bool hasPtUncor = isDefined("Muon_pt_uncor");
+
+    if (isPostSkim) {
+        if (!hasPtUncor) {
+            std::cerr << "[ERROR] [ScaReKIT] Muon_pt_uncor branch is missing in skimmed input! Applying ScaReKIT on Muon_pt in Process stage for backward compatibility." << std::endl;
+        } else if (_isData || (_syst.find("muonscale") == std::string::npos && _syst.find("muonsmear") == std::string::npos)) {
+            std::cout << "[ScaReKIT] Nominal Muon_pt and PuppiMET already corrected in Skim [syst=" << _syst << "]." << std::endl;
+            return;
+        }
+    }
+
+    if (!isDefined("Muon_pt") || !isDefined("Muon_eta") || !isDefined("Muon_phi") ||
+        !isDefined("Muon_charge") || !isDefined("Muon_nTrackerLayers") ||
+        !isDefined("event") || !isDefined("luminosityBlock")) {
+        std::cerr << "[ERROR] [ScaReKIT] Missing required Muon branches (Muon_pt, Muon_eta, Muon_phi, Muon_charge, Muon_nTrackerLayers, event, or luminosityBlock)!" << std::endl;
         return;
     }
 
@@ -234,54 +276,25 @@ void NanoAODAnalyzerrdframe::applyMuonScaleSmearing() {
     auto helper = std::make_shared<MuonScaReHelper>(scareReader);
     const bool isData = _isData;
     const std::string systStr = _syst;
-    const bool hasNTrackerLayers = isDefined("Muon_nTrackerLayers");
 
-    auto muonScareLambda = [helper, isData, systStr, hasNTrackerLayers](const floats &pts, const floats &etas, const floats &phis, const ints &charges,
-                                                                        ULong64_t evt, UInt_t lumi,
-                                                                        const floats &nLayers)->floats {
+    auto muonScareLambda = [helper, isData, systStr](const floats &pts, const floats &etas, const floats &phis, const ints &charges,
+                                                     ULong64_t evt, UInt_t lumi,
+                                                     const floats &nLayers)->floats {
         floats out;
         out.reserve(pts.size());
-        for (size_t i = 0; i < pts.size(); i++) {
-            float pt = pts[i];
-            float eta = etas[i];
-            float phi = phis[i];
-            int charge = charges[i];
-            float nL = (hasNTrackerLayers && i < nLayers.size()) ? nLayers[i] : 11.0f;
-
-            float pt_final = pt;
-            if (isData) {
-                pt_final = helper->pt_scale(true, pt, eta, phi, charge);
-            } else {
-                double pt_scale_corr = helper->pt_scale(false, pt, eta, phi, charge);
-                double pt_corr = helper->pt_resol(pt_scale_corr, eta, phi, nL, evt, lumi);
-
-                if (systStr.find("muonscaleup") != std::string::npos) {
-                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "up");
-                } else if (systStr.find("muonscaledown") != std::string::npos) {
-                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "dn");
-                } else if (systStr.find("muonsmearup") != std::string::npos) {
-                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "up");
-                } else if (systStr.find("muonsmeardown") != std::string::npos) {
-                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "dn");
-                } else {
-                    pt_final = pt_corr;
-                }
-            }
-            out.emplace_back(pt_final);
+        if (etas.size() != pts.size() || phis.size() != pts.size() ||
+            charges.size() != pts.size() || nLayers.size() != pts.size()) {
+            std::cerr << "[ERROR] [ScaReKIT] Size mismatch among Muon branches: pt=" << pts.size()
+                      << ", eta=" << etas.size() << ", phi=" << phis.size()
+                      << ", charge=" << charges.size() << ", nTrackerLayers=" << nLayers.size() << std::endl;
+            return pts;
         }
-        return out;
-    };
-
-    auto muonScareLambdaNoNLayers = [helper, isData, systStr](const floats &pts, const floats &etas, const floats &phis, const ints &charges,
-                                                             ULong64_t evt, UInt_t lumi)->floats {
-        floats out;
-        out.reserve(pts.size());
         for (size_t i = 0; i < pts.size(); i++) {
             float pt = pts[i];
             float eta = etas[i];
             float phi = phis[i];
             int charge = charges[i];
-            float nL = 11.0f; // median fallback for tight muons
+            float nL = nLayers[i];
 
             float pt_final = pt;
             if (isData) {
@@ -331,46 +344,72 @@ void NanoAODAnalyzerrdframe::applyMuonScaleSmearing() {
         return float(std::atan2(mety, metx));
     };
 
-    if (hasNTrackerLayers) {
-        _rlm = _rlm.Define("Muon_nTrackerLayers_f", "ROOT::VecOps::Cast<float>(Muon_nTrackerLayers)")
-                   .Define("Muon_pt_scare", muonScareLambda, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock", "Muon_nTrackerLayers_f"});
+    if (!isPostSkim) {
+        // Skim stage (before selectMuons): preserve Muon_pt_uncor and apply nominal ScaReKIT to Muon_pt.
+        // PuppiMET propagation is performed inside selectMuons() after [muoncuts] so only selected muons shift MET.
+        _rlm = _rlm.Define("Muon_pt_uncor", "Muon_pt")
+                   .Define("skim_Muon_nTrackerLayers_f", "ROOT::VecOps::Cast<float>(Muon_nTrackerLayers)")
+                   .Define("skim_Muon_pt_scare", muonScareLambda, {"Muon_pt_uncor", "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock", "skim_Muon_nTrackerLayers_f"})
+                   .Redefine("Muon_pt", "skim_Muon_pt_scare");
     } else {
-        _rlm = _rlm.Define("Muon_pt_scare", muonScareLambdaNoNLayers, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock"});
-    }
+        // Process stage: evaluate from Muon_pt_uncor (or Muon_pt for legacy skims) and shift PuppiMET relative to current Muon_pt.
+        const std::string inputPtCol = hasPtUncor ? "Muon_pt_uncor" : "Muon_pt";
+        _rlm = _rlm.Define("Muon_nTrackerLayers_f", "ROOT::VecOps::Cast<float>(Muon_nTrackerLayers)")
+                   .Define("Muon_pt_scare", muonScareLambda, {inputPtCol, "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock", "Muon_nTrackerLayers_f"})
+                   .Define("PuppiMET_pt_mu_unsmear", "PuppiMET_pt")
+                   .Define("PuppiMET_phi_mu_unsmear", "PuppiMET_phi")
+                   .Redefine("PuppiMET_phi", muonscaremetphi, {"Muon_pt", "Muon_pt_scare", "Muon_phi", "PuppiMET_pt_mu_unsmear", "PuppiMET_phi_mu_unsmear"})
+                   .Redefine("PuppiMET_pt",  muonscaremet,    {"Muon_pt", "Muon_pt_scare", "Muon_phi", "PuppiMET_pt_mu_unsmear", "PuppiMET_phi_mu_unsmear"})
+                   .Redefine("Muon_pt", "Muon_pt_scare");
 
-    _rlm = _rlm.Define("PuppiMET_pt_mu_unsmear", "PuppiMET_pt")
-               .Define("PuppiMET_phi_mu_unsmear", "PuppiMET_phi")
-               .Redefine("PuppiMET_phi", muonscaremetphi, {"Muon_pt", "Muon_pt_scare", "Muon_phi", "PuppiMET_pt_mu_unsmear", "PuppiMET_phi_mu_unsmear"})
-               .Redefine("PuppiMET_pt",  muonscaremet,    {"Muon_pt", "Muon_pt_scare", "Muon_phi", "PuppiMET_pt_mu_unsmear", "PuppiMET_phi_mu_unsmear"})
-               .Redefine("Muon_pt", "Muon_pt_scare");
-
-    if (isDefined("lep4vecs")) {
-        _rlm = _rlm.Redefine("lep4vecs", ::gen4vec, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+        if (isDefined("lep4vecs")) {
+            _rlm = _rlm.Redefine("lep4vecs", ::gen4vec, {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass"});
+        }
     }
 }
  
 void NanoAODAnalyzerrdframe::applyElectronScaleSmearing() {
     std::string elecEraFolder = "";
-    std::string scaleCorrName = "";
     if (_isRun22) {
         elecEraFolder = "2022_Summer22";
-        scaleCorrName = "EGMScale_EleEtaR9_2022preEE";
     } else if (_isRun22EE) {
         elecEraFolder = "2022_Summer22EE";
-        scaleCorrName = "EGMScale_EleEtaR9_2022postEE";
     } else if (_isRun23) {
         elecEraFolder = "2023_Summer23";
-        scaleCorrName = "EGMScale_EleEtaR9_2023preBPIX";
     } else if (_isRun23BPix) {
         elecEraFolder = "2023_Summer23BPix";
-        scaleCorrName = "EGMScale_EleEtaR9_2023postBPIX";
     } else if (_isRun24){
         elecEraFolder = "2024_Summer24";
-        scaleCorrName = "EGMScale_EleEtaR9_2024";
     }
 
     if (elecEraFolder.empty()) {
-        std::cout << "[EGM S&S] Era not recognized for Run 3 electron scale/smearing, skipping." << std::endl;
+        std::cerr << "[ERROR] [EGM S&S] Era not recognized for Run 3 electron scale/smearing!" << std::endl;
+        return;
+    }
+
+    const bool isPostSkim = isDefined("nelepass");
+    const bool hasPtUncor = isDefined("Electron_pt_uncor");
+
+    if (isPostSkim) {
+        if (!hasPtUncor) {
+            std::cerr << "[ERROR] [EGM S&S] Electron_pt_uncor branch is missing in skimmed input!" << std::endl;
+            return;
+        }
+        // In Process stage, Data and nominal/non-EGM-syst MC already have S&S applied to Electron_pt and PuppiMET in Skim.
+        if (_isData || (_syst.find("elescale") == std::string::npos && _syst.find("elesmear") == std::string::npos)) {
+            std::cout << "[EGM S&S] Nominal Electron_pt and PuppiMET already corrected in Skim [syst=" << _syst << "]." << std::endl;
+            return;
+        }
+    }
+
+    const bool hasR9 = isDefined("Electron_r9");
+    const bool hasDeltaEtaSC = isDefined("Electron_deltaEtaSC");
+    const bool hasSeedGain = isDefined("Electron_seedGain");
+    if (!hasR9 || !hasDeltaEtaSC || !hasSeedGain) {
+        std::cerr << "[ERROR] [EGM S&S] Missing required Electron S&S branch(es): "
+                  << "Electron_r9=" << hasR9
+                  << ", Electron_deltaEtaSC=" << hasDeltaEtaSC
+                  << ", Electron_seedGain=" << hasSeedGain << std::endl;
         return;
     }
 
@@ -378,58 +417,30 @@ void NanoAODAnalyzerrdframe::applyElectronScaleSmearing() {
     std::cout << "Loading Electron Scale and Smearing: " << ssFile << " [syst=" << _syst << "]" << std::endl;
 
     auto ssReader = loadCorrectionSet(ssFile);
-    auto helper = std::make_shared<ElectronSSHelper>(ssReader, scaleCorrName);
+    auto helper = std::make_shared<ElectronSSHelper>(ssReader);
     const bool isData = _isData;
     const std::string systStr = _syst;
-    const bool hasR9 = isDefined("Electron_r9");
-    const bool hasDeltaEtaSC = isDefined("Electron_deltaEtaSC");
 
-    auto eleScaleSmearLambda = [helper, isData, systStr](const floats &pts, const floats &etas, const floats &phis, const floats &deltaEtas, const floats &r9s,
-                                                         ULong64_t evt, UInt_t lumi)->floats {
+    auto eleScaleSmearLambda = [helper, isData, systStr](const floats &pts, const floats &etas, const floats &phis, const floats &deltaEtas, const floats &r9s, const ints &seedGains,
+                                                         UInt_t run, ULong64_t evt, UInt_t lumi)->floats {
         floats out;
         out.reserve(pts.size());
-        for (size_t i = 0; i < pts.size(); i++) {
-            float pt = pts[i];
-            float eta = etas[i];
-            float phi = phis[i];
-            float deltaSC = (i < deltaEtas.size()) ? deltaEtas[i] : 0.0f;
-            float r9 = (i < r9s.size()) ? r9s[i] : 0.98f;
-
-            double pt_corr = helper->pt_corr(isData, systStr, pt, eta, phi, deltaSC, r9, evt, lumi, static_cast<int>(i));
-            out.emplace_back(static_cast<float>(pt_corr));
+        if (deltaEtas.size() != pts.size() || r9s.size() != pts.size() || seedGains.size() != pts.size()) {
+            std::cerr << "[ERROR] [EGM S&S] Branch size mismatch with Electron_pt (" << pts.size()
+                      << "): deltaEtaSC=" << deltaEtas.size()
+                      << ", r9=" << r9s.size()
+                      << ", seedGain=" << seedGains.size() << std::endl;
+            return pts;
         }
-        return out;
-    };
-
-    auto eleScaleSmearLambdaNoR9 = [helper, isData, systStr](const floats &pts, const floats &etas, const floats &phis, const floats &deltaEtas,
-                                                             ULong64_t evt, UInt_t lumi)->floats {
-        floats out;
-        out.reserve(pts.size());
         for (size_t i = 0; i < pts.size(); i++) {
             float pt = pts[i];
             float eta = etas[i];
             float phi = phis[i];
-            float deltaSC = (i < deltaEtas.size()) ? deltaEtas[i] : 0.0f;
-            float r9 = 0.98f; // graceful fallback for existing skims (falls in High-R9 bin >= 0.975)
+            float deltaSC = deltaEtas[i];
+            float r9 = r9s[i];
+            int seedGain = seedGains[i];
 
-            double pt_corr = helper->pt_corr(isData, systStr, pt, eta, phi, deltaSC, r9, evt, lumi, static_cast<int>(i));
-            out.emplace_back(static_cast<float>(pt_corr));
-        }
-        return out;
-    };
-
-    auto eleScaleSmearLambdaNoDeltaNoR9 = [helper, isData, systStr](const floats &pts, const floats &etas, const floats &phis,
-                                                                   ULong64_t evt, UInt_t lumi)->floats {
-        floats out;
-        out.reserve(pts.size());
-        for (size_t i = 0; i < pts.size(); i++) {
-            float pt = pts[i];
-            float eta = etas[i];
-            float phi = phis[i];
-            float deltaSC = 0.0f;
-            float r9 = 0.98f;
-
-            double pt_corr = helper->pt_corr(isData, systStr, pt, eta, phi, deltaSC, r9, evt, lumi, static_cast<int>(i));
+            double pt_corr = helper->pt_corr(isData, systStr, pt, eta, phi, deltaSC, r9, run, seedGain, evt, lumi);
             out.emplace_back(static_cast<float>(pt_corr));
         }
         return out;
@@ -459,38 +470,58 @@ void NanoAODAnalyzerrdframe::applyElectronScaleSmearing() {
         return float(std::atan2(mety, metx));
     };
 
-    if (hasR9 && hasDeltaEtaSC) {
-        _rlm = _rlm.Define("Electron_pt_scare", eleScaleSmearLambda, {"Electron_pt", "Electron_eta", "Electron_phi", "Electron_deltaEtaSC", "Electron_r9", "event", "luminosityBlock"});
-    } else if (hasDeltaEtaSC) {
-        _rlm = _rlm.Define("Electron_pt_scare", eleScaleSmearLambdaNoR9, {"Electron_pt", "Electron_eta", "Electron_phi", "Electron_deltaEtaSC", "event", "luminosityBlock"});
+    if (!isPostSkim) {
+        // Skim stage (before selectElectrons): preserve Electron_pt_uncor and apply nominal S&S to Electron_pt.
+        // PuppiMET propagation is performed inside selectElectrons() after [elecuts] so only selected electrons shift MET.
+        _rlm = _rlm.Define("Electron_pt_uncor", "Electron_pt")
+                   .Define("Electron_seedGain_i", "ROOT::VecOps::Cast<int>(Electron_seedGain)")
+                   .Define("Electron_pt_scare", eleScaleSmearLambda, {"Electron_pt_uncor", "Electron_eta", "Electron_phi", "Electron_deltaEtaSC", "Electron_r9", "Electron_seedGain_i", "run", "event", "luminosityBlock"})
+                   .Redefine("Electron_pt", "Electron_pt_scare");
     } else {
-        _rlm = _rlm.Define("Electron_pt_scare", eleScaleSmearLambdaNoDeltaNoR9, {"Electron_pt", "Electron_eta", "Electron_phi", "event", "luminosityBlock"});
-    }
+        // Process stage (elescaleup/down or elesmearup/down): evaluate from Electron_pt_uncor and shift PuppiMET relative to nominal Electron_pt.
+        _rlm = _rlm.Define("Electron_seedGain_i", "ROOT::VecOps::Cast<int>(Electron_seedGain)")
+                   .Define("Electron_pt_scare", eleScaleSmearLambda, {"Electron_pt_uncor", "Electron_eta", "Electron_phi", "Electron_deltaEtaSC", "Electron_r9", "Electron_seedGain_i", "run", "event", "luminosityBlock"})
+                   .Define("PuppiMET_pt_ele_unsmear", "PuppiMET_pt")
+                   .Define("PuppiMET_phi_ele_unsmear", "PuppiMET_phi")
+                   .Redefine("PuppiMET_phi", elescaremetphi, {"Electron_pt", "Electron_pt_scare", "Electron_phi", "PuppiMET_pt_ele_unsmear", "PuppiMET_phi_ele_unsmear"})
+                   .Redefine("PuppiMET_pt",  elescaremet,    {"Electron_pt", "Electron_pt_scare", "Electron_phi", "PuppiMET_pt_ele_unsmear", "PuppiMET_phi_ele_unsmear"})
+                   .Redefine("Electron_pt", "Electron_pt_scare");
 
-    _rlm = _rlm.Define("PuppiMET_pt_ele_unsmear", "PuppiMET_pt")
-               .Define("PuppiMET_phi_ele_unsmear", "PuppiMET_phi")
-               .Redefine("PuppiMET_phi", elescaremetphi, {"Electron_pt", "Electron_pt_scare", "Electron_phi", "PuppiMET_pt_ele_unsmear", "PuppiMET_phi_ele_unsmear"})
-               .Redefine("PuppiMET_pt",  elescaremet,    {"Electron_pt", "Electron_pt_scare", "Electron_phi", "PuppiMET_pt_ele_unsmear", "PuppiMET_phi_ele_unsmear"})
-               .Redefine("Electron_pt", "Electron_pt_scare");
-
-    if (isDefined("lep4vecs")) {
-        _rlm = _rlm.Redefine("lep4vecs", ::gen4vec, {"Electron_pt", "Electron_eta", "Electron_phi", "Electron_mass"});
+        if (isDefined("lep4vecs")) {
+            _rlm = _rlm.Redefine("lep4vecs", ::gen4vec, {"Electron_pt", "Electron_eta", "Electron_phi", "Electron_mass"});
+        }
     }
 }
 
 void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYear){
     // Electron SF
     cout << "Loading Electron SF" << endl;
+    if (elecFile.empty() || elecYear.empty()) {
+        std::cerr << "[ERROR] calculateElectronSF: elecFile ('" << elecFile << "') or elecYear ('" << elecYear << "') is empty!" << std::endl;
+        return;
+    }
+    if (!isDefined("Electron_pt") || !isDefined("Electron_eta") || !isDefined("Electron_deltaEtaSC") || !isDefined("Electron_phi")) {
+        std::cerr << "[ERROR] calculateElectronSF: Missing required Electron_pt, Electron_eta, Electron_deltaEtaSC, or Electron_phi branch!" << std::endl;
+        return;
+    }
 
     auto elecSFreader = loadCorrectionSet("data/ElectronSF/"+elecFile+"/electron.json.gz");
     auto _elecid = elecSFreader->at("Electron-ID-SF");
 
     auto elecSFId = [this, _elecid, elecYear](std::string var){
-        return [this, _elecid, elecYear, var](const floats &pt, const floats &eta, const floats &phi)->floats {
+        return [this, _elecid, elecYear, var](const floats &pt, const floats &eta, const floats &deltaEtaSC, const floats &phi)->floats {
             floats wVec;
             wVec.reserve(7); // [0]: nom, [1]: tot_up, [2]: tot_down, [3]: stat_up, [4]: stat_down, [5]: syst_up, [6]: syst_down
             std::string wp = var;
             if (pt.size() == 1){
+                if (eta.size() != pt.size() || deltaEtaSC.size() != pt.size() || phi.size() != pt.size()) {
+                    std::cerr << "[ERROR] calculateElectronSF: Size mismatch among Electron_pt (" << pt.size()
+                              << "), Electron_eta (" << eta.size()
+                              << "), Electron_deltaEtaSC (" << deltaEtaSC.size()
+                              << "), Electron_phi (" << phi.size() << ")!" << std::endl;
+                    return {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+                }
+                float scEta = eta[0] + deltaEtaSC[0];
                 float sf = 1.0f, sf_up = 1.0f, sf_down = 1.0f;
                 float stat_up = 1.0f, stat_down = 1.0f;
                 float syst_up = 1.0f, syst_down = 1.0f;
@@ -500,25 +531,27 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
                     else wp = "RecoAbove75";
                 }
                 if (elecYear.find("2022")!=std::string::npos || elecYear.find("2024")!=std::string::npos){
-                    sf = _elecid->evaluate({elecYear, "sf", wp, eta[0], pt[0]});
-                    sf_up = _elecid->evaluate({elecYear, "sfup", wp, eta[0], pt[0]});
-                    sf_down = _elecid->evaluate({elecYear, "sfdown", wp, eta[0], pt[0]});
-                    float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, eta[0], pt[0]});
-                    float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, eta[0], pt[0]});
+                    sf = _elecid->evaluate({elecYear, "sf", wp, scEta, pt[0]});
+                    sf_up = _elecid->evaluate({elecYear, "sfup", wp, scEta, pt[0]});
+                    sf_down = _elecid->evaluate({elecYear, "sfdown", wp, scEta, pt[0]});
+                    float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, scEta, pt[0]});
+                    float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, scEta, pt[0]});
                     stat_up = sf + err_stat;
                     stat_down = sf - err_stat;
                     syst_up = sf + err_syst;
                     syst_down = sf - err_syst;
                 } else if (elecYear.find("2023")!=std::string::npos){
-                    sf = _elecid->evaluate({elecYear, "sf", wp, eta[0], pt[0], phi[0]});
-                    sf_up = _elecid->evaluate({elecYear, "sfup", wp, eta[0], pt[0], phi[0]});
-                    sf_down = _elecid->evaluate({elecYear, "sfdown", wp, eta[0], pt[0], phi[0]});
-                    float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, eta[0], pt[0], phi[0]});
-                    float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, eta[0], pt[0], phi[0]});
+                    sf = _elecid->evaluate({elecYear, "sf", wp, scEta, pt[0], phi[0]});
+                    sf_up = _elecid->evaluate({elecYear, "sfup", wp, scEta, pt[0], phi[0]});
+                    sf_down = _elecid->evaluate({elecYear, "sfdown", wp, scEta, pt[0], phi[0]});
+                    float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, scEta, pt[0], phi[0]});
+                    float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, scEta, pt[0], phi[0]});
                     stat_up = sf + err_stat;
                     stat_down = sf - err_stat;
                     syst_up = sf + err_syst;
                     syst_down = sf - err_syst;
+                } else {
+                    std::cerr << "[ERROR] calculateElectronSF: Unrecognized elecYear '" << elecYear << "' for Electron-ID-SF!" << std::endl;
                 }
                 wVec.emplace_back(sf);
                 wVec.emplace_back(sf_up);
@@ -535,11 +568,11 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
     };
 
     if (isDefined("elecWeightReco")) {
-        _rlm = _rlm.Redefine("elecWeightReco", elecSFId("RecoAbove75"), {"Electron_pt","Electron_eta","Electron_phi"})
-                   .Redefine("elecWeightId", elecSFId("wp90iso"), {"Electron_pt","Electron_eta","Electron_phi"});
+        _rlm = _rlm.Redefine("elecWeightReco", elecSFId("RecoAbove75"), {"Electron_pt","Electron_eta","Electron_deltaEtaSC","Electron_phi"})
+                   .Redefine("elecWeightId", elecSFId("wp90iso"), {"Electron_pt","Electron_eta","Electron_deltaEtaSC","Electron_phi"});
     } else {
-        _rlm = _rlm.Define("elecWeightReco", elecSFId("RecoAbove75"), {"Electron_pt","Electron_eta","Electron_phi"})
-                   .Define("elecWeightId", elecSFId("wp90iso"), {"Electron_pt","Electron_eta","Electron_phi"});
+        _rlm = _rlm.Define("elecWeightReco", elecSFId("RecoAbove75"), {"Electron_pt","Electron_eta","Electron_deltaEtaSC","Electron_phi"})
+                   .Define("elecWeightId", elecSFId("wp90iso"), {"Electron_pt","Electron_eta","Electron_deltaEtaSC","Electron_phi"});
     }
 
     auto elecHltSFreader = loadCorrectionSet("data/ElectronSF/"+elecFile+"/electronHlt.json.gz");

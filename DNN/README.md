@@ -47,13 +47,11 @@ python postprocess_2.py -I DNN_out_0424
 python ../nanoaodframe/stack_signals_v2.py -I DNN_out_0424 --postfix _orgbin
 python ../nanoaodframe/plot_run2.py -I DNN_out_0424 --postfix _orgbin -D
 ```
-**Evaluation** is performed with the best model from training and produce dnn output score histograms with data and MC samples.
+**Evaluation** is performed with the best model from training and produces DNN output score histograms (`h_dnn_pred_S5` and all systematic variations) with data and MC samples.
 
-To use proper model, you must check the directory of the processed ntuple used in training.
+To use the proper model, check the directory of the processed ntuple used in training. The 24 Run 3 input features per channel (`muon` / `electron`) are defined in `utils/feature_config.py`.
 
-The output folder is defined in `eval.py`. The folders will appear by year (run). **Currently, you need to put your model in 'nom' folder**
-
-The post processing is to gather all uncertainty histograms into a single, nominal root file, and apply b tagging rescaling.
+The output folder is defined in `eval_multi.py` (`eval_multi_bi.py`). During evaluation, `hcounter`, `ScaleWeightSum`, `PSWeightSum`, and `LHEPdfWeightSum` are automatically copied from the input process ROOT files so that `postprocess.py` can renormalize the theory scale (`mescale`, `renscale`, `facscale`), PS (`isr`, `fsr`), and PDF/$\alpha_S$ variations by their pre-selection generator weight sums and merge external shape variations into a single nominal ROOT file.
 
 The plotIt does not support stack for signals, thus it is done by dedicated code.
 

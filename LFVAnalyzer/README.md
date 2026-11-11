@@ -25,7 +25,7 @@ Skimmed NanoAOD    ←  stored under $LFV_SKIM_DIR/{version}/{ch}/{data|mc}/{yea
      ▼  TopLFVAnalyzer (src/TopLFVAnalyzer.cpp)
 Flat Ntuple + Histograms  ←  stored in the process output directory
      │
-     ├──▶  postprocess.py          (b-SF rescaling, histogram merging)
+     ├──▶  postprocess.py          (theory scale/PS/PDF renormalization, external syst rescaling, histogram merging)
      ├──▶  DNN/eval_multi.py       (DNN training / inference)
      └──▶  plotIt / print_syst_table.py  (plotting, systematic table)
 ```
@@ -35,8 +35,8 @@ Flat Ntuple + Histograms  ←  stored in the process output directory
 Runs once per NanoAOD file. Its job is:
 
 - Apply a golden JSON lumi mask (data only)
-- Apply JEC (L1FastJet + L2Relative + L3Absolute + L2L3Residual), JER smearing, and propagation to MET
-- Store pile-up weights (`puWeight[0/1/2]`), lepton SFs (ID/Iso/Trg), b-tag shape SFs (`btagWeight[0..16]`), tau ID SFs, and top-pT reweighting — all as branches in the skimmed NanoAOD
+- Apply JEC (L1FastJet + L2Relative + L3Absolute + L2L3Residual), JER smearing, and propagation to PuppiMET (including MET XY-shift corrections for 2022–2023BPix)
+- Store pile-up weights (`puWeight[0/1/2]`), lepton SFs (ID/Iso/Trg), tau energy scale (`Tau_ES_nom/up/down`) & ID SFs, top-pT reweighting, and pre-selection theory weight sums (`ScaleWeightSum`, `PSWeightSum`, `LHEPdfWeightSum`) — all in the skimmed NanoAOD
 - Apply a **loose** object and event preselection (≥1 lepton, ≥1 tau, ≥1 jet)
 - Drop all unnecessary NanoAOD branches; keep only what the process stage needs
 
@@ -46,11 +46,11 @@ The skim output is still in NanoAOD format (`TTree Events`), just smaller.
 
 Runs per dataset (or per file for shape systematics). Does the full analysis:
 
-- **Object selection** — full analysis cuts from `data/config/analysis_config.json`; for shape systematics (JES/JER/TES/MET Unclust/muon GE scale), the primary object is varied before all downstream quantities are computed
-- **Kinematic variables** — 4-vectors, ΔR, M_T, S_T^MET, top reconstruction χ², lepton+τ mass, object-level branches (`Jet1_pt`, `Tau1_pt`, etc.)
-- **Event weights** — nominal weight and all systematic variations stored as separate branches (`eventWeight`, `eventWeight__puup`, `eventWeight__btaghfup`, …)
-- **b-tag normalization** — per-njet-bin normalization pass before writing weights, following CMS BTV recommendation
-- **Tau fake factor** — applied optionally via `--ff` flag
+- **Object selection** — full analysis cuts from `data/config/analysis_config.json`; for shape systematics (JES / JER / TES / MET Unclust / Muon ScaReKIT `muonscale`,`muonsmear` / Electron S&S `elescale`,`elesmear`), the primary object is varied at the 4-vector level and propagated to Type-1 PuppiMET before all downstream quantities are computed
+- **Kinematic variables** — 4-vectors, ΔR, M_T, S_T^MET, top reconstruction χ², lepton+τ+b mass (`LFV_top_mass`), scalar `Jet_HT`, object-level branches (`Jet1_pt`, `bJet1_pt`, `Tau1_pt`, etc.)
+- **Event weights** — nominal weight and all systematic variations stored as separate branches (`eventWeight`, `eventWeight__puup`, `eventWeight__btagSFbc_correlatedup`, `eventWeight__btagSFbc_<era>up`, `eventWeight__btagSFlight_correlatedup`, `eventWeight__btagSFlight_<era>up`, …)
+- **b-tag Fixed-WP SF (Method 1a)** — event-by-event reweighting over tagged and untagged jets using 2D MC efficiency maps (`data/BTV/<ch>/<era>/btag_eff_*.root`) and `btagging.json.gz`, with heavy-flavour (`bc`) and light-flavour (`light`) correlated/uncorrelated nuisances (`btagWeight[0..12]`, `btagWeight_loose[0..12]`)
+- **Tau fake factor** — applied optionally via `--ff` flag (and measured via `TauFakeFactorAnalyzer` with Medium b-tag WP and `btagWeight_loose[0]`)
 - **Histogram booking** — 1-D distributions at each selection step, with all weight variations
 - **Flat ntuple writing** — `Events` TTree with all output branches for DNN and limit setting
 
@@ -374,22 +374,24 @@ python scripts/validate_systematics.py \
 
 These shift object kinematics and are run as separate jobs. All downstream derived variables (`chi2`, `leptau_mass`, `st_met`, `lepMET_mt`, etc.) and DNN input features are automatically shifted.
 
-| Systematic | Objects varied | Era |
+| Systematic | Objects varied | Era / Channel |
 |-----------|---------------|-----|
-| `jesAbsoluteup/down` | Jet pT, mass, MET | All |
-| `jesAbsolute_{year}up/down` | Same, year-specific | All |
-| `jesBBEC1up/down` | Jet pT, mass, MET | All |
-| `jesBBEC1_{year}up/down` | Same, year-specific | All |
-| `jesRelativeBalup/down` | Jet pT, mass, MET | All |
-| `jesRelativeSample_{year}up/down` | Same | All |
-| `jesFlavorPure{Gluon,Quark,Charm,Bottom}up/down` | Jet pT, mass, MET | All |
-| `jesHEMup/down` | Jet pT, mass, MET | 2018 only |
-| `jerup/down` | Jet pT, mass, MET (smearing) | All |
-| `tesup/down` | Tau pT, mass | All |
-| `metUnclustup/down` | PuppiMET pT, φ | All |
-| `muonhighscaleup/down` | Muon pT, MET | Muon channel |
+| `jesAbsoluteup/down` | Jet pT, mass, Type-1 PuppiMET | All (Correlated) |
+| `jesAbsolute_{year}up/down` | Jet pT, mass, Type-1 PuppiMET | Per year (`2022`, `2023`, `2024`) |
+| `jesBBEC1up/down` | Jet pT, mass, Type-1 PuppiMET | All (Correlated) |
+| `jesBBEC1_{year}up/down` | Jet pT, mass, Type-1 PuppiMET | Per year (`2022`, `2023`, `2024`) |
+| `jesEC2up/down`, `jesEC2_{year}up/down` | Jet pT, mass, Type-1 PuppiMET | All / Per year |
+| `jesHFup/down`, `jesHF_{year}up/down` | Jet pT, mass, Type-1 PuppiMET | All / Per year |
+| `jesRelativeBalup/down` | Jet pT, mass, Type-1 PuppiMET | All (Correlated) |
+| `jesRelativeSample_{year}up/down` | Jet pT, mass, Type-1 PuppiMET | Per year (`2022`, `2023`, `2024`) |
+| `jesFlavorPure{Gluon,Quark,Charm,Bottom}up/down` | Jet pT, mass (by parton flavour), Type-1 PuppiMET | All (Correlated) |
+| `jerup/down` | Jet pT, mass ($c_{\text{var}}/c_{\text{nom}}$ ratio), Type-1 PuppiMET | All (Uncorrelated per era) |
+| `tesup/down` | Tau pT, mass (`Tau_ES_up/down / Tau_ES_nom`) | All (Uncorrelated per era) |
+| `metUnclustup/down` | PuppiMET pT, φ (2D shift preserving XY-correction) | All (Uncorrelated per era) |
+| `muonscaleup/down`, `muonsmearup/down` | Muon pT, mass (ScaReKIT), Type-1 PuppiMET | Muon channel (`scale` Corr, `smear` Uncorr) |
+| `elescaleup/down`, `elesmearup/down` | Electron pT, mass (EGM S&S), Type-1 PuppiMET | Electron channel (`scale` Corr, `smear` Uncorr) |
 
-Shape systematics for `hdamp` and `TuneCP5` are handled via dedicated MC datasets (separate dataset entries), not as varied jobs.
+Shape systematics for `hdamp` and `TuneCP5` (`tune`) are handled via dedicated SM $t\bar{t}$ MC datasets (`-S nosyst` + `postprocess.py` `hcounter` rescaling).
 
 ### Weight systematics (branches in the nominal file)
 
@@ -397,43 +399,43 @@ For `--syst all` or `--syst theory`, the following branches are added to each MC
 
 | Branch pattern | Physics source |
 |---------------|---------------|
-| `eventWeight__puup/down` | Pileup reweighting |
-| `eventWeight__topptup/down` | Top pT reweighting |
-| `eventWeight__muidup/down` | Muon ID SF |
-| `eventWeight__muisoup/down` | Muon isolation SF |
-| `eventWeight__mutrgup/down` | Muon trigger SF |
-| `eventWeight__btagcorrup/down` | b-tag correlated uncertainty (correlated across all Run 3 eras) |
-| `eventWeight__btaguncorrup/down` | b-tag uncorrelated uncertainty (per era) |
-| `eventWeight__tauidjetUncert{0,1}up/down` | Tau VSjet stat |
-| `eventWeight__tauidjetSyst*up/down` | Tau VSjet syst (era/DM) |
-| `eventWeight__tauidelup/down` | Tau VSe SF |
-| `eventWeight__tauidmuup/down` | Tau VSmu SF |
-| `eventWeight__mescaleup/down` | ME scale (theory mode) |
-| `eventWeight__renscaleup/down` | Renorm. scale (theory mode) |
-| `eventWeight__facscaleup/down` | Factor. scale (theory mode) |
-| `eventWeight__isrup/down` | ISR (theory mode) |
-| `eventWeight__fsrup/down` | FSR (theory mode) |
-| `eventWeight__pdf{i}` | PDF eigenvectors (theory mode) |
+| `eventWeight__puup/down` | Pileup reweighting (Correlated across Run 3) |
+| `eventWeight__topptup/down` | Top pT reweighting (Correlated across Run 3) |
+| `eventWeight__mu{id,iso,trg}_{stat,syst}up/down` | Muon ID / Iso / Trigger SF (`stat` Uncorr, `syst` Corr; legacy `mu{id,iso,trg}up/down` also stored) |
+| `eventWeight__elec{id,reco}_{stat,syst}up/down`, `eventWeight__electrgup/down` | Electron ID / Reco / Trigger SF (`stat` Uncorr, `syst` Corr; legacy `elec{id,reco}up/down` also stored) |
+| `eventWeight__btagSFbc_correlatedup/down` | Heavy-flavour ($b,c$) b-tag SF correlated uncertainty across Run 3 (`btagWeight[5/6]`) |
+| `eventWeight__btagSFbc_{era}up/down` | Heavy-flavour ($b,c$) b-tag SF uncorrelated uncertainty for `{era}` $\in \{\text{2022, 2022EE, 2023, 2023BPix, 2024}\}$ (`btagWeight[7/8]`) |
+| `eventWeight__btagSFlight_correlatedup/down` | Light-flavour ($u,d,s,g$) b-tag SF correlated uncertainty across Run 3 (`btagWeight[9/10]`) |
+| `eventWeight__btagSFlight_{era}up/down` | Light-flavour ($u,d,s,g$) b-tag SF uncorrelated uncertainty for `{era}` (`btagWeight[11/12]`) |
+| `eventWeight__tauidjet*up/down` | Tau VSjet ID SF (stat1/2 per DM, `Systalleras`, `Syst{era}`, `SystTESdm*`, `Highpt*`, plus inclusive `tauidjet`) |
+| `eventWeight__tauidelup/down`, `eventWeight__tauidmuup/down` | Tau VSe and VSmu ID SFs |
+| `eventWeight__tauFF{stat,syst}up/down` | Data-driven $\text{jet}\to\tau_h$ Fake Factor stat/syst (`--ff` mode) |
+| `eventWeight__{mescale,renscale,facscale}up/down` | Inclusive 7-point ME $\mu_R/\mu_F$ scale variations (theory mode; renormalized by `ScaleWeightSum` in `postprocess.py`) |
+| `eventWeight__{isr,fsr}up/down` | Parton Shower ISR / FSR scale variations (theory mode; renormalized by `PSWeightSum` in `postprocess.py`) |
+| `eventWeight__pdf{1..102}`, `eventWeight__pdfalphasup/down` | PDF eigenvectors and $\alpha_S$ variations (theory mode; renormalized by `LHEPdfWeightSum` in `postprocess.py`) |
 
-**b-tag SF:** Fixed Working Point (Medium) SFs are applied via Method 1a via `btagWeight[0]`, with 4 variation components (`btagWeight[1..4]`: correlated up/down and uncorrelated up/down) following the official CMS BTV POG multi-era recommendation. Normalization is not required for fixed-WP SFs.
+**b-tag SF:** Fixed Working Point (Medium) SFs are applied via BTV Method 1a (`btagWeight[0]`), with heavy-flavour (`bc`) and light-flavour (`light`) separated into correlated (`btagSFbc_correlated`, `btagSFlight_correlated`) and era-uncorrelated (`btagSFbc_<era>`, `btagSFlight_<era>`) components following the official CMS BTV POG Wiki naming convention. Per-njet normalization is not required for Method 1a.
 
 ### DNN input features
 
-The following branches are used by `DNN/train_multi.py`:
+The following 24 kinematic branches (defined in `DNN/utils/feature_config.py`) are used by `DNN/train_multi.py` and `DNN/eval_multi.py`:
 
 ```python
-# Muon channel (28 features)
-["Muon1_pt", "Muon1_eta",
- "Tau1_pt", "Tau1_mass", "Tau1_eta",
- "Jet1_pt", "Jet1_mass", "Jet1_eta", "Jet1_btagPNetB",
- "Jet2_pt", "Jet2_mass", "Jet2_eta", "Jet2_btagPNetB",
- "Jet3_pt", "Jet3_mass", "Jet3_eta", "Jet3_btagPNetB",
- "chi2", "chi2_SMW_mass", "chi2_SMTop_mass",
- "chi2_wqq_dEta", "chi2_wqq_dPhi", "chi2_wqq_dR",
- "leptau_mass", "leptau_dEta", "leptau_dPhi", "leptau_dR",
- "PuppiMET_pt"]
+# Muon channel (24 features)
+[
+    "Muon1_pt",
+    "Tau1_pt", "Tau1_mass",
+    "Jet1_pt", "Jet1_mass",
+    "Jet2_pt", "Jet2_mass",
+    "Jet3_pt", "Jet3_mass",
+    "bJet1_pt", "bJet1_mass",
+    "chi2_SMW_mass", "chi2_SMTop_mass", "chi2_SMTop_pt", "chi2_wqq_dR",
+    "leptau_mass", "leptau_dR",
+    "lepbjet_dR", "taubjet_dR", "lepMET_dPhi", "tauMET_dPhi",
+    "PuppiMET_pt", "Jet_HT", "LFV_top_mass",
+]
 
-# Electron channel: replace Muon1_pt/eta with Electron1_pt/eta
+# Electron channel: replace "Muon1_pt" with "Electron1_pt"
 ```
 
 
@@ -505,19 +507,55 @@ python eval_multi.py \
 
 ## X. Validation
 
-### Systematic propagation check
+### 1. Systematic propagation check (`validate_systematics.py`)
+
+Automated 7-category validation suite verifying branch existence, event count invariance, up/down symmetry, non-zero/finite weights, physical bounds, frozen variables, and Z-scores:
 
 ```bash
-python scripts/validate_systematics.py \
-    --indir process_v1/muon/v2023_BPix/ \
+# Muon channel (e.g. 2022EE)
+python3 scripts/validate_systematics.py \
+    --indir process_v1/muon/2022EE/ \
     --sample TTto2L2Nu \
-    --year v12_2023BPix \
+    --year 2022EE \
     --ch muon \
     --nevents 10000 \
-    --outfile syst_report.json
+    --outfile report_2022EE_muon.json
+
+# Electron channel (e.g. 2023BPix)
+python3 scripts/validate_systematics.py \
+    --indir process_v1/electron/2023BPix/ \
+    --sample TTto2L2Nu \
+    --year 2023BPix \
+    --ch electron \
+    --nevents 10000 \
+    --outfile report_2023BPix_electron.json
 ```
 
-The script runs 7 categories of automated checks and exits with code 1 if any fail. See `scripts/validate_systematics.py` for full documentation.
+The script runs 7 categories of automated checks and exits with code 1 if any fail.
+
+### 2. Systematic yield table generation (`print_syst_table.py`)
+
+Batch runner for `plotIt` to calculate yield impact ($\pm \Delta N/N [\%]$) for all systematics and produce `total_syst.tex`:
+
+```bash
+# S5 yields with Tau Fake Factor
+python3 print_syst_table.py -I process_v1/muon/ -Y 2022EE -C muon -F
+
+# DNN discriminant yields (Electron channel)
+python3 print_syst_table.py -I process_v1/electron/ -Y 2023BPix -C electron -D
+```
+
+### 3. External systematic injection (`inject_ext_syst.py`)
+
+Injects dedicated shape variation files (`hdamp`, `tune`, `tes`, `muonscale`, `elescale`, etc.) into nominal files:
+
+```bash
+# Dry run preview
+python3 scripts/inject_ext_syst.py -d process_v1/muon/2022EE/ --dry-run
+
+# Inject all external systematics
+python3 scripts/inject_ext_syst.py -d process_v1/muon/2022EE/
+```
 
 ### Output file integrity
 

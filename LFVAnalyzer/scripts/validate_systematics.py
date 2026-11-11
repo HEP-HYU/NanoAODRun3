@@ -53,69 +53,85 @@ BASE_SHAPE_SYSTS = {
     # ── JES (Correlated across all eras) ──────────────────────────────────────
     "jesAbsoluteup":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet1_mass","Jet2_pt","Jet2_mass","Jet3_pt","Jet3_mass","bJet1_pt"],
-         "derived": ["chi2","chi2_SMW_mass","chi2_SMTop_mass","st_met"]},
+         "objects": ["Jet1_pt","Jet1_mass","Jet2_pt","Jet2_mass","Jet3_pt","Jet3_mass","bJet1_pt","PuppiMET_pt"],
+         "derived": ["chi2","chi2_SMW_mass","chi2_SMTop_mass","st_met","lepMET_mt"]},
     "jesAbsolutedown":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet1_mass","Jet2_pt","Jet2_mass","Jet3_pt","Jet3_mass","bJet1_pt"],
-         "derived": ["chi2","chi2_SMW_mass","chi2_SMTop_mass","st_met"]},
+         "objects": ["Jet1_pt","Jet1_mass","Jet2_pt","Jet2_mass","Jet3_pt","Jet3_mass","bJet1_pt","PuppiMET_pt"],
+         "derived": ["chi2","chi2_SMW_mass","chi2_SMTop_mass","st_met","lepMET_mt"]},
     "jesBBEC1up":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesBBEC1down":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
+    "jesEC2up":
+        {"type": "object",
+         "objects": ["PuppiMET_pt"],
+         "derived": ["st_met","lepMET_mt"]},
+    "jesEC2down":
+        {"type": "object",
+         "objects": ["PuppiMET_pt"],
+         "derived": ["st_met","lepMET_mt"]},
+    "jesHFup":
+        {"type": "object",
+         "objects": ["PuppiMET_pt"],
+         "derived": ["st_met","lepMET_mt"]},
+    "jesHFdown":
+        {"type": "object",
+         "objects": ["PuppiMET_pt"],
+         "derived": ["st_met","lepMET_mt"]},
     "jesRelativeBalup":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesRelativeBaldown":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureGluonup":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureGluondown":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureQuarkup":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureQuarkdown":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureCharmup":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureCharmdown":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureBottomup":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jesFlavorPureBottomdown":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     # ── JER ───────────────────────────────────────────────────────────────────
     "jerup":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     "jerdown":
         {"type": "object",
-         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-         "derived": ["chi2","st_met"]},
+         "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+         "derived": ["chi2","st_met","lepMET_mt"]},
     # ── TES ───────────────────────────────────────────────────────────────────
     "tesup":
         {"type": "object",
@@ -157,15 +173,15 @@ MUON_SHAPE_SYSTS = {
         {"type": "object",
          "objects": ["Muon1_pt","PuppiMET_pt"],
          "derived": ["leptau_mass","lepMET_mt","st_met"]},
-    # ── Muon GE Scale ─────────────────────────────────────────────────────────
-    "muonhighscaleup":
-        {"type": "object",
-         "objects": ["Muon1_pt","PuppiMET_pt"],
-         "derived": ["leptau_mass","lepMET_mt","st_met"]},
-    "muonhighscaledown":
-        {"type": "object",
-         "objects": ["Muon1_pt","PuppiMET_pt"],
-         "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    # ── Muon GE Scale (Run 2 legacy; replaced by ScaReKIT muonscale/muonsmear in Run 3) ──
+    # "muonhighscaleup":
+    #     {"type": "object",
+    #      "objects": ["Muon1_pt","PuppiMET_pt"],
+    #      "derived": ["leptau_mass","lepMET_mt","st_met"]},
+    # "muonhighscaledown":
+    #     {"type": "object",
+    #      "objects": ["Muon1_pt","PuppiMET_pt"],
+    #      "derived": ["leptau_mass","lepMET_mt","st_met"]},
 }
 
 ELECTRON_SHAPE_SYSTS = {
@@ -191,9 +207,8 @@ ELECTRON_SHAPE_SYSTS = {
 
 def get_shape_systs(year, ch):
     """Return dictionary of expected shape systematics for the given year and channel."""
-    import re
-    m_year = re.search(r'(20\d\d)', str(year))
-    jes_year = m_year.group(1) if m_year else str(year)[:4]
+    # [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024)
+    jes_year = str(year)
 
     systs = dict(BASE_SHAPE_SYSTS)
 
@@ -201,13 +216,24 @@ def get_shape_systs(year, ch):
     for comp in ["Absolute", "BBEC1", "RelativeSample"]:
         systs[f"jes{comp}_{jes_year}up"] = {
             "type": "object",
-            "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-            "derived": ["chi2","st_met"],
+            "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+            "derived": ["chi2","st_met","lepMET_mt"],
         }
         systs[f"jes{comp}_{jes_year}down"] = {
             "type": "object",
-            "objects": ["Jet1_pt","Jet2_pt","Jet3_pt"],
-            "derived": ["chi2","st_met"],
+            "objects": ["Jet1_pt","Jet2_pt","Jet3_pt","PuppiMET_pt"],
+            "derived": ["chi2","st_met","lepMET_mt"],
+        }
+    for comp in ["EC2", "HF"]:
+        systs[f"jes{comp}_{jes_year}up"] = {
+            "type": "object",
+            "objects": ["PuppiMET_pt"],
+            "derived": ["st_met","lepMET_mt"],
+        }
+        systs[f"jes{comp}_{jes_year}down"] = {
+            "type": "object",
+            "objects": ["PuppiMET_pt"],
+            "derived": ["st_met","lepMET_mt"],
         }
 
     # Add channel-specific shape systematics
@@ -221,44 +247,91 @@ def get_shape_systs(year, ch):
 
 def get_shape_syst_pairs(year, ch):
     """Return list of base systematic names for up/down directionality checks."""
-    import re
-    m_year = re.search(r'(20\d\d)', str(year))
-    jes_year = m_year.group(1) if m_year else str(year)[:4]
+    # [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024)
+    jes_year = str(year)
 
     pairs = [
         "jesAbsolute", f"jesAbsolute_{jes_year}",
         "jesBBEC1", f"jesBBEC1_{jes_year}",
+        "jesEC2", f"jesEC2_{jes_year}",
+        "jesHF", f"jesHF_{jes_year}",
         "jesRelativeBal", f"jesRelativeSample_{jes_year}",
         "jesFlavorPureGluon", "jesFlavorPureQuark",
         "jesFlavorPureCharm", "jesFlavorPureBottom",
         "jer", "tes", "metUnclust",
     ]
     if ch == "muon":
-        pairs.extend(["muonscale", "muonsmear", "muonhighscale"])
+        pairs.extend(["muonscale", "muonsmear"])
     elif ch == "electron":
         pairs.extend(["elescale", "elesmear"])
 
     return pairs
 
 
-def get_weight_syst_branches(ch):
+def _resolve_btag_era(year):
+    if year.endswith("2022"):
+        return "2022"
+    elif year.endswith("2022EE"):
+        return "2022EE"
+    elif year.endswith("2023"):
+        return "2023"
+    elif year.endswith("2023BPix"):
+        return "2023BPix"
+    elif year.endswith("2024"):
+        return "2024"
+    return year
+
+
+def _resolve_tau_year(year):
+    """Map analysis year label to the tauYear suffix used in tauidjet weight branch names."""
+    if year.endswith("2022EE"):
+        return "2022_postEE"
+    elif year.endswith("2022"):
+        return "2022_preEE"
+    elif year.endswith("2023BPix"):
+        return "2023_postBPix"
+    elif year.endswith("2023"):
+        return "2023_preBPix"
+    elif year.endswith("2024"):
+        return "2024"
+    return year
+
+
+def get_tauidjet_weight_branches(year="2024"):
+    """[TAU-01/02] Expected DeepTau2018v2p5VSjet decomposed weight branches (inclusive tauidjet / legacy aliases removed).
+    2024_Summer24 provides only DM-binned nom/up/down, routed into tauidjetStat1dm{0,1,10,11}2024 (option A-1)."""
+    ty = _resolve_tau_year(year)
+    names = [f"tauidjetStat1dm{dm}{ty}" for dm in (0, 1, 10, 11)]
+    if ty != "2024":
+        names += [f"tauidjetStat2dm{dm}{ty}" for dm in (0, 1, 10, 11)]
+        names += ["tauidjetSystalleras", f"tauidjetSyst{ty}"]
+        names += [f"tauidjetSystTESdm{dm}{ty}" for dm in (0, 1, 10, 11)]
+    branches = []
+    for n in names:
+        branches += [f"eventWeight__{n}up", f"eventWeight__{n}down"]
+    return branches
+
+
+def get_weight_syst_branches(ch, year="2024"):
     """Return list of expected weight systematic branches in the nominal file for the given channel."""
+    btag_era = _resolve_btag_era(year)
     common = [
         "eventWeight__puup", "eventWeight__pudown",
         "eventWeight__topptup", "eventWeight__topptdown",
-        "eventWeight__btagcorrup", "eventWeight__btagcorrdown",
-        "eventWeight__btaguncorrup", "eventWeight__btaguncorrdown",
-        "eventWeight__tauidjetUncert0up", "eventWeight__tauidjetUncert0down",
-        "eventWeight__tauidjetUncert1up", "eventWeight__tauidjetUncert1down",
-        "eventWeight__tauidjetSystallerasup", "eventWeight__tauidjetSystallerasdown",
+        "eventWeight__btagSFbc_correlatedup", "eventWeight__btagSFbc_correlateddown",
+        f"eventWeight__btagSFbc_{btag_era}up", f"eventWeight__btagSFbc_{btag_era}down",
+        "eventWeight__btagSFlight_correlatedup", "eventWeight__btagSFlight_correlateddown",
+        f"eventWeight__btagSFlight_{btag_era}up", f"eventWeight__btagSFlight_{btag_era}down",
+        # [TAU-01] legacy aliases removed (exact copies of tauidjetStat1dm*):
+        # "eventWeight__tauidjetUncert0up", "eventWeight__tauidjetUncert0down",
+        # "eventWeight__tauidjetUncert1up", "eventWeight__tauidjetUncert1down",
+        # "eventWeight__tauidjetSystallerasup", "eventWeight__tauidjetSystallerasdown",
+    ] + get_tauidjet_weight_branches(year) + [
         "eventWeight__tauidelup", "eventWeight__tauideldown",
         "eventWeight__tauidmuup", "eventWeight__tauidmudown",
     ]
     if ch == "muon":
         lepton = [
-            "eventWeight__muidup", "eventWeight__muiddown",
-            "eventWeight__muisoup", "eventWeight__muisodown",
-            "eventWeight__mutrgup", "eventWeight__mutrgdown",
             "eventWeight__muid_statup", "eventWeight__muid_statdown",
             "eventWeight__muid_systup", "eventWeight__muid_systdown",
             "eventWeight__muiso_statup", "eventWeight__muiso_statdown",
@@ -268,8 +341,6 @@ def get_weight_syst_branches(ch):
         ]
     else:
         lepton = [
-            "eventWeight__elecrecoup", "eventWeight__elecrecodown",
-            "eventWeight__elecidup", "eventWeight__eleciddown",
             "eventWeight__electrgup", "eventWeight__electrgdown",
             "eventWeight__elecid_statup", "eventWeight__elecid_statdown",
             "eventWeight__elecid_systup", "eventWeight__elecid_systdown",
@@ -279,19 +350,19 @@ def get_weight_syst_branches(ch):
     return common + lepton
 
 
-def get_weight_syst_pairs(ch):
+def get_weight_syst_pairs(ch, year="2024"):
     """Return list of (up, down) weight branch pairs for directionality check."""
+    btag_era = _resolve_btag_era(year)
     common = [
         ("eventWeight__puup", "eventWeight__pudown"),
         ("eventWeight__topptup", "eventWeight__topptdown"),
-        ("eventWeight__btagcorrup", "eventWeight__btagcorrdown"),
-        ("eventWeight__btaguncorrup", "eventWeight__btaguncorrdown"),
+        ("eventWeight__btagSFbc_correlatedup", "eventWeight__btagSFbc_correlateddown"),
+        (f"eventWeight__btagSFbc_{btag_era}up", f"eventWeight__btagSFbc_{btag_era}down"),
+        ("eventWeight__btagSFlight_correlatedup", "eventWeight__btagSFlight_correlateddown"),
+        (f"eventWeight__btagSFlight_{btag_era}up", f"eventWeight__btagSFlight_{btag_era}down"),
     ]
     if ch == "muon":
         lepton = [
-            ("eventWeight__muidup", "eventWeight__muiddown"),
-            ("eventWeight__muisoup", "eventWeight__muisodown"),
-            ("eventWeight__mutrgup", "eventWeight__mutrgdown"),
             ("eventWeight__muid_statup", "eventWeight__muid_statdown"),
             ("eventWeight__muid_systup", "eventWeight__muid_systdown"),
             ("eventWeight__muiso_statup", "eventWeight__muiso_statdown"),
@@ -301,8 +372,6 @@ def get_weight_syst_pairs(ch):
         ]
     else:
         lepton = [
-            ("eventWeight__elecrecoup", "eventWeight__elecrecodown"),
-            ("eventWeight__elecidup", "eventWeight__eleciddown"),
             ("eventWeight__electrgup", "eventWeight__electrgdown"),
             ("eventWeight__elecid_statup", "eventWeight__elecid_statdown"),
             ("eventWeight__elecid_systup", "eventWeight__elecid_systdown"),
@@ -325,29 +394,31 @@ FROZEN_KINEMATIC_BRANCHES = [
     "lepMET_mt","st_met",
 ]
 
-# DNN input features per channel
+# DNN input features per channel (synced with DNN/utils/feature_config.py)
 DNN_FEATURES = {
     "muon": [
-        "Muon1_pt","Muon1_eta",
-        "Tau1_pt","Tau1_mass","Tau1_eta",
-        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
-        "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
-        "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-        "chi2","chi2_SMW_mass","chi2_SMTop_mass",
-        "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-        "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-        "PuppiMET_pt",
+        "Muon1_pt",
+        "Tau1_pt", "Tau1_mass",
+        "Jet1_pt", "Jet1_mass",
+        "Jet2_pt", "Jet2_mass",
+        "Jet3_pt", "Jet3_mass",
+        "bJet1_pt", "bJet1_mass",
+        "chi2_SMW_mass", "chi2_SMTop_mass", "chi2_SMTop_pt", "chi2_wqq_dR",
+        "leptau_mass", "leptau_dR",
+        "lepbjet_dR", "taubjet_dR", "lepMET_dPhi", "tauMET_dPhi",
+        "PuppiMET_pt", "Jet_HT", "LFV_top_mass",
     ],
     "electron": [
-        "Electron1_pt","Electron1_eta",
-        "Tau1_pt","Tau1_mass","Tau1_eta",
-        "Jet1_pt","Jet1_mass","Jet1_eta","Jet1_btagPNetB",
-        "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
-        "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-        "chi2","chi2_SMW_mass","chi2_SMTop_mass",
-        "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-        "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-        "PuppiMET_pt",
+        "Electron1_pt",
+        "Tau1_pt", "Tau1_mass",
+        "Jet1_pt", "Jet1_mass",
+        "Jet2_pt", "Jet2_mass",
+        "Jet3_pt", "Jet3_mass",
+        "bJet1_pt", "bJet1_mass",
+        "chi2_SMW_mass", "chi2_SMTop_mass", "chi2_SMTop_pt", "chi2_wqq_dR",
+        "leptau_mass", "leptau_dR",
+        "lepbjet_dR", "taubjet_dR", "lepMET_dPhi", "tauMET_dPhi",
+        "PuppiMET_pt", "Jet_HT", "LFV_top_mass",
     ],
 }
 
@@ -952,8 +1023,8 @@ def main():
     nevents = args.nevents if args.nevents > 0 else None
     shape_systs = get_shape_systs(args.year, args.ch)
     shape_syst_pairs = get_shape_syst_pairs(args.year, args.ch)
-    weight_syst_branches = get_weight_syst_branches(args.ch)
-    weight_syst_pairs = get_weight_syst_pairs(args.ch)
+    weight_syst_branches = get_weight_syst_branches(args.ch, args.year)
+    weight_syst_pairs = get_weight_syst_pairs(args.ch, args.year)
     all_results = []
 
     print("\n[INFO] Running CHECK 1: Branch / file existence ...")

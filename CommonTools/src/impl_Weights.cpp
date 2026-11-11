@@ -28,40 +28,86 @@ void NanoAODAnalyzerrdframe::applyWeights(string pileFile, string map){
 
 
         // Store sum of weights
-        auto storePDFWeights = [this](floats weights, float gen)->floats {
-            for (size_t i=0; i<weights.size(); i++)
-                PDFWeights[i] += (gen / abs(gen)) * weights[i];
-            return PDFWeights;
-        };
-        auto storePSWeights = [this](floats weights, float gen)->floats {
-            for (size_t i=0; i<weights.size(); i++) {
-                if (i > 3) continue; //JME Nano stores all PS
-                PSWeights[i] += (gen / abs(gen)) * weights[i];
+        bool hasPDF   = _rd.HasColumn("LHEPdfWeight");
+        bool hasPS    = _rd.HasColumn("PSWeight");
+        bool hasScale = _rd.HasColumn("LHEScaleWeight");
+        bool hasGen   = _rd.HasColumn("genWeight");
+
+        if (!hasGen) {
+            std::cerr << "[ERROR] applyWeights: Missing genWeight branch in MC sample!" << std::endl;
+            throw std::runtime_error("[ERROR] applyWeights: Missing genWeight branch in MC sample!");
+        }
+
+        // Case A: Standard NLO MC with all 3 weight branches (TTbar, ST, DY, WJets, Signal)
+        // Consolidated into a single event loop to reduce I/O overhead by 3x while preserving exact physics.
+        if (hasPDF && hasPS && hasScale) {
+            auto storeAllWeights = [this](const floats& pdfw, const floats& psw, const floats& scalew, float gen) {
+                float sign = (gen != 0.0f) ? (gen / std::abs(gen)) : 0.0f;
+                for (size_t i = 0; i < std::min(pdfw.size(), PDFWeights.size()); i++)
+                    PDFWeights[i] += sign * pdfw[i];
+                for (size_t i = 0; i < std::min(psw.size(), PSWeights.size()); i++) {
+                    if (i > 3) continue; // JME Nano stores all PS
+                    PSWeights[i] += sign * psw[i];
+                }
+                for (size_t i = 0; i < std::min(scalew.size(), ScaleWeights.size()); i++)
+                    ScaleWeights[i] += sign * scalew[i];
+            };
+            try {
+                _rlm.Foreach(storeAllWeights, {"LHEPdfWeight", "PSWeight", "LHEScaleWeight", "genWeight"});
+            } catch (const std::exception& e) {
+                std::cerr << "[ERROR] applyWeights: Failed executing consolidated weight loop: " << e.what() << std::endl;
+                throw;
             }
-            return PSWeights;
-        };
-        auto storeScaleWeights = [this](floats weights, float gen)->floats {
-            for (size_t i=0; i<weights.size(); i++)
-                ScaleWeights[i] += (gen / abs(gen)) * weights[i];
-            return ScaleWeights;
-        };
-        try {
-            _rlm.Foreach(storePDFWeights, {"LHEPdfWeight", "genWeight"});
-        } catch (exception& e) {
-            cout << e.what() << endl;
-            cout << "No PDF weight in this root file!" << endl;
         }
-        try {
-            _rlm.Foreach(storePSWeights, {"PSWeight", "genWeight"});
-        } catch (exception& e) {
-            cout << e.what() << endl;
-            cout << "No PS weight in this root file!" << endl;
-        }
-        try {
-            _rlm.Foreach(storeScaleWeights, {"LHEScaleWeight", "genWeight"});
-        } catch (exception& e) {
-            cout << e.what() << endl;
-            cout << "No Scale weight in this root file!" << endl;
+        // Case B: Selective processing for samples missing one or more theory weight branches (e.g. LO Pythia samples)
+        else {
+            auto storePDFWeights = [this](const floats& weights, float gen) {
+                float sign = (gen != 0.0f) ? (gen / std::abs(gen)) : 0.0f;
+                for (size_t i = 0; i < std::min(weights.size(), PDFWeights.size()); i++)
+                    PDFWeights[i] += sign * weights[i];
+            };
+            auto storePSWeights = [this](const floats& weights, float gen) {
+                float sign = (gen != 0.0f) ? (gen / std::abs(gen)) : 0.0f;
+                for (size_t i = 0; i < std::min(weights.size(), PSWeights.size()); i++) {
+                    if (i > 3) continue;
+                    PSWeights[i] += sign * weights[i];
+                }
+            };
+            auto storeScaleWeights = [this](const floats& weights, float gen) {
+                float sign = (gen != 0.0f) ? (gen / std::abs(gen)) : 0.0f;
+                for (size_t i = 0; i < std::min(weights.size(), ScaleWeights.size()); i++)
+                    ScaleWeights[i] += sign * weights[i];
+            };
+
+            if (hasPDF) {
+                try {
+                    _rlm.Foreach(storePDFWeights, {"LHEPdfWeight", "genWeight"});
+                } catch (const std::exception& e) {
+                    std::cerr << "[ERROR] applyWeights: Failed reading LHEPdfWeight: " << e.what() << std::endl;
+                }
+            } else {
+                std::cout << "[INFO] applyWeights: No LHEPdfWeight branch in this ROOT file." << std::endl;
+            }
+
+            if (hasPS) {
+                try {
+                    _rlm.Foreach(storePSWeights, {"PSWeight", "genWeight"});
+                } catch (const std::exception& e) {
+                    std::cerr << "[ERROR] applyWeights: Failed reading PSWeight: " << e.what() << std::endl;
+                }
+            } else {
+                std::cout << "[INFO] applyWeights: No PSWeight branch in this ROOT file." << std::endl;
+            }
+
+            if (hasScale) {
+                try {
+                    _rlm.Foreach(storeScaleWeights, {"LHEScaleWeight", "genWeight"});
+                } catch (const std::exception& e) {
+                    std::cerr << "[ERROR] applyWeights: Failed reading LHEScaleWeight: " << e.what() << std::endl;
+                }
+            } else {
+                std::cout << "[INFO] applyWeights: No LHEScaleWeight branch in this ROOT file." << std::endl;
+            }
         }
 
         ////Check Normalisation issue for genWeight
@@ -74,14 +120,33 @@ void NanoAODAnalyzerrdframe::applyWeights(string pileFile, string map){
         };
 
         
-        auto puWeightreader = loadCorrectionSet("data/LUM/"+pileFile+"/puWeights.json.gz");
-        auto _puweight = puWeightreader->at(map);
+        const std::string puJsonPath = (pileFile.find(".json.gz") != std::string::npos)
+            ? ("data/LUM/" + pileFile)
+            : ("data/LUM/" + pileFile + "/puWeights.json.gz");
+        std::shared_ptr<correction::CorrectionSet> puWeightreader;
+        correction::Correction::Ref _puweight;
+        try {
+            puWeightreader = loadCorrectionSet(puJsonPath);
+            _puweight = puWeightreader->at(map);
+        } catch (const std::exception& e) {
+            std::string msg = "[ERROR] applyWeights: Failed to load pileup correction '" + map +
+                              "' from " + puJsonPath + ": " + e.what();
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
+        }
 
-        auto PuWeight = [this, _puweight](float x) -> floats {
+        auto PuWeight = [this, _puweight, map, puJsonPath](float x) -> floats {
             floats out;
-            out.emplace_back(_puweight->evaluate({x, "nominal"}));
-            out.emplace_back(_puweight->evaluate({x, "up"}));
-            out.emplace_back(_puweight->evaluate({x, "down"}));
+            try {
+                out.emplace_back(_puweight->evaluate({x, "nominal"}));
+                out.emplace_back(_puweight->evaluate({x, "up"}));
+                out.emplace_back(_puweight->evaluate({x, "down"}));
+            } catch (const std::exception& e) {
+                std::string msg = "[ERROR] applyWeights: Pileup weight evaluation failed for '" + map +
+                                  "' (" + puJsonPath + ") at Pileup_nTrueInt=" + std::to_string(x) + ": " + e.what();
+                std::cerr << msg << std::endl;
+                throw std::runtime_error(msg);
+            }
 
             return out;
         };

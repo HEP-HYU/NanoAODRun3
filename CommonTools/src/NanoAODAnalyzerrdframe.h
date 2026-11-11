@@ -84,9 +84,9 @@ public:
   void JetVetoMap(std::string jetFile, std::string map);
   virtual void selectElectrons(std::string cut, std::string vetocut);
   virtual void selectMuons(std::string cut, std::string vetocut);
-  virtual void selectJets(std::vector<std::string> jes_var, std::vector<std::string> jes_var_flav, std::string cut);
+  virtual void selectJets(std::string cut);
   virtual void skimJets(std::string cut);
-  void applyBSFs(std::vector<string> jes_var, std::string btagYear, std::string btagMap, std::string btagMapLight, float btagcut);
+  void applyBSFs(std::string btagYear, std::string btagMap, std::string btagMapLight, float btagcut);
   void applyWeights(std::string pileFile, std::string map);
   virtual void selectTaus(std::string cut, std::string tauYear, std::string vsjet, std::string vsmu, std::string vse);
   //virtual void selectMET();
@@ -100,7 +100,7 @@ public:
   void storeEvWeight();
   void topPtReweight();
   virtual void defineMoreVars() = 0; // define higher-level variables from basic ones, you must implement this in your subclassed analysis code
-  virtual void defineObjectSelection(std::vector<std::string> jes_var) = 0;
+  virtual void defineObjectSelection() = 0;
 
   void addVar(varinfo v);
 
@@ -146,30 +146,13 @@ protected:
   bool _isRun23BPix = false;
   bool _isRun24 = false;
   bool _isSignal = false;
+  float _btagcut = -1.0f; ///< Centralized B-tag Medium WP threshold loaded from analysis_config.json
   // you MUST copy syst names from the output of 'python skimcsv.py'
   inline static std::vector<std::string> btag_var = {"central",
                 "hfup", "hfdown", "lfup", "lfdown", "hfstats1up", "hfstats1down",
                 "hfstats2up", "hfstats2down", "lfstats1up", "lfstats1down",
                 "lfstats2up", "lfstats2down", "cferr1up", "cferr1down", "cferr2up", "cferr2down"};
 
-  inline static std::vector<std::string> jes_var_2016 = {"jesAbsoluteup", "jesAbsolutedown",
-                "jesAbsolute_2016up", "jesAbsolute_2016down", "jesBBEC1up", "jesBBEC1down",
-                "jesBBEC1_2016up", "jesBBEC1_2016down", "jesFlavorQCDup", "jesFlavorQCDdown",
-                "jesRelativeBalup", "jesRelativeBaldown", "jesRelativeSample_2016up", "jesRelativeSample_2016down"};
-  inline static std::vector<std::string> jes_var_2017 = {"jesAbsoluteup", "jesAbsolutedown",
-                "jesAbsolute_2017up", "jesAbsolute_2017down", "jesBBEC1up", "jesBBEC1down",
-                "jesBBEC1_2017up", "jesBBEC1_2017down", "jesFlavorQCDup", "jesFlavorQCDdown",
-                "jesRelativeBalup", "jesRelativeBaldown", "jesRelativeSample_2017up", "jesRelativeSample_2017down"};
-  inline static std::vector<std::string> jes_var_2018 = {"jesAbsoluteup", "jesAbsolutedown",
-                "jesAbsolute_2018up", "jesAbsolute_2018down", "jesBBEC1up", "jesBBEC1down",
-                "jesBBEC1_2018up", "jesBBEC1_2018down", "jesFlavorQCDup", "jesFlavorQCDdown",
-                "jesRelativeBalup", "jesRelativeBaldown", "jesRelativeSample_2018up", "jesRelativeSample_2018down",
-                "jesHEMup", "jesHEMdown"};
-  // The order of jes_var_flav is important: Gluon / Quark / Charm / Bottom
-  inline static std::vector<std::string> jes_var_flav = {
-                "jesFlavorPureGluonup", "jesFlavorPureGluondown", "jesFlavorPureQuarkup", "jesFlavorPureQuarkdown",
-                "jesFlavorPureCharmup", "jesFlavorPureCharmdown", "jesFlavorPureBottomup", "jesFlavorPureBottomdown",
-                };
   floats PDFWeights;
   floats PSWeights;
   floats ScaleWeights;

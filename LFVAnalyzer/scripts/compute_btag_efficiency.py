@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# ==============================================================================
+# [DEPRECATED] This standalone Python event-loop b-tag efficiency calculator is
+# deprecated and no longer used in the Run 3 Top-LFV production pipeline.
+# Please use the C++ RDataFrame-based pipeline instead:
+#   - scripts/run_all_btag_efficiency.py
+#   - scripts/compute_btag_efficiency_rdataframe.py
+#   - src/BTagEfficiencyAnalyzer.cpp
+# ==============================================================================
 """
 compute_btag_efficiency.py
 
@@ -171,6 +179,8 @@ def main():
     parser.add_argument("--max-events", dest="max_events", type=int, default=-1, help="Max events to process (default: all)")
     parser.add_argument("--full-baseline", dest="full_baseline", action="store_true", default=True, help="Apply full analysis baseline: N_lep==1, N_veto==0, N_clean_tau==1, OS charge, N_jets>=3 (default: True)")
     parser.add_argument("--no-full-baseline", dest="full_baseline", action="store_false", help="Disable lepton/tau event multiplicity cuts and only apply N_jets>=3")
+    parser.add_argument("--ref-file", dest="ref_file", type=str, default="", help="SM reference efficiency ROOT file for low-stat bin replacement")
+    parser.add_argument("--min-neff", dest="min_neff", type=float, default=20.0, help="Minimum effective denominator entries per bin [default: 20.0]")
     args = parser.parse_args()
 
     # If --auto-skim is requested, delegate execution to run_all_btag_efficiency
@@ -614,35 +624,32 @@ def main():
             if score >= btag_cut:
                 h2_num[fl_key].Fill(pt, abseta, w)
 
-    # Compute efficiencies and fill fallbacks for empty bins
+    # Write raw numerator/denominator histograms, then delegate smoothing to postprocess_btag_eff
     out_dir = os.path.dirname(os.path.abspath(args.outfile))
     if out_dir and not os.path.exists(out_dir):
         os.makedirs(out_dir, exist_ok=True)
 
-    fout = ROOT.TFile(args.outfile, "RECREATE")
-    default_effs = {"b": 0.65, "c": 0.15, "light": 0.01}
-
+    raw_outfile = os.path.join(out_dir, f"raw_{os.path.basename(args.outfile)}")
+    fout = ROOT.TFile(raw_outfile, "RECREATE")
     for fl in flavors:
         h2_denom[fl].Write()
         h2_num[fl].Write()
-
-        h2_eff = h2_num[fl].Clone(f"h2_eff_{fl}")
-        h2_eff.SetTitle(f"B-tagging Efficiency ({fl});Jet p_{{T}} [GeV];Jet |#eta|")
-        h2_eff.Divide(h2_num[fl], h2_denom[fl], 1.0, 1.0, "B")
-
-        # Sanity check & empty bin smoothing with default fallback
-        for bx in range(1, n_pt + 1):
-            for by in range(1, n_eta + 1):
-                eff = h2_eff.GetBinContent(bx, by)
-                denom_val = h2_denom[fl].GetBinContent(bx, by)
-                if denom_val <= 0 or eff <= 0.0 or eff > 1.0:
-                    h2_eff.SetBinContent(bx, by, default_effs[fl])
-                    h2_eff.SetBinError(bx, by, 0.0)
-
-        h2_eff.Write()
-        print(f">> Generated h2_eff_{fl} (mean eff: {h2_eff.Integral() / (n_pt * n_eta):.4f})")
-
     fout.Close()
+
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    if this_dir not in sys.path:
+        sys.path.insert(0, this_dir)
+    from postprocess_btag_eff import process_file
+    success = process_file(raw_outfile, args.outfile, ref_path=args.ref_file, min_neff=args.min_neff)
+    if os.path.isfile(raw_outfile):
+        try:
+            os.remove(raw_outfile)
+        except OSError:
+            pass
+    if not success:
+        print(f"[ERROR] Post-processing failed for {raw_outfile}", file=sys.stderr)
+        sys.exit(1)
+
     print(f">> Successfully saved efficiency maps to: {args.outfile}")
 
 if __name__ == "__main__":

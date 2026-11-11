@@ -21,7 +21,7 @@ TopLFVAnalyzer::TopLFVAnalyzer(TTree *t, std::string outfilename, std::string ye
             syst.find("tes") != std::string::npos or syst.find("hdamp") != std::string::npos or syst.find("tune") != std::string::npos or
             syst.find("muonscale") != std::string::npos or syst.find("muonsmear") != std::string::npos or
             syst.find("elescale") != std::string::npos or syst.find("elesmear") != std::string::npos or
-            syst.find("muonhighscale") != std::string::npos or syst.find("btag") != std::string::npos) {
+            syst.find("muonhighscale") != std::string::npos) {
         ext_syst = true;
     }
     cout << "syst: " << _syst << endl;
@@ -140,7 +140,13 @@ void TopLFVAnalyzer::defineBTagNormalization(){
 }
 */
 
-void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
+void TopLFVAnalyzer::defineObjectSelection(){
+    if (_isData && !_jsonOK) {
+        std::string msg = "[ERROR] TopLFVAnalyzer: Data processing requires a valid Golden JSON file, but no valid JSON was loaded!";
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+
     // ── Load analysis configuration (static cache, read once per process) ────
     // All physics thresholds are defined in data/config/analysis_config.json.
     // Values were verified against previous hardcoded literals (Python PASS).
@@ -156,9 +162,9 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
         const std::string cfgPath = "data/config/analysis_config.json";
         std::ifstream fin(cfgPath);
         if (!fin.good()) {
-            std::cerr << "ERROR defineObjectSelection: cannot open " << cfgPath
-                      << " — aborting" << std::endl;
-            std::abort();
+            std::string msg = "[ERROR] defineObjectSelection: cannot open " + cfgPath + " — aborting";
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
         }
         Json::Value root;
         fin >> root;
@@ -219,20 +225,49 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
         btagMap      = s_btagMap2024;       // "UParTAK4_comb"
         btagMapLight = s_btagMapLight2024;  // "UParTAK4_light"
     }
-    float btagcut = s_btagcut_map.count(btagEra) ? s_btagcut_map[btagEra] : 0.1272f;
+    if (btagEra.empty() || !s_btagcut_map.count(btagEra) || s_btagcut_map[btagEra] <= 0.0f) {
+        std::string msg = "[ERROR] defineObjectSelection: Missing or invalid btag.wp_medium for era '" +
+                          btagEra + "' (year='" + _year + "') in data/config/analysis_config.json";
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+    _btagcut = s_btagcut_map[btagEra];
+    float btagcut = _btagcut;
 
     // MET unclustered energy variation:
     // NanoAOD pre-computes PuppiMET_ptUnclusteredUp/Down and PuppiMET_phiUnclusteredUp/Down.
-    // Redefine the nominal branches BEFORE any downstream variable (lepMET_mt, st_met, etc.)
-    // so that all derived kinematics automatically pick up the shifted MET.
-    if (_syst.find("metUnclustup") != std::string::npos) {
-        _rlm = _rlm.Redefine("PuppiMET_pt",  "PuppiMET_ptUnclusteredUp")
-                   .Redefine("PuppiMET_phi", "PuppiMET_phiUnclusteredUp");
-        cout << "[metUnclust] Swapped PuppiMET_pt/phi -> Unclustered UP" << endl;
-    } else if (_syst.find("metUnclustdown") != std::string::npos) {
-        _rlm = _rlm.Redefine("PuppiMET_pt",  "PuppiMET_ptUnclusteredDown")
-                   .Redefine("PuppiMET_phi", "PuppiMET_phiUnclusteredDown");
-        cout << "[metUnclust] Swapped PuppiMET_pt/phi -> Unclustered DOWN" << endl;
+    // Because SkimEvents applies MET XY-corrections to nominal PuppiMET_pt/phi (2022-2023BPix)
+    // but not to the raw UnclusteredUp/Down branches, we extract the pure 2D unclustered
+    // shift vector 0.5 * (Vec(UnclUp) - Vec(UnclDown)) and add +/- delta to the nominal
+    // XY-corrected PuppiMET BEFORE any downstream variable (lepMET_mt, st_met, etc.).
+    if (!_isData && (_syst.find("metUnclustup") != std::string::npos || _syst.find("metUnclustdown") != std::string::npos)) {
+        const double unclSign = (_syst.find("metUnclustup") != std::string::npos) ? +1.0 : -1.0;
+        auto shiftUnclPt = [unclSign](float pt_nom, float phi_nom, float pt_up, float phi_up, float pt_dn, float phi_dn) -> float {
+            double dpx = 0.5 * (pt_up * std::cos(phi_up) - pt_dn * std::cos(phi_dn));
+            double dpy = 0.5 * (pt_up * std::sin(phi_up) - pt_dn * std::sin(phi_dn));
+            double px  = pt_nom * std::cos(phi_nom) + unclSign * dpx;
+            double py  = pt_nom * std::sin(phi_nom) + unclSign * dpy;
+            return static_cast<float>(std::sqrt(px * px + py * py));
+        };
+        auto shiftUnclPhi = [unclSign](float pt_nom, float phi_nom, float pt_up, float phi_up, float pt_dn, float phi_dn) -> float {
+            double dpx = 0.5 * (pt_up * std::cos(phi_up) - pt_dn * std::cos(phi_dn));
+            double dpy = 0.5 * (pt_up * std::sin(phi_up) - pt_dn * std::sin(phi_dn));
+            double px  = pt_nom * std::cos(phi_nom) + unclSign * dpx;
+            double py  = pt_nom * std::sin(phi_nom) + unclSign * dpy;
+            return static_cast<float>(std::atan2(py, px));
+        };
+        _rlm = _rlm.Define("PuppiMET_pt_uncl_base",  "PuppiMET_pt")
+                   .Define("PuppiMET_phi_uncl_base", "PuppiMET_phi")
+                   .Redefine("PuppiMET_pt",  shiftUnclPt,
+                             {"PuppiMET_pt_uncl_base", "PuppiMET_phi_uncl_base",
+                              "PuppiMET_ptUnclusteredUp", "PuppiMET_phiUnclusteredUp",
+                              "PuppiMET_ptUnclusteredDown", "PuppiMET_phiUnclusteredDown"})
+                   .Redefine("PuppiMET_phi", shiftUnclPhi,
+                             {"PuppiMET_pt_uncl_base", "PuppiMET_phi_uncl_base",
+                              "PuppiMET_ptUnclusteredUp", "PuppiMET_phiUnclusteredUp",
+                              "PuppiMET_ptUnclusteredDown", "PuppiMET_phiUnclusteredDown"});
+        cout << "[metUnclust] Applied 2D Unclustered Energy shift (" << (unclSign > 0.0 ? "UP" : "DOWN")
+             << ") onto XY-corrected PuppiMET_pt/phi" << endl;
     }
 
     if (_isMuonCh){
@@ -271,10 +306,10 @@ void TopLFVAnalyzer::defineObjectSelection(std::vector<std::string> jes_var){
         selectMuons(cut, s_vetomuon);
         selectTaus(s_taucut, tauYear, s_el_vsjet, s_el_vsmu, s_el_vse); //VSjet VTight, VSmu VLoose, VSe Tight
     }
-    selectJets(jes_var, jes_var_flav, s_jetcut);
+    selectJets(s_jetcut);
     if (!_isData){
         topPtReweight();
-        applyBSFs(jes_var, btagYear, btagMap, btagMapLight, btagcut);
+        applyBSFs(btagYear, btagMap, btagMapLight, btagcut);
     }
 }
 
@@ -404,31 +439,14 @@ void TopLFVAnalyzer::defineKinematicVars() {
     addVar({"Jet1_mass", "Jet_mass[0]", ""});
     addVar({"Jet1_btagPNetB", bTagCol + "[0]", ""});
 
-    // Read btag medium WP from config per era
-    std::string btagEra = "";
-    if (_isRun22) btagEra = "2022_Summer22";
-    else if (_isRun22EE) btagEra = "2022_Summer22EE";
-    else if (_isRun23) btagEra = "2023_Summer23";
-    else if (_isRun23BPix) btagEra = "2023_Summer23BPix";
-    else if (_isRun24) btagEra = "2024_Summer24";
-
-    static std::map<std::string, float> s_btagcut_kin_map;
-    static bool btagkin_loaded = false;
-    if (!btagkin_loaded) {
-        const std::string cfgPath = "data/config/analysis_config.json";
-        std::ifstream fin(cfgPath);
-        if (fin.good()) {
-            Json::Value root; fin >> root;
-            if (root["btag"]["wp_medium"].isObject()) {
-                for (auto const& id : root["btag"]["wp_medium"].getMemberNames()) {
-                    s_btagcut_kin_map[id] = root["btag"]["wp_medium"][id].asFloat();
-                }
-            }
-        }
-        btagkin_loaded = true;
+    // Use centralized _btagcut loaded from analysis_config.json in defineObjectSelection
+    if (_btagcut <= 0.0f || !std::isfinite(_btagcut)) {
+        std::string msg = "[ERROR] defineKinematicVars: Uninitialized or invalid _btagcut (" +
+                          std::to_string(_btagcut) + ") for year=" + _year;
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
     }
-    float _btagcutKin = s_btagcut_kin_map.count(btagEra) ? s_btagcut_kin_map[btagEra] : 0.1272f;
-    const std::string bWP = std::to_string(_btagcutKin);
+    const std::string bWP = std::to_string(_btagcut);
 
     addVar({"Jet1_btagUParTAK4B",   bTagCol + "[0]",    ""});
     addVar({"Jet1_btagUParTAK4CvB", bTagColCvB + "[0]", ""});
@@ -458,7 +476,8 @@ void TopLFVAnalyzer::defineKinematicVars() {
     addVar({"bJet1_mass", "bJet_mass[0]", ""});
     // Additional angular/btag branches for DNN
     addVar({"bJet1_phi",       "bJet_phi[0]",   ""});
-    addVar({"bJet1_btagScore", bTagCol + "[0]", ""});
+    const std::string bJetTagCol = _isRun24 ? "bJet_btagUParTAK4B" : "bJet_btagPNetB";
+    addVar({"bJet1_btagScore", bJetTagCol + "[0]", ""});
 
     // Lepton and tau phi (angular inputs for DNN)
     if (_isMuonCh) {
@@ -548,7 +567,8 @@ void TopLFVAnalyzer::defineWeightVars() {
         addVar({"eventWeight_genputau", "eventWeight_genpu * eventWeight_tau"});
         addVar({"eventWeight_nobtag", "eventWeight_genpu * eventWeight_lep * eventWeight_tau"});
         addVar({"eventWeight_nopu", "unitGenWeight * TopPtWeight[0] * eventWeight_lep * eventWeight_tau * btagWeight[0]"});
-        addVar({"eventWeight_noprefire", "unitGenWeight * TopPtWeight[0] * puWeight[0] * eventWeight_lep * eventWeight_tau * btagWeight[0]"});
+        // L1 prefire reweighting is not needed in Run 3 (L1 DPG recommendation)
+        //addVar({"eventWeight_noprefire", "unitGenWeight * TopPtWeight[0] * puWeight[0] * eventWeight_lep * eventWeight_tau * btagWeight[0]"});
         addVar({"eventWeight_notoppt", "unitGenWeight * puWeight[0] * eventWeight_lep * eventWeight_tau * btagWeight[0]"});
 
         addVar({"eventWeight",         "eventWeight_nobtag * btagWeight[0]"});
@@ -565,12 +585,12 @@ void TopLFVAnalyzer::defineWeightVars() {
             addVar({"eventWeight__topptdown", "eventWeight_nobtag * btagWeight[0] * TopPtWeight[2] / TopPtWeight[0]"});
             // Lepton SF variations — muon channel
             if (_isMuonCh) {
-                addVar({"eventWeight__muidup",     "eventWeight_genputau * muonWeightId[1] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight__muiddown",   "eventWeight_genputau * muonWeightId[2] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight__muisoup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[1] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight__muisodown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[2] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight__mutrgup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[1] * btagWeight[0]"});
-                addVar({"eventWeight__mutrgdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[2] * btagWeight[0]"});
+                //addVar({"eventWeight__muidup",     "eventWeight_genputau * muonWeightId[1] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__muiddown",   "eventWeight_genputau * muonWeightId[2] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__muisoup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[1] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__muisodown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[2] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__mutrgup",    "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[1] * btagWeight[0]"});
+                //addVar({"eventWeight__mutrgdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[2] * btagWeight[0]"});
 
                 // Muon SF stat / syst separated variations (POG recommendation)
                 addVar({"eventWeight__muid_statup",     "eventWeight_genputau * muonWeightId[3] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
@@ -589,10 +609,10 @@ void TopLFVAnalyzer::defineWeightVars() {
                 addVar({"eventWeight__mutrg_systdown",  "eventWeight_genputau * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[6] * btagWeight[0]"});
             } else {
                 // Electron SF variations — electron channel
-                addVar({"eventWeight__elecrecoup",    "eventWeight_genputau * elecWeightReco[1] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight__elecrecodown",  "eventWeight_genputau * elecWeightReco[2] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight__elecidup",      "eventWeight_genputau * elecWeightReco[0] * elecWeightId[1] * elecWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight__eleciddown",    "eventWeight_genputau * elecWeightReco[0] * elecWeightId[2] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__elecrecoup",    "eventWeight_genputau * elecWeightReco[1] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__elecrecodown",  "eventWeight_genputau * elecWeightReco[2] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__elecidup",      "eventWeight_genputau * elecWeightReco[0] * elecWeightId[1] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight__eleciddown",    "eventWeight_genputau * elecWeightReco[0] * elecWeightId[2] * elecWeightTrg[0] * btagWeight[0]"});
                 addVar({"eventWeight__electrgup",     "eventWeight_genputau * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[1] * btagWeight[0]"});
                 addVar({"eventWeight__electrgdown",   "eventWeight_genputau * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[2] * btagWeight[0]"});
 
@@ -609,8 +629,12 @@ void TopLFVAnalyzer::defineWeightVars() {
             }
             // muonHighPtAddUncUp/Dn removed: no official Run3 high-pT muon additional uncertainty prescription.
 
-            addVar({"eventWeight__tauidjetup", "eventWeight_notau * tauWeightIdVsJet[0][1] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetdown", "eventWeight_notau * tauWeightIdVsJet[0][2] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            // [TAU-01] Inclusive tauidjet (= quadrature sum of the decomposed sub-sources in 2022/2023, native POG total in 2024)
+            // is NOT booked: using it together with the decomposed sub-sources double-counts the VSjet ID uncertainty.
+            //addVar({"eventWeight__tauidjetup", "eventWeight_notau * tauWeightIdVsJet[0][1] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetdown", "eventWeight_notau * tauWeightIdVsJet[0][2] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            // [TAU-01/02] Stat1dm{0,1,10,11}: 2022/2023 = POG stat1 eigenvector per DM;
+            //             2024 = POG DM-binned total up/down (option A-1, see impl_Selection.cpp tauSFIdVsJet).
             addVar({"eventWeight__tauidjetStat1dm0"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][3] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetStat1dm0"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][4] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetStat1dm1"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][5] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
@@ -619,6 +643,9 @@ void TopLFVAnalyzer::defineWeightVars() {
             addVar({"eventWeight__tauidjetStat1dm10"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][8] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetStat1dm11"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][9] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetStat1dm11"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][10] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            // [TAU-02] The remaining decomposed sub-sources exist only in the 2022/2023 tau POG JSONs.
+            // 2024_Summer24 (flag="dm") provides only nom/up/down, so these slots equal nominal (0% variation) and are not booked.
+            if (tauYear != "2024") {
             addVar({"eventWeight__tauidjetStat2dm0"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][11] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetStat2dm0"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][12] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetStat2dm1"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][13] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
@@ -639,37 +666,56 @@ void TopLFVAnalyzer::defineWeightVars() {
             addVar({"eventWeight__tauidjetSystTESdm10"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][28] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetSystTESdm11"+tauYear+"up", "eventWeight_notau * tauWeightIdVsJet[0][29] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidjetSystTESdm11"+tauYear+"down", "eventWeight_notau * tauWeightIdVsJet[0][30] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin1up", "eventWeight_notau * tauWeightIdVsJet[0][31] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin1down", "eventWeight_notau * tauWeightIdVsJet[0][32] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin2up", "eventWeight_notau * tauWeightIdVsJet[0][33] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptstat_bin2down", "eventWeight_notau * tauWeightIdVsJet[0][34] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptsystup", "eventWeight_notau * tauWeightIdVsJet[0][35] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptsystdown", "eventWeight_notau * tauWeightIdVsJet[0][36] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptextrapup", "eventWeight_notau * tauWeightIdVsJet[0][37] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            addVar({"eventWeight__tauidjetHighptextrapdown", "eventWeight_notau * tauWeightIdVsJet[0][38] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
-            // Legacy aliases for backward compatibility
-            addVar({"eventWeight__tauidjetUncert0up", "eventWeight__tauidjetStat1dm0"+tauYear+"up"});
-            addVar({"eventWeight__tauidjetUncert0down", "eventWeight__tauidjetStat1dm0"+tauYear+"down"});
-            addVar({"eventWeight__tauidjetUncert1up", "eventWeight__tauidjetStat1dm1"+tauYear+"up"});
-            addVar({"eventWeight__tauidjetUncert1down", "eventWeight__tauidjetStat1dm1"+tauYear+"down"});
-            addVar({"eventWeight__tauidjetSystdm0"+tauYear+"up", "eventWeight__tauidjetStat1dm0"+tauYear+"up"});
-            addVar({"eventWeight__tauidjetSystdm0"+tauYear+"down", "eventWeight__tauidjetStat1dm0"+tauYear+"down"});
-            addVar({"eventWeight__tauidjetSystdm1"+tauYear+"up", "eventWeight__tauidjetStat1dm1"+tauYear+"up"});
-            addVar({"eventWeight__tauidjetSystdm1"+tauYear+"down", "eventWeight__tauidjetStat1dm1"+tauYear+"down"});
-            addVar({"eventWeight__tauidjetSystdm10"+tauYear+"up", "eventWeight__tauidjetStat1dm10"+tauYear+"up"});
-            addVar({"eventWeight__tauidjetSystdm10"+tauYear+"down", "eventWeight__tauidjetStat1dm10"+tauYear+"down"});
-            addVar({"eventWeight__tauidjetSystdm11"+tauYear+"up", "eventWeight__tauidjetStat1dm11"+tauYear+"up"});
-            addVar({"eventWeight__tauidjetSystdm11"+tauYear+"down", "eventWeight__tauidjetStat1dm11"+tauYear+"down"});
+            } // end 2022/2023-only decomposed sub-sources
+            // [TAU-01] High-pT sub-sources (indices 31..38) are not booked: the analysis evaluates flag="dm" only,
+            // and in all 5 bundled tau POG JSONs these keys equal the nominal SF (0% variation).
+            //addVar({"eventWeight__tauidjetHighptstat_bin1up", "eventWeight_notau * tauWeightIdVsJet[0][31] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetHighptstat_bin1down", "eventWeight_notau * tauWeightIdVsJet[0][32] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetHighptstat_bin2up", "eventWeight_notau * tauWeightIdVsJet[0][33] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetHighptstat_bin2down", "eventWeight_notau * tauWeightIdVsJet[0][34] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetHighptsystup", "eventWeight_notau * tauWeightIdVsJet[0][35] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetHighptsystdown", "eventWeight_notau * tauWeightIdVsJet[0][36] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetHighptextrapup", "eventWeight_notau * tauWeightIdVsJet[0][37] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            //addVar({"eventWeight__tauidjetHighptextrapdown", "eventWeight_notau * tauWeightIdVsJet[0][38] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][0]"});
+            // [TAU-01] Legacy aliases removed: they are exact copies of Stat1dm* and were double/quadruple-counted downstream.
+            //addVar({"eventWeight__tauidjetUncert0up", "eventWeight__tauidjetStat1dm0"+tauYear+"up"});
+            //addVar({"eventWeight__tauidjetUncert0down", "eventWeight__tauidjetStat1dm0"+tauYear+"down"});
+            //addVar({"eventWeight__tauidjetUncert1up", "eventWeight__tauidjetStat1dm1"+tauYear+"up"});
+            //addVar({"eventWeight__tauidjetUncert1down", "eventWeight__tauidjetStat1dm1"+tauYear+"down"});
+            //addVar({"eventWeight__tauidjetSystdm0"+tauYear+"up", "eventWeight__tauidjetStat1dm0"+tauYear+"up"});
+            //addVar({"eventWeight__tauidjetSystdm0"+tauYear+"down", "eventWeight__tauidjetStat1dm0"+tauYear+"down"});
+            //addVar({"eventWeight__tauidjetSystdm1"+tauYear+"up", "eventWeight__tauidjetStat1dm1"+tauYear+"up"});
+            //addVar({"eventWeight__tauidjetSystdm1"+tauYear+"down", "eventWeight__tauidjetStat1dm1"+tauYear+"down"});
+            //addVar({"eventWeight__tauidjetSystdm10"+tauYear+"up", "eventWeight__tauidjetStat1dm10"+tauYear+"up"});
+            //addVar({"eventWeight__tauidjetSystdm10"+tauYear+"down", "eventWeight__tauidjetStat1dm10"+tauYear+"down"});
+            //addVar({"eventWeight__tauidjetSystdm11"+tauYear+"up", "eventWeight__tauidjetStat1dm11"+tauYear+"up"});
+            //addVar({"eventWeight__tauidjetSystdm11"+tauYear+"down", "eventWeight__tauidjetStat1dm11"+tauYear+"down"});
             addVar({"eventWeight__tauidelup", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][1] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauideldown", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][2] * tauWeightIdVsMu[0][0]"});
             addVar({"eventWeight__tauidmuup", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][1]"});
             addVar({"eventWeight__tauidmudown", "eventWeight_notau * tauWeightIdVsJet[0][0] * tauWeightIdVsEl[0][0] * tauWeightIdVsMu[0][2]"});
-            // Fixed-WP btag systematics (BTV standard: correlated + uncorrelated)
-            // btagWeight indices: 0=central, 1/2=corr up/dn, 3/4=uncorr up/dn
-            addVar({"eventWeight__btagcorrup",     "eventWeight_nobtag * btagWeight[1]"});
-            addVar({"eventWeight__btagcorrdown",   "eventWeight_nobtag * btagWeight[2]"});
-            addVar({"eventWeight__btaguncorrup",   "eventWeight_nobtag * btagWeight[3]"});
-            addVar({"eventWeight__btaguncorrdown", "eventWeight_nobtag * btagWeight[4]"});
+            // Fixed-WP btag systematics (BTV POG Wiki convention: btagSFbc_correlated, btagSFbc_<era>, btagSFlight_correlated, btagSFlight_<era>)
+            // btagWeight indices: 0=central, 1/2=combined corr up/dn, 3/4=combined uncorr up/dn,
+            //                     5/6=btagSFbc_correlated up/dn, 7/8=btagSFbc_<era> up/dn,
+            //                     9/10=btagSFlight_correlated up/dn, 11/12=btagSFlight_<era> up/dn
+            std::string btagSystEra = "2022";
+            if (_isRun22) btagSystEra = "2022";
+            else if (_isRun22EE) btagSystEra = "2022EE";
+            else if (_isRun23) btagSystEra = "2023";
+            else if (_isRun23BPix) btagSystEra = "2023BPix";
+            else if (_isRun24) btagSystEra = "2024";
+            //addVar({"eventWeight__btagcorrup",     "eventWeight_nobtag * btagWeight[1]"});
+            //addVar({"eventWeight__btagcorrdown",   "eventWeight_nobtag * btagWeight[2]"});
+            //addVar({"eventWeight__btaguncorrup",   "eventWeight_nobtag * btagWeight[3]"});
+            //addVar({"eventWeight__btaguncorrdown", "eventWeight_nobtag * btagWeight[4]"});
+            addVar({"eventWeight__btagSFbc_correlatedup",            "eventWeight_nobtag * btagWeight[5]"});
+            addVar({"eventWeight__btagSFbc_correlateddown",          "eventWeight_nobtag * btagWeight[6]"});
+            addVar({"eventWeight__btagSFbc_" + btagSystEra + "up",   "eventWeight_nobtag * btagWeight[7]"});
+            addVar({"eventWeight__btagSFbc_" + btagSystEra + "down", "eventWeight_nobtag * btagWeight[8]"});
+            addVar({"eventWeight__btagSFlight_correlatedup",            "eventWeight_nobtag * btagWeight[9]"});
+            addVar({"eventWeight__btagSFlight_correlateddown",          "eventWeight_nobtag * btagWeight[10]"});
+            addVar({"eventWeight__btagSFlight_" + btagSystEra + "up",   "eventWeight_nobtag * btagWeight[11]"});
+            addVar({"eventWeight__btagSFlight_" + btagSystEra + "down", "eventWeight_nobtag * btagWeight[12]"});
 
             if (_applytauFF) {
                 addVar({"eventWeight__tauFFstatup", "eventWeight * tauFFstatup"});
@@ -687,12 +733,12 @@ void TopLFVAnalyzer::defineWeightVars() {
 
             // Lepton SF variations (no-tau denominator) — channel-dependent
             if (_isMuonCh) {
-                addVar({"eventWeight_notau__muidup",    "eventWeight_genpu * muonWeightId[1] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight_notau__muiddown",  "eventWeight_genpu * muonWeightId[2] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight_notau__muisoup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[1] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight_notau__muisodown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[2] * muonWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight_notau__mutrgup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[1] * btagWeight[0]"});
-                addVar({"eventWeight_notau__mutrgdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[2] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__muidup",    "eventWeight_genpu * muonWeightId[1] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__muiddown",  "eventWeight_genpu * muonWeightId[2] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__muisoup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[1] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__muisodown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[2] * muonWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__mutrgup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[1] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__mutrgdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[2] * btagWeight[0]"});
 
                 // Muon SF stat / syst separated variations (POG recommendation)
                 addVar({"eventWeight_notau__muid_statup",    "eventWeight_genpu * muonWeightId[3] * muonWeightIso[0] * muonWeightTrg[0] * btagWeight[0]"});
@@ -710,10 +756,10 @@ void TopLFVAnalyzer::defineWeightVars() {
                 addVar({"eventWeight_notau__mutrg_systup",   "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[5] * btagWeight[0]"});
                 addVar({"eventWeight_notau__mutrg_systdown", "eventWeight_genpu * muonWeightId[0] * muonWeightIso[0] * muonWeightTrg[6] * btagWeight[0]"});
             } else {
-                addVar({"eventWeight_notau__elecrecoup",   "eventWeight_genpu * elecWeightReco[1] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight_notau__elecrecodown", "eventWeight_genpu * elecWeightReco[2] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight_notau__elecidup",     "eventWeight_genpu * elecWeightReco[0] * elecWeightId[1] * elecWeightTrg[0] * btagWeight[0]"});
-                addVar({"eventWeight_notau__eleciddown",   "eventWeight_genpu * elecWeightReco[0] * elecWeightId[2] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__elecrecoup",   "eventWeight_genpu * elecWeightReco[1] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__elecrecodown", "eventWeight_genpu * elecWeightReco[2] * elecWeightId[0] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__elecidup",     "eventWeight_genpu * elecWeightReco[0] * elecWeightId[1] * elecWeightTrg[0] * btagWeight[0]"});
+                //addVar({"eventWeight_notau__eleciddown",   "eventWeight_genpu * elecWeightReco[0] * elecWeightId[2] * elecWeightTrg[0] * btagWeight[0]"});
                 addVar({"eventWeight_notau__electrgup",    "eventWeight_genpu * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[1] * btagWeight[0]"});
                 addVar({"eventWeight_notau__electrgdown",  "eventWeight_genpu * elecWeightReco[0] * elecWeightId[0] * elecWeightTrg[2] * btagWeight[0]"});
 
@@ -731,10 +777,18 @@ void TopLFVAnalyzer::defineWeightVars() {
             // muonHighPtAddUncUp/Dn removed: no official Run3 high-pT muon additional uncertainty prescription.
 
             // Fixed-WP btag systematics (no-tau variant)
-            addVar({"eventWeight_notau__btagcorrup",     "eventWeight_genpumu * btagWeight[1]"});
-            addVar({"eventWeight_notau__btagcorrdown",   "eventWeight_genpumu * btagWeight[2]"});
-            addVar({"eventWeight_notau__btaguncorrup",   "eventWeight_genpumu * btagWeight[3]"});
-            addVar({"eventWeight_notau__btaguncorrdown", "eventWeight_genpumu * btagWeight[4]"});
+            //addVar({"eventWeight_notau__btagcorrup",     "eventWeight_genpumu * btagWeight[1]"});
+            //addVar({"eventWeight_notau__btagcorrdown",   "eventWeight_genpumu * btagWeight[2]"});
+            //addVar({"eventWeight_notau__btaguncorrup",   "eventWeight_genpumu * btagWeight[3]"});
+            //addVar({"eventWeight_notau__btaguncorrdown", "eventWeight_genpumu * btagWeight[4]"});
+            addVar({"eventWeight_notau__btagSFbc_correlatedup",            "eventWeight_genpumu * btagWeight[5]"});
+            addVar({"eventWeight_notau__btagSFbc_correlateddown",          "eventWeight_genpumu * btagWeight[6]"});
+            addVar({"eventWeight_notau__btagSFbc_" + btagSystEra + "up",   "eventWeight_genpumu * btagWeight[7]"});
+            addVar({"eventWeight_notau__btagSFbc_" + btagSystEra + "down", "eventWeight_genpumu * btagWeight[8]"});
+            addVar({"eventWeight_notau__btagSFlight_correlatedup",            "eventWeight_genpumu * btagWeight[9]"});
+            addVar({"eventWeight_notau__btagSFlight_correlateddown",          "eventWeight_genpumu * btagWeight[10]"});
+            addVar({"eventWeight_notau__btagSFlight_" + btagSystEra + "up",   "eventWeight_genpumu * btagWeight[11]"});
+            addVar({"eventWeight_notau__btagSFlight_" + btagSystEra + "down", "eventWeight_genpumu * btagWeight[12]"});
 
 
             if (_syst == "theory") {
@@ -829,22 +883,32 @@ void TopLFVAnalyzer::bookHists() {
     std::string lep = "e", title_tmp = "";
     if (_isMuonCh) lep = "#mu"; 
     std::vector<std::string> init_weight = {""};
+    std::string btagSystEra = "2022";
+    if (_isRun22) btagSystEra = "2022";
+    else if (_isRun22EE) btagSystEra = "2022EE";
+    else if (_isRun23) btagSystEra = "2023";
+    else if (_isRun23BPix) btagSystEra = "2023BPix";
+    else if (_isRun24) btagSystEra = "2024";
     // Base weight suffixes common to both channels
     std::vector<std::string> sf_weight = {
         "",
         "_nobtag", "_nopu", "_notau", "_notoppt",
         "__puup",   "__pudown",
         "__topptup", "__topptdown",
-        // Fixed-WP btag variations (BTV standard: correlated + uncorrelated)
-        "__btagcorrup",     "__btagcorrdown",
-        "__btaguncorrup",   "__btaguncorrdown",
+        // Fixed-WP btag variations (BTV POG Wiki convention: btagSFbc_correlated, btagSFbc_<era>, btagSFlight_correlated, btagSFlight_<era>)
+        //"__btagcorrup",     "__btagcorrdown",
+        //"__btaguncorrup",   "__btaguncorrdown",
+        "__btagSFbc_correlatedup",            "__btagSFbc_correlateddown",
+        "__btagSFbc_" + btagSystEra + "up",   "__btagSFbc_" + btagSystEra + "down",
+        "__btagSFlight_correlatedup",            "__btagSFlight_correlateddown",
+        "__btagSFlight_" + btagSystEra + "up",   "__btagSFlight_" + btagSystEra + "down",
     };
     // Channel-dependent lepton SF suffixes
     if (_isMuonCh) {
         sf_weight.insert(sf_weight.end(), {
-            "__muidup",   "__muiddown",
-            "__muisoup",  "__muisodown",
-            "__mutrgup",  "__mutrgdown",
+            //"__muidup",   "__muiddown",
+            //"__muisoup",  "__muisodown",
+            //"__mutrgup",  "__mutrgdown",
             "__muid_statup",   "__muid_statdown",
             "__muid_systup",   "__muid_systdown",
             "__muiso_statup",  "__muiso_statdown",
@@ -855,8 +919,8 @@ void TopLFVAnalyzer::bookHists() {
         });
     } else {
         sf_weight.insert(sf_weight.end(), {
-            "__elecrecoup",  "__elecrecodown",
-            "__elecidup",    "__eleciddown",
+            //"__elecrecoup",  "__elecrecodown",
+            //"__elecidup",    "__eleciddown",
             "__electrgup",   "__electrgdown",
             "__elecid_statup",     "__elecid_statdown",
             "__elecid_systup",     "__elecid_systdown",
@@ -867,32 +931,38 @@ void TopLFVAnalyzer::bookHists() {
 
 
 
-    std::vector<std::string> sf_weight_tau = {"__tauidjetup", "__tauidjetdown",
+    // [TAU-01] Inclusive tauidjet, legacy aliases (Uncert0/1, Systdm*) and 0%-variation high-pT sources removed.
+    std::vector<std::string> sf_weight_tau = {//"__tauidjetup", "__tauidjetdown",
                                               "__tauidjetStat1dm0"+tauYear+"up", "__tauidjetStat1dm0"+tauYear+"down",
                                               "__tauidjetStat1dm1"+tauYear+"up", "__tauidjetStat1dm1"+tauYear+"down",
                                               "__tauidjetStat1dm10"+tauYear+"up", "__tauidjetStat1dm10"+tauYear+"down",
                                               "__tauidjetStat1dm11"+tauYear+"up", "__tauidjetStat1dm11"+tauYear+"down",
+                                              //"__tauidjetUncert0up", "__tauidjetUncert0down",
+                                              //"__tauidjetUncert1up", "__tauidjetUncert1down",
+                                              //"__tauidjetSystdm0"+tauYear+"up", "__tauidjetSystdm0"+tauYear+"down",
+                                              //"__tauidjetSystdm1"+tauYear+"up", "__tauidjetSystdm1"+tauYear+"down",
+                                              //"__tauidjetSystdm10"+tauYear+"up", "__tauidjetSystdm10"+tauYear+"down",
+                                              //"__tauidjetSystdm11"+tauYear+"up", "__tauidjetSystdm11"+tauYear+"down",
+                                              //"__tauidjetHighptstat_bin1up", "__tauidjetHighptstat_bin1down",
+                                              //"__tauidjetHighptstat_bin2up", "__tauidjetHighptstat_bin2down",
+                                              //"__tauidjetHighptsystup", "__tauidjetHighptsystdown",
+                                              //"__tauidjetHighptextrapup", "__tauidjetHighptextrapdown",
+                                              "__tauidelup", "__tauideldown", "__tauidmuup", "__tauidmudown"};
+    // [TAU-02] 2022/2023-only decomposed sub-sources (not provided by the 2024_Summer24 tau POG JSON).
+    if (tauYear != "2024") {
+        std::vector<std::string> sf_weight_tau_decomp = {
                                               "__tauidjetStat2dm0"+tauYear+"up", "__tauidjetStat2dm0"+tauYear+"down",
                                               "__tauidjetStat2dm1"+tauYear+"up", "__tauidjetStat2dm1"+tauYear+"down",
                                               "__tauidjetStat2dm10"+tauYear+"up", "__tauidjetStat2dm10"+tauYear+"down",
                                               "__tauidjetStat2dm11"+tauYear+"up", "__tauidjetStat2dm11"+tauYear+"down",
-                                              "__tauidjetUncert0up", "__tauidjetUncert0down",
-                                              "__tauidjetUncert1up", "__tauidjetUncert1down",
                                               "__tauidjetSystallerasup", "__tauidjetSystallerasdown",
                                               "__tauidjetSyst"+tauYear+"up", "__tauidjetSyst"+tauYear+"down",
-                                              "__tauidjetSystdm0"+tauYear+"up", "__tauidjetSystdm0"+tauYear+"down",
-                                              "__tauidjetSystdm1"+tauYear+"up", "__tauidjetSystdm1"+tauYear+"down",
-                                              "__tauidjetSystdm10"+tauYear+"up", "__tauidjetSystdm10"+tauYear+"down",
-                                              "__tauidjetSystdm11"+tauYear+"up", "__tauidjetSystdm11"+tauYear+"down",
                                               "__tauidjetSystTESdm0"+tauYear+"up", "__tauidjetSystTESdm0"+tauYear+"down",
                                               "__tauidjetSystTESdm1"+tauYear+"up", "__tauidjetSystTESdm1"+tauYear+"down",
                                               "__tauidjetSystTESdm10"+tauYear+"up", "__tauidjetSystTESdm10"+tauYear+"down",
-                                              "__tauidjetSystTESdm11"+tauYear+"up", "__tauidjetSystTESdm11"+tauYear+"down",
-                                              "__tauidjetHighptstat_bin1up", "__tauidjetHighptstat_bin1down",
-                                              "__tauidjetHighptstat_bin2up", "__tauidjetHighptstat_bin2down",
-                                              "__tauidjetHighptsystup", "__tauidjetHighptsystdown",
-                                              "__tauidjetHighptextrapup", "__tauidjetHighptextrapdown",
-                                              "__tauidelup", "__tauideldown", "__tauidmuup", "__tauidmudown"};
+                                              "__tauidjetSystTESdm11"+tauYear+"up", "__tauidjetSystTESdm11"+tauYear+"down"};
+        sf_weight_tau.insert(sf_weight_tau.end(), sf_weight_tau_decomp.begin(), sf_weight_tau_decomp.end());
+    }
 
     std::vector<std::string> sf_weight_FF ={"__tauFFstatup", "__tauFFstatdown", "__tauFFsystup", "__tauFFsystdown"};
 
@@ -964,7 +1034,7 @@ void TopLFVAnalyzer::bookHists() {
         add1DHist({"h_jet1_pt_notausf", ";Leading jet p_{T} (GeV);Events", 20, 0, 400}, "Jet1_pt", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_jet1_eta_notausf", ";Leading jet #eta;Events", 20, -2.4, 2.4}, "Jet1_eta", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         add1DHist({"h_jet1_mass_notausf", ";Leading jet mass (GeV);Events", 20, 0, 100}, "Jet1_mass", "eventWeight_notau", weightstr, minstep_S1, maxstep);
-        add1DHist({"h_jet1_btag_notausf",";PNet score of leading jet;Events", 20, 0, 1.0}, "Jet1_btagPNetB", "eventWeight_notau", weightstr, minstep_S1, maxstep);
+        add1DHist({"h_jet1_btag_notausf", ";b-tag score of leading jet;Events", 20, 0, 1.0}, "Jet1_btagPNetB", "eventWeight_notau", weightstr, minstep_S1, maxstep);
         // DNN variables (no tau SF)
         add1DHist({"h_lepmet_dPhi_notausf", ";|#Delta#phi(lep, MET)|;Events", 16, 0, 3.2}, "lepMET_dPhi", "eventWeight_notau", weightstr, minstep_S1, maxstep);
     }
@@ -1008,7 +1078,7 @@ void TopLFVAnalyzer::bookHists() {
         add1DHist({"h_lepMET_mt", title_tmp.c_str(), 20, 0, 400}, "lepMET_mt", "eventWeight", weightstr, minstep_S1, maxstep);
 
         add1DHist({"h_tau1_pt", ";#tau_{h} p_{T} (GeV);Events", 10, 0, 200}, "Tau1_pt", "eventWeight", weightstr, minstep_S2, maxstep);
-        add1DHist({"h_tau1_eta", ";#tau_{h} #eta;Events", 20, -2.3, 2.3}, "Tau1_eta", "eventWeight", weightstr, minstep_S2, maxstep);
+        add1DHist({"h_tau1_eta", ";#tau_{h} #eta;Events", 25, -2.5, 2.5}, "Tau1_eta", "eventWeight", weightstr, minstep_S2, maxstep);
         add1DHist({"h_tau1_mass", ";m_{#tau_{h}} (GeV);Events", 20, 0, 100}, "Tau1_mass", "eventWeight", weightstr, minstep_S2, maxstep);
         add1DHist({"h_tau1_decayMode", ";Decaymode of #tau_{h};Events", 15, 0, 15}, "Tau1_decayMode", "eventWeight", weightstr, minstep_S2, maxstep);
 
@@ -1025,17 +1095,17 @@ void TopLFVAnalyzer::bookHists() {
         add1DHist({"h_jet1_pt", ";Leading jet p_{T} (GeV);Events", 20, 0, 400}, "Jet1_pt", "eventWeight", weightstr, minstep_S1, maxstep);
         add1DHist({"h_jet1_eta", ";Leading jet #eta;Events", 20, -2.4, 2.4}, "Jet1_eta", "eventWeight", weightstr, minstep_S1, maxstep);
         add1DHist({"h_jet1_mass", ";Leading jet mass (GeV);Events", 20, 0, 100}, "Jet1_mass", "eventWeight", weightstr, minstep_S1, maxstep);
-        add1DHist({"h_jet1_btag",";PNet score of leading jet;Events", 20, 0, 1.0}, "Jet1_btagPNetB", "eventWeight", weightstr, minstep_S1, maxstep);
+        add1DHist({"h_jet1_btag", ";b-tag score of leading jet;Events", 20, 0, 1.0}, "Jet1_btagPNetB", "eventWeight", weightstr, minstep_S1, maxstep);
 
         add1DHist({"h_jet2_pt", ";Subleading jet p_{T} (GeV);Events", 20, 0, 400}, "Jet2_pt", "eventWeight", weightstr, minstep_S4, maxstep);
         add1DHist({"h_jet2_eta", ";Subleading jet #eta;Events", 20, -2.4, 2.4}, "Jet2_eta", "eventWeight", weightstr, minstep_S4, maxstep);
         add1DHist({"h_jet2_mass", ";Subleading jet mass (GeV);Events", 20, 0, 100}, "Jet2_mass", "eventWeight", weightstr, minstep_S4, maxstep);
-        add1DHist({"h_jet2_btag",";PNet score of subleading jet;Events", 20, 0, 1.0}, "Jet2_btagPNetB", "eventWeight", weightstr, minstep_S4, maxstep);
+        add1DHist({"h_jet2_btag", ";b-tag score of subleading jet;Events", 20, 0, 1.0}, "Jet2_btagPNetB", "eventWeight", weightstr, minstep_S4, maxstep);
 
         add1DHist({"h_jet3_pt", ";Subsubleading jet p_{T} (GeV);Events", 20, 0, 400}, "Jet3_pt", "eventWeight", weightstr, minstep_S4, maxstep);
         add1DHist({"h_jet3_eta", ";Subsubleading jet #eta;Events", 20, -2.4, 2.4}, "Jet3_eta", "eventWeight", weightstr, minstep_S4, maxstep);
         add1DHist({"h_jet3_mass", ";Subsubleading jet mass (GeV);Events", 20, 0, 100}, "Jet3_mass", "eventWeight", weightstr, minstep_S4, maxstep);
-        add1DHist({"h_jet3_btag",";PNet score of subsubleading jet;Events", 20, 0, 1.0}, "Jet3_btagPNetB", "eventWeight", weightstr, minstep_S4, maxstep);
+        add1DHist({"h_jet3_btag", ";b-tag score of subsubleading jet;Events", 20, 0, 1.0}, "Jet3_btagPNetB", "eventWeight", weightstr, minstep_S4, maxstep);
 
         add1DHist({"h_bjet1_pt", ";b-tagged jet p_{T} (GeV);Events", 20, 0, 400}, "bJet1_pt", "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_bjet1_eta", ";b-tagged jet #eta;Events", 20, -2.4, 2.4}, "bJet1_eta", "eventWeight", weightstr, minstep_S5, maxstep);
@@ -1095,9 +1165,8 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
         const std::string ffPath = "data/TauFF/tau_fake_factors_run3.json";
         std::ifstream fin(ffPath);
         if (!fin.good()) {
-            std::cerr << "ERROR tauFF: cannot open " << ffPath
-                      << " — falling back to 1.0" << std::endl;
-            return 1.0;
+            std::cerr << "[ERROR] tauFF: cannot open " << ffPath << std::endl;
+            throw std::runtime_error("[ERROR] [tauFF] Missing tau fake factors payload: " + ffPath);
         }
         Json::Value root;
         fin >> root;
@@ -1126,8 +1195,8 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
     if      (ch_.find("muon")     != std::string::npos) chKey = "muon_ch";
     else if (ch_.find("electron") != std::string::npos) chKey = "electron_ch";
     else {
-        std::cout << "tauFF: unknown channel " << ch_ << " — returning 1.0" << std::endl;
-        return 1.0;
+        std::cerr << "[ERROR] tauFF: unknown channel " << ch_ << std::endl;
+        throw std::runtime_error("[ERROR] [tauFF] Unknown channel: " + ch_);
     }
 
     // ── Decay-mode key ────────────────────────────────────────────
@@ -1139,8 +1208,8 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
     else if (dm == 10) dmKey = "dm10";
     else if (dm == 11) dmKey = "dm11";
     else {
-        std::cout << "tauFF: unknown decay mode " << dm << std::endl;
-        return 1.0;
+        std::cerr << "[ERROR] tauFF: unsupported decay mode " << dm << std::endl;
+        throw std::runtime_error("[ERROR] [tauFF] Unsupported tau decay mode: " + std::to_string(dm));
     }
 
     // ── Era key normalization ──────────────────────────────────────
@@ -1160,9 +1229,9 @@ double TopLFVAnalyzer::tauFF(std::string year_, std::string ch_, std::string unc
     if (map_ff.find(chKey) == map_ff.end() ||
         map_ff.at(chKey).find(dmKey) == map_ff.at(chKey).end() ||
         map_ff.at(chKey).at(dmKey).find(yrKey) == map_ff.at(chKey).at(dmKey).end()) {
-        std::cout << "tauFF: no entry for ch=" << chKey
-                  << " dm=" << dmKey << " year=" << yrKey << " — returning 1.0" << std::endl;
-        return 1.0;
+        std::cerr << "[ERROR] tauFF: no entry for ch=" << chKey
+                  << " dm=" << dmKey << " year=" << yrKey << std::endl;
+        throw std::runtime_error("[ERROR] [tauFF] Missing fake factor entry for ch=" + chKey + " dm=" + dmKey + " year=" + yrKey);
     }
 
     // ── Return value ──────────────────────────────────────────────

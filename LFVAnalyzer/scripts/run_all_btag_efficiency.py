@@ -31,8 +31,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 DEFAULT_BASE_DIR_TEMPLATE = "/data2/common/skimmed_NanoAOD/skim_0812_LFV/{channel}/mc/"
 
 # Classification of process groups based on sample folder naming conventions
-# Aligned with files.yml / files24.yml definitions
-PROCESS_GROUPS = [
+# Aligned with files.yml / files24.yml and CommonTools/src/impl_Selection.cpp
+SM_PROCESS_GROUPS = [
     "ttbar",
     "singletop",
     "wjets",
@@ -40,9 +40,14 @@ PROCESS_GROUPS = [
     "qcd",
     "diboson",
     "ttx",
-    "signal",
-    "inclusive",
 ]
+
+SIGNAL_PROCESS_GROUPS = [
+    "signal_tc",
+    "signal_tu",
+]
+
+PROCESS_GROUPS = SM_PROCESS_GROUPS + SIGNAL_PROCESS_GROUPS + ["inclusive"]
 
 # Standard BTV campaign name mappings aligned with analysis_config.json
 ERA_TO_BTAG_YEAR = {
@@ -61,7 +66,7 @@ def parse_era_from_dirname(dirname):
       v12_2022EE   -> 2022EE
       v12_2023     -> 2023
       v12_2023BPix -> 2023BPix
-      v13_2024     -> 2024
+      v13_2024 / v15_2024 -> 2024
     """
     dirname = os.path.basename(dirname.rstrip("/"))
     m = re.search(r'(?:v\d+_)?(202[2-4](?:EE|BPix|postEE|preEE)?)', dirname, re.IGNORECASE)
@@ -75,47 +80,108 @@ def parse_era_from_dirname(dirname):
         return raw
     return None
 
-def classify_sample_dir(dirname):
-    """Classifies a sample directory into one of the standard process groups."""
+def should_exclude_sample(dirname, era, channel):
+    """
+    Returns True if a sample directory should be excluded from b-tag efficiency
+    calculation:
+      1. External systematic variation directories containing '__' (e.g. TTtoLNu2Q__hdampup).
+      2. Data directories (Muon*, SingleMuon*, EGamma*, Egamma*).
+      3. Overlapping/superseded MC samples commented out in plotIt files.yml / files24.yml:
+         - 2022–2023BPix: inclusive t-channel single top (TBbarQ_t-channel, TbarBQ_t-channel)
+           and inclusive WtoLNu-2Jets.
+         - 2024: jet-sliced WtoLNu-4Jets_{1..4}J (superseded by Wto{E,Mu,Tau}Nu-4Jets).
+      4. Channel-mismatched samples (e.g. EMEnriched / ETau in muon channel;
+         MuEnriched / MuTau in electron channel).
+    Note: Low-pT QCD samples (QCD_Pt15To20_MuEnriched, QCD_Pt10To30_EMEnriched,
+    QCD_Pt15To20_EMEnriched) are intentionally INCLUDED.
+    """
     name = os.path.basename(dirname.rstrip("/"))
     lname = name.lower()
 
-    # 1. Signal (LFV / TCMuTau)
-    if "tcmu" in lname or "tcmutau" in lname or "tce" in lname or "tcetau" in lname or "lfv" in lname:
-        return "signal"
+    # 1. External systematic directories
+    if "__" in name:
+        return True
 
-    # 2. TTX (ttW, ttZ, ttH, ttTT, etc.)
-    if (lname.startswith("ttw") or lname.startswith("ttz") or
-        lname.startswith("tth") or lname.startswith("tttt")):
+    # 2. Data directories
+    if lname.startswith(("muon", "singlemuon", "egamma")):
+        return True
+
+    # 3. Overlapping / superseded MC samples per era
+    is_2024 = "2024" in str(era)
+    if not is_2024:
+        if lname in ("tbbarq_t-channel", "tbarbq_t-channel", "wtolnu-2jets"):
+            return True
+    else:
+        if lname in ("wtolnu-4jets_1j", "wtolnu-4jets_2j", "wtolnu-4jets_3j", "wtolnu-4jets_4j"):
+            return True
+
+    # 4. Channel-mismatched samples
+    if channel == "muon":
+        if "emenriched" in lname or "etau" in lname:
+            return True
+    elif channel == "electron":
+        if "muenriched" in lname or "mutau" in lname:
+            return True
+
+    return False
+
+def classify_sample_dir(dirname):
+    """
+    Classifies a sample directory into one of the standard process groups.
+    Strictly synchronized with CommonTools/src/impl_Selection.cpp.
+    """
+    name = os.path.basename(dirname.rstrip("/"))
+    lname = name.lower()
+
+    # 1. Signal (LFV tc vs tu couplings) — MUST check before ttbar because TTto*LFV contains "ttto"
+    if ("tcmutau" in lname or "tcetau" in lname or
+        "tttocmutau" in lname or "tttocetau" in lname or
+        "signal_tc" in lname):
+        return "signal_tc"
+    if ("tumutau" in lname or "tuetau" in lname or
+        "tttoumutau" in lname or "tttouetau" in lname or
+        "signal_tu" in lname):
+        return "signal_tu"
+
+    # 2. TTX (ttW, ttZ, ttH, ttTT, etc.) — MUST check before ttbar
+    if ("ttw" in lname or "ttz" in lname or
+        "tth" in lname or "tttt" in lname):
         return "ttx"
 
     # 3. Pure ttbar (TTto2L2Nu, TTto4Q, TTtoLNu2Q, TT_TuneCP5)
-    if (lname.startswith("ttto") or lname.startswith("tt_") or
-        "ttto2l2nu" in lname or "tttolnu2q" in lname or "ttto4q" in lname):
+    if ("ttto" in lname or "ttbar" in lname or lname.startswith("tt_")):
         return "ttbar"
 
-    # 4. Single Top (t-channel, s-channel, tW, tbarW, TBbarQ, etc.)
-    if (lname.startswith("tw") or lname.startswith("tbarw") or
+    # 4. Single Top (t-channel, s-channel, tW, tbarW, TBbar, TbarB, TQbar, TbarQ)
+    if ("tbbar" in lname or "tbarb" in lname or
+        "tqbarto" in lname or "tbarqto" in lname or
+        "twminus" in lname or "tbarwplus" in lname or
         "t-channel" in lname or "s-channel" in lname or
-        lname.startswith("tbbar") or lname.startswith("tq") or
+        "singletop" in lname or lname.startswith("tw") or
+        lname.startswith("tbarw") or lname.startswith("tq") or
         lname.startswith("st_")):
         return "singletop"
 
-    # 5. Drell-Yan (DYto2L, DYJetsToLL)
-    if lname.startswith("dy"):
-        return "dyjets"
-
-    # 6. W+Jets (WtoLNu, WJetsToLNu)
-    if lname.startswith("wto") or lname.startswith("wjets") or lname.startswith("w_"):
+    # 5. W+Jets (WtoLNu, WtoENu, WtoMuNu, WtoTauNu, WJetsToLNu)
+    if ("wtolnu" in lname or "wtoenu" in lname or
+        "wtomunu" in lname or "wtotaunu" in lname or
+        "wjets" in lname or lname.startswith("wto") or lname.startswith("w_")):
         return "wjets"
 
+    # 6. Drell-Yan (DYto2L, DYto2E, DYto2Mu, DYto2Tau, DYJetsToLL)
+    if ("dyto" in lname or "dyjets" in lname or
+        "zjets" in lname or lname.startswith("dy")):
+        return "dyjets"
+
     # 7. Diboson (WW, WZ, ZZ)
-    if (lname.startswith("ww") or lname.startswith("wz") or lname.startswith("zz") or
-        "_ww" in lname or "_wz" in lname or "_zz" in lname):
+    if (lname in ("ww", "wz", "zz") or
+        lname.startswith("ww_") or lname.startswith("wz_") or lname.startswith("zz_") or
+        "_ww" in lname or "_wz" in lname or "_zz" in lname or
+        "diboson" in lname):
         return "diboson"
 
     # 8. QCD Multijet
-    if lname.startswith("qcd"):
+    if "qcd" in lname:
         return "qcd"
 
     return "unclassified"
@@ -128,6 +194,16 @@ def discover_jobs(base_dir, channel, target_years=None, target_procs=None, out_b
     jobs = []
     if not os.path.isdir(base_dir):
         return []
+
+    # Expand convenience alias 'signal' -> ['signal_tc', 'signal_tu']
+    expanded_procs = None
+    if target_procs:
+        expanded_procs = []
+        for p in target_procs:
+            if p == "signal":
+                expanded_procs.extend(SIGNAL_PROCESS_GROUPS)
+            else:
+                expanded_procs.append(p)
 
     subdirs = sorted(os.listdir(base_dir))
     era_dirs = {}
@@ -144,26 +220,30 @@ def discover_jobs(base_dir, channel, target_years=None, target_procs=None, out_b
     for era, era_path in sorted(era_dirs.items()):
         samples = sorted(os.listdir(era_path))
         proc_samples = {p: [] for p in PROCESS_GROUPS if p != "inclusive"}
-        all_samples = []
+        sm_samples = []
 
         for s in samples:
             sample_path = os.path.join(era_path, s)
             if not os.path.isdir(sample_path):
                 continue
+            if should_exclude_sample(s, era, channel):
+                continue
             grp = classify_sample_dir(s)
             if grp in proc_samples:
                 proc_samples[grp].append(sample_path)
-                all_samples.append(sample_path)
+                if grp in SM_PROCESS_GROUPS:
+                    sm_samples.append(sample_path)
             else:
-                print(f"[WARN] Unclassified sample directory in {channel}/{era}: {s}")
+                print(f"[ERROR] Unclassified sample directory in {channel}/{era}: {s}", file=sys.stderr)
+                sys.exit(1)
 
         # Build job specifications
         for proc in PROCESS_GROUPS:
-            if target_procs and proc not in target_procs:
+            if expanded_procs and proc not in expanded_procs:
                 continue
 
             if proc == "inclusive":
-                dirs = all_samples
+                dirs = sm_samples
                 outfile = os.path.join(out_base, channel, era, "btag_eff.root")
             else:
                 dirs = proc_samples.get(proc, [])
@@ -265,6 +345,8 @@ def main():
                         help="[Python engine only] Custom comma-separated pT bin edges")
     parser.add_argument("--max-events", dest="max_events", type=int, default=-1,
                         help="Max events to process per job (-1 for all)")
+    parser.add_argument("--min-neff", dest="min_neff", type=float, default=20.0,
+                        help="Minimum effective denominator entries per bin for post-processing [default: 20.0]")
     args = parser.parse_args()
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -290,8 +372,9 @@ def main():
     print(f"Engine               : {args.engine.upper()} ({os.path.basename(compute_script)})")
     print(f"Channels             : {', '.join(active_channels)}")
     print(f"Output Base Directory: {args.out_base}")
+    all_procs_str = ", ".join(PROCESS_GROUPS)
     print(f"Target Eras          : {args.years if args.years else 'All discovered'}")
-    print(f"Target Processes     : {args.processes if args.processes else 'All (ttbar, singletop, wjets, dyjets, qcd, diboson, ttx, signal, inclusive)'}")
+    print(f"Target Processes     : {args.processes if args.processes else f'All ({all_procs_str})'}")
     print(f"Concurrency (Workers): {args.jobs}")
     print("=" * 80)
 
@@ -336,7 +419,7 @@ def main():
 
     print(f"\n>> Total active jobs to run: {len(all_jobs)}")
 
-    extra_args = []
+    extra_args = ["--min-neff", str(args.min_neff)]
     if args.engine == "python":
         extra_args.extend(["--eta-bins", args.eta_bins])
         if args.pt_bins:
@@ -358,24 +441,30 @@ def main():
         print("Dry run completed. No commands executed.")
         return
 
-    # Execute jobs using ProcessPoolExecutor
-    n_workers = min(args.jobs, len(all_jobs)) if all_jobs else 1
-    print(f"\nStarting execution with {n_workers} concurrent workers...\n")
+    # Execute jobs in two stages so SM reference maps (btag_eff_ttbar.root) are
+    # finalized before dependent SM process maps run postprocess_btag_eff.py.
+    stage1_procs = {"ttbar", "signal", "signal_tc", "signal_tu"}
+    stage1_jobs = [j for j in all_jobs if j["process"] in stage1_procs]
+    stage2_jobs = [j for j in all_jobs if j["process"] not in stage1_procs]
 
     results = []
     failed_jobs = []
 
-    with ProcessPoolExecutor(max_workers=n_workers) as executor:
-        future_to_job = {
-            executor.submit(run_single_job, job, compute_script, args.engine, extra_args): job
-            for job in all_jobs
-        }
-
-        for future in as_completed(future_to_job):
-            success, job, _ = future.result()
-            results.append((success, job))
-            if not success:
-                failed_jobs.append(job)
+    for stage_idx, stage_jobs in [(1, stage1_jobs), (2, stage2_jobs)]:
+        if not stage_jobs:
+            continue
+        n_workers = min(args.jobs, len(stage_jobs))
+        print(f"\nStarting Stage {stage_idx} execution ({len(stage_jobs)} jobs, {n_workers} concurrent workers)...\n")
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            future_to_job = {
+                executor.submit(run_single_job, job, compute_script, args.engine, extra_args): job
+                for job in stage_jobs
+            }
+            for future in as_completed(future_to_job):
+                success, job, _ = future.result()
+                results.append((success, job))
+                if not success:
+                    failed_jobs.append(job)
     print("EXECUTION SUMMARY")
     print(f"Total jobs scheduled : {len(all_jobs)}")
     print(f"Successfully finished: {len(all_jobs) - len(failed_jobs)}")

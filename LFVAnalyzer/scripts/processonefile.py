@@ -37,22 +37,31 @@ if __name__=='__main__':
     applytauFF = options.ff
 
     workdir = os.getcwd()
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_json_dir = os.path.join(os.path.dirname(script_dir), "data/GoldenJSON")
+    json_base = os.path.join(workdir, "data/GoldenJSON") if os.path.isdir(os.path.join(workdir, "data/GoldenJSON")) else default_json_dir
 
     json = ""
-    if 'data' in infile[5:]:
-        if syst == "data":
-            if "2016" in infile:
-                json = os.path.join(workdir, "data/GoldenJSON/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt")
-            elif "2017" in infile:
-                json = os.path.join(workdir, "data/GoldenJSON/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt")
-            elif "2018" in infile:
-                json = os.path.join(workdir, "data/GoldenJSON/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt")
-            elif "2022" in infile:
-                json = os.path.join(workdir, "data/GoldenJSON/Cert_Collisions2022_355100_362760_Golden.json")
-            elif "2023" in infile:
-                json = os.path.join(workdir, "data/GoldenJSON/Cert_Collisions2023_366442_370790_Golden.json")
-            elif "2024" in infile:
-                json = os.path.join(workdir, "data/GoldenJSON/Cert_Collisions2024_378981_386951_Golden.json")
+    if syst == "data":
+        if "2022" in year or "2022" in infile:
+            json = os.path.join(json_base, "Cert_Collisions2022_355100_362760_Golden.json")
+        elif "2023" in year or "2023" in infile:
+            json = os.path.join(json_base, "Cert_Collisions2023_366442_370790_Golden.json")
+        elif "2024" in year or "2024" in infile:
+            json = os.path.join(json_base, "Cert_Collisions2024_378981_386951_Golden.json")
+        elif "2016" in year or "2016" in infile:
+            json = os.path.join(json_base, "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt")
+        elif "2017" in year or "2017" in infile:
+            json = os.path.join(json_base, "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt")
+        elif "2018" in year or "2018" in infile:
+            json = os.path.join(json_base, "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt")
+        else:
+            print(f"[ERROR] syst is data but cannot determine Golden JSON for year '{year}' and infile '{infile}'!")
+            sys.exit(1)
+
+        if not os.path.isfile(json):
+            print(f"[ERROR] Golden JSON file does not exist: '{json}'")
+            sys.exit(1)
 
     print("Input: " + infile + ", " + "Output: " + outputroot + ", Syst: " + syst + ", Json: " + json + "\n")
 

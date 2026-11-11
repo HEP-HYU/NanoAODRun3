@@ -40,12 +40,18 @@ mc_list = [os.path.join(mcdir, s) for s in os.listdir(mcdir)]
 
 dataset_list = data_list + mc_list
 
-m_year = re.search(r'(20\d\d)', year)
-jes_year = m_year.group(1) if m_year else year[:4]
+# [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024) per CMS_jmeUncertainty.pdf Table 2
+# Preserves distinct eraTag for uncorrelated sources across all 5 Run 3 eras.
+jes_year = year
 
+# [JME-02/03] 11 Regrouped JES sources per CMS_jmeUncertainty.pdf Table 2 & prepareShapesAndCards.py:
+# Correlated: Absolute, BBEC1, EC2, HF, RelativeBal, FlavorPure (4 sources)
+# Year-uncorrelated: Absolute_<era>, BBEC1_<era>, EC2_<era>, HF_<era>, RelativeSample_<era>
 syst_list = ["", "__tesup", "__tesdown", "__jerup","__jerdown", "__jesAbsoluteup","__jesAbsolutedown",
              "__jesAbsolute_"+jes_year+"up", "__jesAbsolute_"+jes_year+"down",
              "__jesBBEC1up", "__jesBBEC1down", "__jesBBEC1_"+jes_year+"up", "__jesBBEC1_"+jes_year+"down",
+             "__jesEC2up", "__jesEC2down", "__jesEC2_"+jes_year+"up", "__jesEC2_"+jes_year+"down",
+             "__jesHFup", "__jesHFdown", "__jesHF_"+jes_year+"up", "__jesHF_"+jes_year+"down",
              "__jesRelativeBalup", "__jesRelativeBaldown",
              "__jesRelativeSample_"+jes_year+"up", "__jesRelativeSample_"+jes_year+"down"]
 # jesHEM was 2018 Run 2 only (HCAL issue repaired in LS2, excluded in Run 3)
@@ -55,7 +61,7 @@ syst_list.extend(["__jesFlavorPureGluonup", "__jesFlavorPureGluondown", "__jesFl
 syst_list.extend(["__metUnclustup", "__metUnclustdown"])
 if ch == "muon":
     syst_list.extend(["__muonscaleup", "__muonscaledown", "__muonsmearup", "__muonsmeardown"])
-    syst_list.extend(["__muonhighscaleup", "__muonhighscaledown"])
+    # syst_list.extend(["__muonhighscaleup", "__muonhighscaledown"])  # Run 2 legacy (no-op in Run 3; replaced by ScaReKIT muonscale/muonsmear)
 elif ch == "electron":
     syst_list.extend(["__elescaleup", "__elescaledown", "__elesmearup", "__elesmeardown"])
 
@@ -105,12 +111,14 @@ for ds in dataset_list:
 
     if len(options.dataset) > 0 and not any(i in ds for i in options.dataset): continue
 
+    is_data = (ds in data_list)
+
     for src in syst_list:
 
-        if options.dataOrMC == 'data':
-            if 'data' not in ds[5:]: continue
-        elif options.dataOrMC == 'mc':
-            if 'mc' not in ds[5:]: continue
+        if options.dataOrMC == 'data' and not is_data:
+            continue
+        elif options.dataOrMC == 'mc' and is_data:
+            continue
 
         dataset_name = ds.split('/')[-1]
         outdir = tgdir
@@ -119,7 +127,7 @@ for ds in dataset_list:
         ext_syst = False
         if any(i in dataset_name for i in syst_ext): ext_syst = True
 
-        if 'data' in ds[5:]:
+        if is_data:
             if src == "":
                 if toSplit:
                     os.makedirs(tgdir.replace(year, year + '/' + "split"), exist_ok=True)

@@ -20,13 +20,12 @@ public:
     BTagEfficiencyAnalyzer(TTree *t, std::string outfilename, std::string year="", std::string ch="", std::string syst="", std::string jsonfname="", bool applytauFF=false, std::string globaltag="", int nthreads=1);
     ~BTagEfficiencyAnalyzer() override = default;
 
-    void defineObjectSelection(std::vector<std::string> jes_var) override;
+    void defineObjectSelection() override;
     void defineCuts() override;
     void defineMoreVars() override;
     void bookHists() override;
 
 private:
-    float _btagcut = 0.2450f;
     std::string _btagCol = "Jet_btagPNetB";
     std::string _chName = "muon";
     std::string maxstep = "0000";

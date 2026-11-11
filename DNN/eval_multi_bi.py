@@ -30,21 +30,24 @@ def min_max_scaling(series):
     return (series - series.min()) / (series.max() - series.min())
 
 
+from utils.feature_config import get_inputvars
+
 training_path = options.indir
 #training_path = ""
 
-inputvars = [#"Muon1_pt", "Muon1_eta",
-            "Tau1_pt","Tau1_mass","Tau1_eta",
-            "Jet1_mass","Jet1_eta","Jet1_btagPNetB",
-            "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
-            "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
-            "chi2","chi2_SMW_mass","chi2_SMTop_mass",
-            "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
-            "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
-            "PuppiMET_pt"
-            ]
-if ch == "muon": inputvars = ["Muon1_pt", "Muon1_eta"] + inputvars
-else: inputvars = ["Electron1_pt", "Electron1_eta"] + inputvars
+#inputvars = [#"Muon1_pt", "Muon1_eta",
+#            "Tau1_pt","Tau1_mass","Tau1_eta",
+#            "Jet1_mass","Jet1_eta","Jet1_btagPNetB",
+#            "Jet2_pt","Jet2_mass","Jet2_eta","Jet2_btagPNetB",
+#            "Jet3_pt","Jet3_mass","Jet3_eta","Jet3_btagPNetB",
+#            "chi2","chi2_SMW_mass","chi2_SMTop_mass",
+#            "chi2_wqq_dEta","chi2_wqq_dPhi","chi2_wqq_dR",
+#            "leptau_mass","leptau_dEta","leptau_dPhi","leptau_dR",
+#            "PuppiMET_pt"
+#            ]
+#if ch == "muon": inputvars = ["Muon1_pt", "Muon1_eta"] + inputvars
+#else: inputvars = ["Electron1_pt", "Electron1_eta"] + inputvars
+inputvars = get_inputvars(ch)
 
 
 #discriminators = {"p_st" : 2, "p_tt" : 1 , "p_bkg" : 0 , "p_st_tt" : 999, "p_st_tt_ob" : 999 }
@@ -87,13 +90,19 @@ def run(inputs):
     hist_nevents_S4_dict = {}
     hist_nevents_S5_dict = {}
 
-    if not "SingleMuon" in input_file :
+    ScaleWeightSum = None
+    PSWeightSum = None
+    LHEPdfWeightSum = None
+    if (not "SingleMuon" in input_file) and (not "Muon" in input_file) and (not "egamma" in input_file.lower()):
         infile_forS = uproot.open(input_file.replace("_FF", ""))
-        h_nevents_S4 = infile_forS["h_nevents_S4_all"]
-        #if any(string in input_file for string in ["_LFV", "TTt", "_ST_t"]) and "__" not in input_file:
-        #    ScaleWeightSum = infile['ScaleWeightSum']
-        #    PSWeightSum = infile['PSWeightSum']
-        #    LHEPdfWeightSum = infile['LHEPdfWeightSum']
+        h_nevents_S4 = infile_forS["h_nevents_S4"]
+        in_keys = [k.split(";")[0] for k in infile.keys()]
+        if "ScaleWeightSum" in in_keys:
+            ScaleWeightSum = infile["ScaleWeightSum"]
+        if "PSWeightSum" in in_keys:
+            PSWeightSum = infile["PSWeightSum"]
+        if "LHEPdfWeightSum" in in_keys:
+            LHEPdfWeightSum = infile["LHEPdfWeightSum"]
 
     if nEvents == 0:
         #print("No events : "+input_file)
@@ -163,13 +172,15 @@ def run(inputs):
         outf["h_dnn_entries_S5"] = dnnhist_entries_nom
         outf["hcounter"] = hcounter
 
-        if not "SingleMuon" in input_file:
+        if (not "SingleMuon" in input_file) and (not "Muon" in input_file) and (not "egamma" in input_file.lower()):
             outf["h_nevents_S4"] = h_nevents_S4
 
-            #if any(string in input_file for string in ["_LFV","TTT","_ST_t"]) and "__" not in input_file:
-            #    outf["ScaleWeightSum"] = ScaleWeightSum
-            #    outf["PSWeightSum"] = PSWeightSum
-            #    outf["LHEPdfWeightSum"] = LHEPdfWeightSum
+            if ScaleWeightSum is not None:
+                outf["ScaleWeightSum"] = ScaleWeightSum
+            if PSWeightSum is not None:
+                outf["PSWeightSum"] = PSWeightSum
+            if LHEPdfWeightSum is not None:
+                outf["LHEPdfWeightSum"] = LHEPdfWeightSum
 
         for syst in syst_list:
             if 'pdf' in syst and not 'alphas' in syst:

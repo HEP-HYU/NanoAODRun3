@@ -34,7 +34,7 @@ SkimEvents::SkimEvents(TTree *t, std::string outfilename, std::string year, std:
   }
 }
 
-void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
+void SkimEvents::defineObjectSelection(){
     std::string pileFile = "";
     std::string pileMap = "";
     std::string jetFile = "";
@@ -105,9 +105,8 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
         jecVersion = "_V4_";
         jerVersion  = "JRV3";
     } else if (_isRun24) {
-        //TODO
-        pileFile = "2024_Summer24";
-        pileMap = "Collisions24_BCDEFGHI_goldenJSON";
+        pileFile = "2024_Summer24/puWeights_CDEFGHI.json.gz";
+        pileMap = "Collisions24_CDEFGHI_goldenJSON";
         jetFile = "2024_Summer24";
         jetMap = "Summer24Prompt24_RunBCDEFGHI_V1";
         elecFile = "2024_Summer24";
@@ -135,14 +134,20 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     // Electron cut: CMS EGM Run3 recommendation
     //   - MVA-based WP90 isolation ID (mvaIso_WP90)
     //   - Exclude ECAL gap (1.4442 < |eta_SC| < 1.566) where reconstruction degrades
-    //   - Electron_eta here is the supercluster eta (Electron_eta in NanoAOD = SC eta)
+    //   - Supercluster eta is eta_SC = Electron_eta + Electron_deltaEtaSC
     std::string muoncut  = "Muon_pt>50.0 && abs(Muon_eta)<2.4 && Muon_tightId && Muon_pfRelIso04_all<0.15";
     std::string vetomuon = "!muoncuts && Muon_pt>15.0 && abs(Muon_eta)<2.4 && Muon_looseId && Muon_pfRelIso04_all<0.25";
     // Signal electron: WP90iso + pt>50 + |eta|<2.5 + ECAL gap exclusion
-    std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && !(abs(Electron_eta)>1.4442 && abs(Electron_eta)<1.566) && Electron_mvaIso_WP90";
-    // Veto electron: loose cutBased + |eta|<2.5 + ECAL gap exclusion
-    std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && !(abs(Electron_eta)>1.4442 && abs(Electron_eta)<1.566) && Electron_cutBased == 1";
-    std::string skimjet = "Jet_pt>30.0 && abs(Jet_eta)<2.5 && (Jet_passJetIdTightLepVeto==1.0) && Jet_muEF<0.8 && Jet_chEmEF<0.8";
+    std::string eleccut  = "Electron_pt>50 && abs(Electron_eta)<2.5 && !(abs(Electron_eta + Electron_deltaEtaSC)>1.4442 && abs(Electron_eta + Electron_deltaEtaSC)<1.566) && Electron_mvaIso_WP90";
+    // Veto electron: cutBased Veto WP (>= 1) + |eta|<2.5 + ECAL gap exclusion
+    std::string vetoelec = "!elecuts && Electron_pt>15.0 && abs(Electron_eta)<2.5 && !(abs(Electron_eta + Electron_deltaEtaSC)>1.4442 && abs(Electron_eta + Electron_deltaEtaSC)<1.566) && Electron_cutBased >= 1";
+    // [JME-02] Skim jet selection aligned with CMS JME Type-1 MET recommendation
+    // (CMS_jmeType1METCorrection.pdf Sec 1.4 & CMS_jmeFAQ.pdf p.5, 8):
+    // Preserves all jets with pt > 15 GeV, |eta| < 5.2, Tight/TightLepVeto ID, and (chEmEF + neEmEF) < 0.9.
+    // This retains the buffer zone (15-40 GeV) for jet threshold migration under JES/JER,
+    // and enables full downstream propagation of soft and forward jets (including jesEC2 and jesHF) to Type-1 MET.
+    // Analysis-specific signal jet selection (Jet_pt > 40.0 && abs(Jet_eta) < 2.5) is applied downstream in selectJets.
+    std::string skimjet = "Jet_pt > 15.0 && abs(Jet_eta) < 5.2 && (Jet_passJetIdTightLepVeto == 1.0) && (Jet_chEmEF + Jet_neEmEF) < 0.9";
 
     std::string muonid = "NUM_TightID_DEN_TrackerMuons";
     std::string muoniso = "NUM_TightPFIso_DEN_TightID";
@@ -157,19 +162,26 @@ void SkimEvents::defineObjectSelection(std::vector<std::string> jes_var){
     if (!metEpoch.empty()) applyMETXYCorrection(jecFile, metEpoch);
     JetVetoMap(jetFile, jetMap);
     applyWeights(pileFile, pileMap);
+    // In Run 3, 2024 tau.json.gz provides 'VTight', whereas 2022-2023 tau_energy_scale only provides 'Medium' in the central Tau POG release.
     std::string tauid_vsjet = _isRun24 ? "VTight" : "Medium";
     if (_ch.find("muon") != std::string::npos){
         if (!_isData){
             calculateTauES(tauYear, tauid_vsjet, "Tight", "VVLoose");
+        }
+        applyMuonScaleSmearing();
+        selectMuons(muoncut, vetomuon);
+        if (!_isData){
             calculateMuonSF(muonid, muoniso, muonhlt);
         }
-        selectMuons(muoncut, vetomuon);
     } else {
         if (!_isData){
             calculateTauES(tauYear, tauid_vsjet, "VLoose", "Tight");
+        }
+        applyElectronScaleSmearing();
+        selectElectrons(eleccut, vetoelec);
+        if (!_isData){
             calculateElectronSF(elecFile, elecYear);
         }
-        selectElectrons(eleccut, vetoelec);
     }
     skimJets(skimjet);
     if (_isSignal) matchGenReco();
@@ -244,7 +256,7 @@ void SkimEvents::defineMoreVars()
         addVartoStore("Jet_ch.*");
         addVartoStore("Jet_ne.*");
         addVartoStore("Jet_pass.*");
-        addVartoStore("btagWeight.*");
+        //addVartoStore("btagWeight.*");
         addVartoStore("nTau");
         addVartoStore("Tau_charge");
         addVartoStore("Tau_d.*");
@@ -285,7 +297,9 @@ void SkimEvents::defineMoreVars()
         addVartoStore("Electron_pf.*");
         addVartoStore("Electron_phi");
         addVartoStore("Electron_pt");
+        addVartoStore("Electron_pt_uncor");
         addVartoStore("Electron_r9");
+        addVartoStore("Electron_seedGain");
         addVartoStore("nMuon");
         addVartoStore("Muon_charge");
         addVartoStore("Muon_eta");
@@ -302,7 +316,7 @@ void SkimEvents::defineMoreVars()
         addVartoStore("nvetoelepass");
         addVartoStore("lep4vecs");
         addVartoStore("Rho_fixedGridRhoFastjetAll");
-        addVartoStore("L1PreFiringWeight_.*");
+        //addVartoStore("L1PreFiringWeight_.*"); // Not needed in Run 3
         addVartoStore("LHEPart_pt");
         addVartoStore("LHEPart_pdgId");
 }

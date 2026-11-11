@@ -17,7 +17,7 @@ public:
     void defineCuts() override;
     void defineMoreVars() override; // define higher-level variables from
     void bookHists() override;
-    void defineObjectSelection(std::vector<std::string> jes_var) override;
+    void defineObjectSelection() override;
 
 protected:
     bool ext_syst = false;  ///< true when _syst encodes an external variation (JES/JER/TES/btag)

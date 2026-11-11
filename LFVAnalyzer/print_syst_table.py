@@ -31,32 +31,56 @@ elif year.endswith("2023BPix"): tauYear = "2023_postBPix"
 elif year.endswith("2024")    : tauYear = "2024"
 else                          : tauYear = year
 
-m_year = re.search(r'(20\d\d)', year)
-jes_year = m_year.group(1) if m_year else year[:4]
+if   year.endswith("2022")    : btag_year = "2022"
+elif year.endswith("2022EE")  : btag_year = "2022EE"
+elif year.endswith("2023")    : btag_year = "2023"
+elif year.endswith("2023BPix"): btag_year = "2023BPix"
+elif year.endswith("2024")    : btag_year = "2024"
+else                          : btag_year = year
+
+# [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024)
+jes_year = year
 
 if os.path.exists(config_path + tmp_file_name):
     os.remove(config_path + tmp_file_name)
 #shutil.copy2(config_path + 'config_' + year + '.yml', config_path + tmp_file_name)
 
 if channel == "muon":
-    lep_systs = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear']
+    lep_systs = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear']
 elif channel == "electron":
-    lep_systs = ['elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
+    lep_systs = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
 else:
-    lep_systs = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear',
-                 'elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
+    lep_systs = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear',
+                 'elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
+
+# [TAU-01/02] DeepTau2018v2p5VSjet: orthogonal decomposed sub-sources only
+# (inclusive 'tauidjet', legacy aliases 'tauidjetUncert0/1', 'tauidjetSystdm*' and 0% 'tauidjetHighpt*' removed).
+# 2024_Summer24 provides only DM-binned nom/up/down -> routed into tauidjetStat1dm{0,1,10,11}2024 (option A-1).
+tauidjet_systs = ['tauidjetStat1dm0'+tauYear, 'tauidjetStat1dm1'+tauYear,
+                  'tauidjetStat1dm10'+tauYear, 'tauidjetStat1dm11'+tauYear]
+if tauYear != "2024":
+    tauidjet_systs += ['tauidjetStat2dm0'+tauYear, 'tauidjetStat2dm1'+tauYear,
+                       'tauidjetStat2dm10'+tauYear, 'tauidjetStat2dm11'+tauYear,
+                       'tauidjetSystalleras', 'tauidjetSyst'+tauYear,
+                       'tauidjetSystTESdm0'+tauYear, 'tauidjetSystTESdm1'+tauYear,
+                       'tauidjetSystTESdm10'+tauYear, 'tauidjetSystTESdm11'+tauYear]
 
 unc_cat = OrderedDict([
 ('all', ['xsec', 'pu', 'toppt'] + lep_systs + [
-         'tauidjet', 'tauidel', 'tauidmu', 'tes',
-         'tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
-         'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
-         'tauidjetSystdm10'+tauYear, 'tauidjetSystdm11'+tauYear,
-         'tauidjetHighptstat_bin1', 'tauidjetHighptstat_bin2',
-         'tauidjetHighptsyst', 'tauidjetHighptextrap',
-         'tauidel', 'tauidmu', 'tes', 'tauFFstat', 'tauFFsyst',
+         'tauidel', 'tauidmu', 'tes'] + tauidjet_systs + [
+         #'tauidjet', 'tauidel', 'tauidmu', 'tes',
+         #'tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
+         #'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
+         #'tauidjetSystdm10'+tauYear, 'tauidjetSystdm11'+tauYear,
+         #'tauidjetHighptstat_bin1', 'tauidjetHighptstat_bin2',
+         #'tauidjetHighptsyst', 'tauidjetHighptextrap',
+         #'tauidel', 'tauidmu', 'tes', 'tauFFstat', 'tauFFsyst',
+         'tauFFstat', 'tauFFsyst',
          'btagcorr', 'btaguncorr',
+         'btagSFbc_correlated', 'btagSFbc_' + btag_year,
+         'btagSFlight_correlated', 'btagSFlight_' + btag_year,
          'jesAbsolute', 'jesAbsolute_'+jes_year, 'jesBBEC1', 'jesBBEC1_'+jes_year,
+         'jesEC2', 'jesEC2_'+jes_year, 'jesHF', 'jesHF_'+jes_year,
          'jesFlavorPureGluon', 'jesFlavorPureQuark', 'jesFlavorPureCharm', 'jesFlavorPureBottom',
          'jesRelativeBal', 'jesRelativeSample_'+jes_year, 'jer',
          'metUnclust',
@@ -68,48 +92,65 @@ unc_cat = OrderedDict([
 ])
 
 if channel == "muon":
-    unc_cat['muon'] = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear']
-    unc_cat['muid'] = ['muid']
-    unc_cat['muiso'] = ['muiso']
-    unc_cat['mutrg'] = ['mutrg']
-    unc_cat['muhighpt'] = ['muhighpt']
-    unc_cat['muonhighscale'] = ['muonhighscale']
+    unc_cat['muon'] = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear']
+    unc_cat['muid'] = ['muid_stat', 'muid_syst']
+    unc_cat['muid_stat'] = ['muid_stat']
+    unc_cat['muid_syst'] = ['muid_syst']
+    unc_cat['muiso'] = ['muiso_stat', 'muiso_syst']
+    unc_cat['muiso_stat'] = ['muiso_stat']
+    unc_cat['muiso_syst'] = ['muiso_syst']
+    unc_cat['mutrg'] = ['mutrg_stat', 'mutrg_syst']
+    unc_cat['mutrg_stat'] = ['mutrg_stat']
+    unc_cat['mutrg_syst'] = ['mutrg_syst']
+    # unc_cat['muhighpt'] = ['muhighpt']
+    # unc_cat['muonhighscale'] = ['muonhighscale']
     unc_cat['muonscale'] = ['muonscale']
     unc_cat['muonsmear'] = ['muonsmear']
 elif channel == "electron":
-    unc_cat['electron'] = ['elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
-    unc_cat['elecreco'] = ['elecreco']
-    unc_cat['elecid'] = ['elecid']
+    unc_cat['electron'] = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
+    unc_cat['elecreco'] = ['elecreco_stat', 'elecreco_syst']
+    unc_cat['elecreco_stat'] = ['elecreco_stat']
+    unc_cat['elecreco_syst'] = ['elecreco_syst']
+    unc_cat['elecid'] = ['elecid_stat', 'elecid_syst']
+    unc_cat['elecid_stat'] = ['elecid_stat']
+    unc_cat['elecid_syst'] = ['elecid_syst']
     unc_cat['electrg'] = ['electrg']
     unc_cat['elescale'] = ['elescale']
     unc_cat['elesmear'] = ['elesmear']
 else:
-    unc_cat['muon'] = ['muid', 'muiso', 'mutrg', 'muhighpt', 'muonhighscale', 'muonscale', 'muonsmear']
-    unc_cat['electron'] = ['elecreco', 'elecid', 'electrg', 'elescale', 'elesmear']
+    unc_cat['muon'] = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear']
+    unc_cat['electron'] = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
 
 unc_cat.update(OrderedDict([
 #('tauid', ['tauidjet', 'tauidel', 'tauidmu']),
-('tauid', ['tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
-	   'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
-	   'tauidjetSystdm10'+tauYear, 'tauidjetSystdm11'+tauYear, 'tauidjetHighpt',
-	   'tauidel', 'tauidmu']),
-('tauidjetUncert0', ['tauidjetUncert0']),
-('tauidjetUncert1', ['tauidjetUncert1']),
-('tauidjetSystalleras', ['tauidjetSystalleras']),
-('tauidjetSyst'+tauYear, ['tauidjetSyst'+tauYear]),
-('tauidjetSystdm0'+tauYear, ['tauidjetSystdm0'+tauYear]),
-('tauidjetSystdm1'+tauYear, ['tauidjetSystdm1'+tauYear]),
-('tauidjetSystdm10'+tauYear, ['tauidjetSystdm10'+tauYear]),
-('tauidjetSystdm11'+tauYear, ['tauidjetSystdm11'+tauYear]),
-('tauidjetHighptstat_bin1', ['tauidjetHighptstat_bin1']),
-('tauidjetHighptstat_bin2', ['tauidjetHighptstat_bin2']),
-('tauidjetHighptsyst', ['tauidjetHighptsyst']),
-('tauidjetHighptextrap', ['tauidjetHighptextrap']),
-('tauidjet', ['tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
-	      'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
-	      'tauidjetSystdm10'+tauYear, 'tauidjetSystdm11'+tauYear,
-	      'tauidjetHighptstat_bin1', 'tauidjetHighptstat_bin2',
-	      'tauidjetHighptsyst', 'tauidjetHighptextrap']),
+#('tauid', ['tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
+#	   'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
+#	   'tauidjetSystdm10'+tauYear, 'tauidjetSystdm11'+tauYear, 'tauidjetHighpt',
+#	   'tauidel', 'tauidmu']),
+#('tauidjetUncert0', ['tauidjetUncert0']),
+#('tauidjetUncert1', ['tauidjetUncert1']),
+#('tauidjetSystalleras', ['tauidjetSystalleras']),
+#('tauidjetSyst'+tauYear, ['tauidjetSyst'+tauYear]),
+#('tauidjetSystdm0'+tauYear, ['tauidjetSystdm0'+tauYear]),
+#('tauidjetSystdm1'+tauYear, ['tauidjetSystdm1'+tauYear]),
+#('tauidjetSystdm10'+tauYear, ['tauidjetSystdm10'+tauYear]),
+#('tauidjetSystdm11'+tauYear, ['tauidjetSystdm11'+tauYear]),
+#('tauidjetHighptstat_bin1', ['tauidjetHighptstat_bin1']),
+#('tauidjetHighptstat_bin2', ['tauidjetHighptstat_bin2']),
+#('tauidjetHighptsyst', ['tauidjetHighptsyst']),
+#('tauidjetHighptextrap', ['tauidjetHighptextrap']),
+#('tauidjet', ['tauidjetUncert0', 'tauidjetUncert1', 'tauidjetSystalleras',
+#	      'tauidjetSyst'+tauYear, 'tauidjetSystdm0'+tauYear, 'tauidjetSystdm1'+tauYear,
+#	      'tauidjetSystdm10'+tauYear, 'tauidjetSystdm11'+tauYear,
+#	      'tauidjetHighptstat_bin1', 'tauidjetHighptstat_bin2',
+#	      'tauidjetHighptsyst', 'tauidjetHighptextrap']),
+('tauid', tauidjet_systs + ['tauidel', 'tauidmu']),
+]))
+# [TAU-01/02] one entry per active decomposed tauidjet sub-source
+for _s in tauidjet_systs:
+    unc_cat[_s] = [_s]
+unc_cat.update(OrderedDict([
+('tauidjet', list(tauidjet_systs)),
 ('tauidel', ['tauidel']),
 ('tauidmu', ['tauidmu']),
 ('tes', ['tes']),
@@ -120,6 +161,10 @@ unc_cat.update(OrderedDict([
 ('jesAbsolute_'+jes_year, ['jesAbsolute_'+jes_year]),
 ('jesBBEC1', ['jesBBEC1']),
 ('jesBBEC1_'+jes_year, ['jesBBEC1_'+jes_year]),
+('jesEC2', ['jesEC2']),
+('jesEC2_'+jes_year, ['jesEC2_'+jes_year]),
+('jesHF', ['jesHF']),
+('jesHF_'+jes_year, ['jesHF_'+jes_year]),
 ('jesFlavorPureGluon', ['jesFlavorPureGluon']),
 ('jesFlavorPureQuark', ['jesFlavorPureQuark']),
 ('jesFlavorPureCharm', ['jesFlavorPureCharm']),
@@ -128,6 +173,7 @@ unc_cat.update(OrderedDict([
 ('jesRelativeBal', ['jesRelativeBal']),
 ('jesRelativeSample_'+jes_year, ['jesRelativeSample_'+jes_year]),
 ('jesAll', ['jesAbsolute', 'jesAbsolute_'+jes_year, 'jesBBEC1', 'jesBBEC1_'+jes_year,
+            'jesEC2', 'jesEC2_'+jes_year, 'jesHF', 'jesHF_'+jes_year,
             'jesFlavorPureGluon', 'jesFlavorPureQuark', 'jesFlavorPureCharm', 'jesFlavorPureBottom',
             'jesRelativeBal', 'jesRelativeSample_'+jes_year]),
 ('jer', ['jer']),
@@ -143,7 +189,11 @@ unc_cat.update(OrderedDict([
 ('tune', ['tune']),
 ('btagcorr', ['btagcorr']),
 ('btaguncorr', ['btaguncorr']),
-('bAll', ['btagcorr', 'btaguncorr']),
+('btagSFbc_correlated', ['btagSFbc_correlated']),
+('btagSFbc_' + btag_year, ['btagSFbc_' + btag_year]),
+('btagSFlight_correlated', ['btagSFlight_correlated']),
+('btagSFlight_' + btag_year, ['btagSFlight_' + btag_year]),
+('bAll', ['btagcorr', 'btaguncorr', 'btagSFbc_correlated', 'btagSFbc_' + btag_year, 'btagSFlight_correlated', 'btagSFlight_' + btag_year]),
 ]))
 
 if year == "2018":
@@ -250,13 +300,15 @@ unc_summary.update(OrderedDict([
 ('mescale', 'Scale $\mu$F and $\mu$R'), ('renscale', 'Scale $\mu$R'), ('facscale', 'Scale $\mu$F'),
 ('isr', 'ISR'), ('fsr', 'FSR'),
 ('hdamp', 'ME-PS matching'), ('pdfalphas', 'PDF alphaS'), ('tune', 'Underlying event'),
-('bAll', 'b-tagging shape'), ('all', 'Total sys. unc.'),
+('bAll', 'b-tagging'), ('all', 'Total sys. unc.'),
 ]))
 
 print("Generating summary table...")
 #Gather all results into one summary table
 template_path = "total_syst_template.tex"
-if options.DNN: template_path = os.path.join("../nanoaodframe", template_path)
+#if options.DNN: template_path = os.path.join("../nanoaodframe", template_path)
+if options.DNN and not os.path.exists(template_path):
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "total_syst_template.tex")
 with open(template_path) as f:
     lines = f.readlines()
     with open(os.path.join(dest_path, 'figure_' + year + options.postfix, 'total_syst.tex'), "w") as f1:

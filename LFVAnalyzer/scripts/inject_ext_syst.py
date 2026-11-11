@@ -25,8 +25,17 @@ def parse_args():
     parser.add_argument("-d", "--dir", dest="directories", action="append", required=True,
                         help="Directory containing ROOT files (can be specified multiple times)")
     parser.add_argument("--systs", nargs="+",
-                        default=["hdamp", "tune", "tes", "muonscale", "muonsmear", "elescale", "elesmear"],
-                        help="List of external systematics to inject (default: hdamp tune tes muonscale muonsmear elescale elesmear)")
+                        default=[
+                            "hdamp", "tune", "tes",
+                            "muonscale", "muonsmear",
+                            "elescale", "elesmear",
+                            "jer", "metUnclust",
+                            "jesAbsolute", "jesAbsolute_2022", "jesAbsolute_2023", "jesAbsolute_2024",
+                            "jesBBEC1", "jesBBEC1_2022", "jesBBEC1_2023", "jesBBEC1_2024",
+                            "jesRelativeBal", "jesRelativeSample_2022", "jesRelativeSample_2023", "jesRelativeSample_2024",
+                            "jesFlavorPureGluon", "jesFlavorPureQuark", "jesFlavorPureCharm", "jesFlavorPureBottom",
+                        ],
+                        help="List of external systematics to inject")
     parser.add_argument("--filter", dest="filter_pattern", default="",
                         help="Optional regex pattern to filter files (e.g., 'TTto')")
     parser.add_argument("--dry-run", dest="dry_run", action="store_true", default=False,

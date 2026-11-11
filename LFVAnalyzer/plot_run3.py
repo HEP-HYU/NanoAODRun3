@@ -30,7 +30,9 @@ if not channel:
 
 config_path = f'../plotIt/configs/Run3_{channel}/'
 
-syst_avoid = ['jesFlavorPureBottom', 'jesFlavorPureCharm', 'jer', 'jesRelativeBal', 'muonhighscale', 'metUnclust', 'jesAbsolute', 'tes', 'jesFlavorPureQuark',]
+# [JME-03] Restored all JME systematics (11 reduced JES sources, 4 FlavorPure sources, jer, metUnclust) and tes.
+# Retain only deprecated Run 2 legacy aliases that do not exist in Run 3 histograms.
+syst_avoid = ['muonhighscale']
 
 eras = {
     '2022':     {'lumi': 7980.4,   'config_tag': '2022',      'dir_candidates': ['v12_2022', 'v2022', '2022']},
