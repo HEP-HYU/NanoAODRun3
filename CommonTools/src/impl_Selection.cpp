@@ -1296,10 +1296,10 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
         if (srcName.rfind("jes", 0) == 0) {
             srcName = srcName.substr(3);
         }
-        for (const std::string &vtag : {"_v12_", "_v15_"}) {
+        for (const char* vtag : {"_v12_", "_v15_"}) {
             size_t vpos = srcName.find(vtag);
             if (vpos != std::string::npos) {
-                srcName.erase(vpos, vtag.size());
+                srcName.erase(vpos, std::string(vtag).size());
             }
         }
         if (srcName.empty()) {
@@ -1331,7 +1331,7 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
             std::cout << "[JES] Applying " << _syst << " -> key=" << corrKey
                       << " from " << jercPath << " (dir=" << (jesDir > 0.0f ? "+1" : "-1") << ")" << std::endl;
             auto jercReader = loadCorrectionSet(jercPath);
-            Correction::Ref _jesUnc;
+            correction::Correction::Ref _jesUnc;
             try {
                 _jesUnc = jercReader->at(corrKey);
             } catch (const std::exception &e) {

@@ -650,7 +650,7 @@ int dRmatching( int origin_i,float maxdR,  floats origin_pt, floats origin_eta, 
     origin = gen4vec(origin_pt, origin_eta, origin_phi, origin_mass);
     target = gen4vec(target_pt, target_eta, target_phi, target_mass);
 
-    for(size_t i=0; i<int(target.size()) && origin_i != -1; i++){
+    for(size_t i=0; i<target.size() && origin_i != -1; i++){
         tempdR = ROOT::Math::VectorUtil::DeltaR(origin[origin_i],target[i]);
         if( tempdR < dR ){
             target_i = i;
@@ -670,15 +670,15 @@ ints dRmatching_binary( int origin_i,float maxdR,  floats origin_pt, floats orig
     origin = gen4vec(origin_pt, origin_eta, origin_phi, origin_mass);
     target = gen4vec(target_pt, target_eta, target_phi, target_mass);
 
-    for(size_t i=0; i<int(target.size()); i++){
+    for(size_t i=0; i<target.size(); i++){
         tempdR = ROOT::Math::VectorUtil::DeltaR(origin[origin_i],target[i]); 
         if( tempdR < dR ){
             target_i = i;
             dR = tempdR;
         }
     }
-    for(int j=0; j<int(target.size()); j++){
-        if( j == int(target_i) )target_binary.emplace_back(1);
+    for(size_t j=0; j<target.size(); j++){
+        if( static_cast<int>(j) == target_i )target_binary.emplace_back(1);
         else target_binary.emplace_back(0);
     }
     return target_binary;
