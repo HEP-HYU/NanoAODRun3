@@ -348,13 +348,13 @@ void NanoAODAnalyzerrdframe::applyMuonScaleSmearing() {
         // Skim stage (before selectMuons): preserve Muon_pt_uncor and apply nominal ScaReKIT to Muon_pt.
         // PuppiMET propagation is performed inside selectMuons() after [muoncuts] so only selected muons shift MET.
         _rlm = _rlm.Define("Muon_pt_uncor", "Muon_pt")
-                   .Define("skim_Muon_nTrackerLayers_f", "ROOT::VecOps::Cast<float>(Muon_nTrackerLayers)")
+                   .Define("skim_Muon_nTrackerLayers_f", "Muon_nTrackerLayers * 1.0f")
                    .Define("skim_Muon_pt_scare", muonScareLambda, {"Muon_pt_uncor", "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock", "skim_Muon_nTrackerLayers_f"})
                    .Redefine("Muon_pt", "skim_Muon_pt_scare");
     } else {
         // Process stage: evaluate from Muon_pt_uncor (or Muon_pt for legacy skims) and shift PuppiMET relative to current Muon_pt.
         const std::string inputPtCol = hasPtUncor ? "Muon_pt_uncor" : "Muon_pt";
-        _rlm = _rlm.Define("Muon_nTrackerLayers_f", "ROOT::VecOps::Cast<float>(Muon_nTrackerLayers)")
+        _rlm = _rlm.Define("Muon_nTrackerLayers_f", "Muon_nTrackerLayers * 1.0f")
                    .Define("Muon_pt_scare", muonScareLambda, {inputPtCol, "Muon_eta", "Muon_phi", "Muon_charge", "event", "luminosityBlock", "Muon_nTrackerLayers_f"})
                    .Define("PuppiMET_pt_mu_unsmear", "PuppiMET_pt")
                    .Define("PuppiMET_phi_mu_unsmear", "PuppiMET_phi")
@@ -474,12 +474,12 @@ void NanoAODAnalyzerrdframe::applyElectronScaleSmearing() {
         // Skim stage (before selectElectrons): preserve Electron_pt_uncor and apply nominal S&S to Electron_pt.
         // PuppiMET propagation is performed inside selectElectrons() after [elecuts] so only selected electrons shift MET.
         _rlm = _rlm.Define("Electron_pt_uncor", "Electron_pt")
-                   .Define("Electron_seedGain_i", "ROOT::VecOps::Cast<int>(Electron_seedGain)")
+                   .Define("Electron_seedGain_i", "Electron_seedGain * 1")
                    .Define("Electron_pt_scare", eleScaleSmearLambda, {"Electron_pt_uncor", "Electron_eta", "Electron_phi", "Electron_deltaEtaSC", "Electron_r9", "Electron_seedGain_i", "run", "event", "luminosityBlock"})
                    .Redefine("Electron_pt", "Electron_pt_scare");
     } else {
         // Process stage (elescaleup/down or elesmearup/down): evaluate from Electron_pt_uncor and shift PuppiMET relative to nominal Electron_pt.
-        _rlm = _rlm.Define("Electron_seedGain_i", "ROOT::VecOps::Cast<int>(Electron_seedGain)")
+        _rlm = _rlm.Define("Electron_seedGain_i", "Electron_seedGain * 1")
                    .Define("Electron_pt_scare", eleScaleSmearLambda, {"Electron_pt_uncor", "Electron_eta", "Electron_phi", "Electron_deltaEtaSC", "Electron_r9", "Electron_seedGain_i", "run", "event", "luminosityBlock"})
                    .Define("PuppiMET_pt_ele_unsmear", "PuppiMET_pt")
                    .Define("PuppiMET_phi_ele_unsmear", "PuppiMET_phi")

@@ -1361,13 +1361,13 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
             } else {
                 // Cast flavor/index columns to int (RVec<int>) for uniform v9/v12/v15 compatibility
                 const std::string partFlavExpr = isDefined("Jet_partonFlavour")
-                    ? "ROOT::VecOps::Cast<int>(Jet_partonFlavour)" : "ROOT::VecOps::RVec<int>{}";
+                    ? "Jet_partonFlavour * 1" : "ROOT::VecOps::RVec<int>{}";
                 const std::string genIdxExpr = isDefined("Jet_genJetIdx")
-                    ? "ROOT::VecOps::Cast<int>(Jet_genJetIdx)" : "ROOT::VecOps::RVec<int>{}";
+                    ? "Jet_genJetIdx * 1" : "ROOT::VecOps::RVec<int>{}";
                 const std::string genPartFlavExpr = isDefined("GenJet_partonFlavour")
-                    ? "ROOT::VecOps::Cast<int>(GenJet_partonFlavour)" : "ROOT::VecOps::RVec<int>{}";
+                    ? "GenJet_partonFlavour * 1" : "ROOT::VecOps::RVec<int>{}";
                 const std::string hadFlavExpr = isDefined("Jet_hadronFlavour")
-                    ? "ROOT::VecOps::Cast<int>(Jet_hadronFlavour)" : "ROOT::VecOps::RVec<int>{}";
+                    ? "Jet_hadronFlavour * 1" : "ROOT::VecOps::RVec<int>{}";
 
                 _rlm = _rlm.Define("Jet_partonFlavour_jes_i",    partFlavExpr)
                            .Define("Jet_genJetIdx_jes_i",        genIdxExpr)
@@ -1510,7 +1510,7 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
             auto jerReader  = loadCorrectionSet("data/JME/jer_smear.json.gz");
             auto _jerSmear  = jerReader->at("JERSmear");
 
-            _rlm = _rlm.Define("Jet_genJetIdx_jer_i", "ROOT::VecOps::Cast<int>(Jet_genJetIdx)");
+            _rlm = _rlm.Define("Jet_genJetIdx_jer_i", "Jet_genJetIdx * 1");
 
             auto calcJerScale = [_jerReso, _jerSF, _jerUnc, _jerSmear, jerDir](
                                     const floats &pts, const floats &etas, const floats &phis,

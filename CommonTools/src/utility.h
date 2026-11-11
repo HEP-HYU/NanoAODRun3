@@ -52,6 +52,15 @@ using FourVectorVec = std::vector<FourVector>;
 using FourVectorRVec= ROOT::VecOps::RVec<FourVector>;
 ///@}
 
+namespace ROOT {
+namespace VecOps {
+    template <typename T, typename U>
+    inline RVec<T> Cast(const RVec<U>& in) {
+        return RVec<T>(in.begin(), in.end());
+    }
+}
+}
+
 
 struct hist1dinfo
 {
