@@ -59,3 +59,23 @@ The `plot_run2.py` will read information from existing configs for each year, th
 
 ### Advanced
 > To modify some details of the plots from training, cross section for normalization, histogram styles, modules in `utils/` folder will be helpful.
+
+### Run 3 Notes (updated 2026-11-12)
+- **Input features**: 24 channel-specific branches (`muon` vs `electron`) are configured in `utils/feature_config.py`. Neither the continuous b-tag discriminant nor deprecated `abs()` input transforms are used (`BTV-06` Q11; `eval_multi.py:162-163`).
+- **Verified `eval_multi.py` CLI**:
+  ```bash
+  python eval_multi.py \
+      -I <TRAIN_DIR> \
+      -O <DNN_OUT> \
+      -C <muon|electron> \
+      -P <LFVAnalyzer_process_base_dir> \
+      --xsecfile <files.yaml> \
+      --alpha 0.1
+  ```
+  `-P` / `--project-dir` must be the base directory above `<ch>/<year>/` (e.g. `../LFVAnalyzer/process_v1/`), because `eval_multi.py` appends `<ch>/<year>/` for `["v12_2022", "v12_2022EE", "v12_2023", "v12_2023BPix", "v15_2024"]`.
+- **Downstream postprocessing & yield tables**:
+  ```bash
+  python ../LFVAnalyzer/postprocess.py -I <DNN_OUT>/<ch> -Y <v12_2022|v12_2022EE|v12_2023|v12_2023BPix|v15_2024>
+  python ../LFVAnalyzer/print_syst_table.py -I <DNN_OUT>/<ch> -Y <v12_...> -C <muon|electron> -D
+  ```
+- See [`LFVAnalyzer/README.md`](../LFVAnalyzer/README.md) (Sections IX–XII) and [`Run3LFVLimits/README.md`](../Run3LFVLimits/README.md) for Run 3 Limit/Combine steps (`Run3LFVLimits/` is excluded by `NanoAODRun3/.gitignore`).

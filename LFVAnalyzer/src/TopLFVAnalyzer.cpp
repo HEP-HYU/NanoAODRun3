@@ -523,7 +523,7 @@ void TopLFVAnalyzer::defineKinematicVars() {
 
     // Invariant mass m(lep+τ+b) — peaks near m_top (173 GeV) for LFV signal;
     // broad or off-peak for SM tt̄ combinatorial background.
-    defineVar("LFV_top_mass", ::invMass3, {"lepvec", "tauvec", "bjetvec"});
+    defineVar("leptaubjet1_mass", ::invMass3, {"lepvec", "tauvec", "bjetvec"});
 
     // S_T^MET: in EXO-19-016, defined by pt1+pt2+ptj1+met where pt1,2 come from taus
     if (_isMuonCh){
@@ -868,7 +868,7 @@ void TopLFVAnalyzer::storeOutputBranches() {
     addVartoStore("tauMET_dPhi");     // DNN: |Δφ(τ, MET)|
     addVartoStore("lepbjet_dR");      // DNN: ΔR(lep, b-jet)
     addVartoStore("taubjet_dR");      // DNN: ΔR(τ, b-jet)
-    addVartoStore("LFV_top_mass");     // DNN: m(lep+τ+b)
+    addVartoStore("leptaubjet1_mass");// DNN: m(lep+τ+b)
     addVartoStore("st_met");
     addVartoStore("GenPart_top_pt");
     addVartoStore("TopPtWeight");
@@ -1124,7 +1124,7 @@ void TopLFVAnalyzer::bookHists() {
         // b-jet topology variables (available from S5, after b-tagging)
         add1DHist({"h_lepbjet_dR",  ";#DeltaR(lep, b-jet);Events",    20, 0, 5.0}, "lepbjet_dR",  "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_taubjet_dR",  ";#DeltaR(#tau_{h}, b-jet);Events",20, 0, 5.0}, "taubjet_dR",  "eventWeight", weightstr, minstep_S5, maxstep);
-        add1DHist({"h_lfv_top_mass", ";m(lep+#tau_{h}+b) (GeV);Events", 30, 0, 600}, "LFV_top_mass", "eventWeight", weightstr, minstep_S5, maxstep);
+        add1DHist({"h_lfv_top_mass", ";m(lep+#tau_{h}+b) (GeV);Events", 30, 0, 600}, "leptaubjet1_mass", "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_bjet1_btag",   ";b-tag score of b-jet;Events",    20, 0, 1.0}, "bJet1_btagScore","eventWeight",weightstr, minstep_S5, maxstep);
 
         // Histogram of Top mass reconstruction

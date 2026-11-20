@@ -159,11 +159,16 @@ public:
 
     double pt_resol(double pt, double eta, double phi, float nL, unsigned long long evtNumber, unsigned int lumiNumber, double low_pt_threshold = 26.0) const {
         if (pt < low_pt_threshold || pt > 200.0) return pt;
-        double rndm = get_rndm(eta, phi, nL, evtNumber, lumiNumber);
         double std_val = get_std(pt, eta, nL);
         double k = get_k(eta, "nom");
+        if (std_val <= 0.0 || k <= 0.0) return pt;
 
+        double rndm = get_rndm(eta, phi, nL, evtNumber, lumiNumber);
         double ptc = pt * (1.0 + k * std_val * rndm);
+        // Per official CMS Muon POG MuonScaRe.cc: reject NaN/Inf or unphysical Crystal Ball tail draws
+        if (!std::isfinite(ptc) || ptc <= 0.0 || ptc / pt > 2.0 || ptc / pt < 0.1) {
+            ptc = pt;
+        }
         return ptc;
     }
 
@@ -182,6 +187,10 @@ public:
             pt_var = pt_woresol * (1.0 + (k + k_unc) * std_x_rndm);
         } else if (updn == "dn" || updn == "down") {
             pt_var = pt_woresol * (1.0 + (k - k_unc) * std_x_rndm);
+        }
+        // Per official CMS Muon POG MuonScaRe.cc: reject NaN/Inf or unphysical tail shifts
+        if (!std::isfinite(pt_var) || pt_var <= 0.0 || pt_var / pt_woresol > 2.0 || pt_var / pt_woresol < 0.1) {
+            pt_var = pt_woresol;
         }
         return pt_var;
     }

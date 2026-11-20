@@ -406,7 +406,7 @@ DNN_FEATURES = {
         "chi2_SMW_mass", "chi2_SMTop_mass", "chi2_SMTop_pt", "chi2_wqq_dR",
         "leptau_mass", "leptau_dR",
         "lepbjet_dR", "taubjet_dR", "lepMET_dPhi", "tauMET_dPhi",
-        "PuppiMET_pt", "Jet_HT", "LFV_top_mass",
+        "PuppiMET_pt", "Jet_HT", "leptaubjet1_mass",
     ],
     "electron": [
         "Electron1_pt",
@@ -418,7 +418,7 @@ DNN_FEATURES = {
         "chi2_SMW_mass", "chi2_SMTop_mass", "chi2_SMTop_pt", "chi2_wqq_dR",
         "leptau_mass", "leptau_dR",
         "lepbjet_dR", "taubjet_dR", "lepMET_dPhi", "tauMET_dPhi",
-        "PuppiMET_pt", "Jet_HT", "LFV_top_mass",
+        "PuppiMET_pt", "Jet_HT", ""leptaubjet1_mass,
     ],
 }
 

@@ -27,9 +27,43 @@ outfile=$5
 workdir=$6
 logdir=$7
 
+export XRD_CONNECTIONRETRY=10
+export XRD_REQUESTTIMEOUT=300
+export XRD_STREAMTIMEOUT=300
+export XRD_REDIRECTLIMIT=16
+
 cd $workdir
 #source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc12-opt/setup.sh  # Run2 UL (CentOS7)
 #source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc12-opt/setup.sh      # Run3 early (EL9)
 source /cvmfs/sft.cern.ch/lcg/views/LCG_108/x86_64-el9-gcc15-opt/setup.sh       # Run3 current (EL9)
-echo "python scripts/skimonefile.py -Y $year -C $ch -I $infile -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log"
-python scripts/skimonefile.py -Y $year -C $ch -I $infile -O ${outpath}/${outfile} 2>&1 | tee ${logdir}/${outfile%%root}log
+
+outroot="${outpath}/${outfile}"
+logfile="${logdir}/${outfile%%root}log"
+
+echo "python scripts/skimonefile.py -Y $year -C $ch -I $infile -O ${outroot} 2>&1 | tee ${logfile}"
+python scripts/skimonefile.py -Y "$year" -C "$ch" -I "$infile" -O "${outroot}" 2>&1 | tee "${logfile}"
+rc=${PIPESTATUS[0]}
+
+if [ "${rc}" -ne 0 ]; then
+    rm -f "${outroot}"
+    alt_infile=""
+    case "${infile}" in
+        root://xrootd-cms.infn.it/*)
+            alt_infile="root://cmsxrootd.fnal.gov/${infile#root://xrootd-cms.infn.it/}"
+            ;;
+        root://cmsxrootd.fnal.gov/*)
+            alt_infile="root://xrootd-cms.infn.it/${infile#root://cmsxrootd.fnal.gov/}"
+            ;;
+    esac
+
+    if [ -n "${alt_infile}" ] && { grep -qE "GetBasket|TNetXNGFile|Xrd|ReadBuffer|Cannot open|Failed to open" "${logfile}" || ! grep -q "\[ERROR\]" "${logfile}"; }; then
+        echo "[INFO] Retrying skim (attempt 2/2) with fallback redirector: ${alt_infile}" > "${logfile}"
+        python scripts/skimonefile.py -Y "$year" -C "$ch" -I "$alt_infile" -O "${outroot}" 2>&1 | tee -a "${logfile}"
+        rc=${PIPESTATUS[0]}
+        if [ "${rc}" -ne 0 ]; then
+            rm -f "${outroot}"
+        fi
+    fi
+fi
+
+exit "${rc}"

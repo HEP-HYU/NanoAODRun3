@@ -42,23 +42,31 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
         for (size_t i=0; i<jetpts.size(); i++) {
             float rawFact = (1.0-jetrawf[i]);
             float rawjetpt = jetpts[i] * rawFact;
-            float L1corr = _L1FastJet->evaluate({jetAreas[i], jetetas[i], rawjetpt, rho});
-            float L1pt = rawjetpt * L1corr;
-            float L2corr = 1; float L2L3corr = 1;
-            // L2Relative: Run3Summer24 AND Run3Summer23BPix add JetPhi as 2nd input → [JetEta, JetPhi, JetPt].
-            // Earlier eras (22, 22EE, 23 preBPix) use only [JetEta, JetPt].
-            // Passing the wrong number of args corrupts the heap.
-            if (_isRun24 || _isRun23BPix)
-                L2corr = _L2Relative->evaluate({jetetas[i], jetphis[i], L1pt});
-            else
-                L2corr = _L2Relative->evaluate({jetetas[i], L1pt});
-            float L2pt = L1pt * L2corr;
-            // L2L3Residual: DATA keys in ALL Run3 eras require run as 1st input → [run, JetEta, JetPt].
-            if (dataMc) {
-                L2L3corr = _L2L3Residual->evaluate({float(run), jetetas[i], L2pt});
+            try {
+                float L1corr = _L1FastJet->evaluate({jetAreas[i], jetetas[i], rawjetpt, rho});
+                float L1pt = rawjetpt * L1corr;
+                float L2corr = 1; float L2L3corr = 1;
+                // L2Relative: Run3Summer24 AND Run3Summer23BPix add JetPhi as 2nd input → [JetEta, JetPhi, JetPt].
+                // Earlier eras (22, 22EE, 23 preBPix) use only [JetEta, JetPt].
+                // Passing the wrong number of args corrupts the heap.
+                if (_isRun24 || _isRun23BPix)
+                    L2corr = _L2Relative->evaluate({jetetas[i], jetphis[i], L1pt});
+                else
+                    L2corr = _L2Relative->evaluate({jetetas[i], L1pt});
+                float L2pt = L1pt * L2corr;
+                // L2L3Residual: DATA keys in ALL Run3 eras require run as 1st input → [run, JetEta, JetPt].
+                if (dataMc) {
+                    L2L3corr = _L2L3Residual->evaluate({float(run), jetetas[i], L2pt});
+                }
+                float corrfactor = toCorr[i] * rawFact * L1corr * L2corr * L2L3corr; 
+                corrfactors.emplace_back(corrfactor);
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] setupJetMETCorrection (applyJes): evaluate failed (jet " << i
+                          << ", run=" << run << ", dataMc=" << dataMc << ", pt=" << jetpts[i]
+                          << ", rawPt=" << rawjetpt << ", eta=" << jetetas[i] << ", phi=" << jetphis[i]
+                          << ", area=" << jetAreas[i] << ", rho=" << rho << "): " << e.what() << std::endl;
+                throw;
             }
-            float corrfactor = toCorr[i] * rawFact * L1corr * L2corr * L2L3corr; 
-            corrfactors.emplace_back(corrfactor);
         }
         return corrfactors;
     };
@@ -80,25 +88,41 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
             corrfactors.reserve(jetpts.size());
 
             for (size_t i=0; i<jetpts.size(); i++){
-                float reso = _jerReso->evaluate({jetetas[i], jetpts[i], rho});
-                // JER ScaleFactor across ALL Run3 eras (2022, 2022EE, 2023, 2023BPix, 2024)
-                // takes 2 inputs: [JetEta, JetPt].
-                float sf = _jerSF->evaluate({jetetas[i], jetpts[i]});
                 float genPtForSmear = -1.0;
-
                 int genidx = genidxs[i];
-                if (genidx >= 0){
-                    float dPhi = std::abs(genphis[genidx] - jetphis[i]);
-                    float dEta = std::abs(genetas[genidx] - jetetas[i]);
-                    float dR2 = dPhi*dPhi + dEta*dEta;
-                    if (dR2 < 0.04 && std::abs(jetpts[i]-genpts[genidx]) < (3*reso*jetpts[i])) {
-                        genPtForSmear = genpts[genidx];
-                    }
+                if (genidx >= 0 && (static_cast<size_t>(genidx) >= genpts.size() ||
+                                    static_cast<size_t>(genidx) >= genetas.size() ||
+                                    static_cast<size_t>(genidx) >= genphis.size())) {
+                    std::cerr << "[ERROR] setupJetMETCorrection (applyJer): Jet_genJetIdx (" << genidx
+                              << ") out of bounds (nGenJet=" << genpts.size() << ") at jet " << i
+                              << ", event=" << event << std::endl;
+                    throw std::runtime_error("setupJetMETCorrection (applyJer): Jet_genJetIdx out of bounds");
                 }
-                float smear = _jerSmear->evaluate({jetpts[i], jetetas[i], genPtForSmear, rho, int(event), reso, sf});
-                float corr = (std::isfinite(smear) && smear > 0.0) ? smear : 1.0;
-                float corrfactor = toCorr[i] * corr;
-                corrfactors.emplace_back(corrfactor);
+                try {
+                    float reso = _jerReso->evaluate({jetetas[i], jetpts[i], rho});
+                    // JER ScaleFactor across ALL Run3 eras (2022, 2022EE, 2023, 2023BPix, 2024)
+                    // takes 2 inputs: [JetEta, JetPt].
+                    float sf = _jerSF->evaluate({jetetas[i], jetpts[i]});
+
+                    if (genidx >= 0){
+                        float dPhi = std::abs(genphis[genidx] - jetphis[i]);
+                        float dEta = std::abs(genetas[genidx] - jetetas[i]);
+                        float dR2 = dPhi*dPhi + dEta*dEta;
+                        if (dR2 < 0.04 && std::abs(jetpts[i]-genpts[genidx]) < (3*reso*jetpts[i])) {
+                            genPtForSmear = genpts[genidx];
+                        }
+                    }
+                    float smear = _jerSmear->evaluate({jetpts[i], jetetas[i], genPtForSmear, rho, int(event), reso, sf});
+                    float corr = (std::isfinite(smear) && smear > 0.0) ? smear : 1.0;
+                    float corrfactor = toCorr[i] * corr;
+                    corrfactors.emplace_back(corrfactor);
+                } catch (const std::exception &e) {
+                    std::cerr << "[ERROR] setupJetMETCorrection (applyJer): evaluate failed (jet " << i
+                              << ", pt=" << jetpts[i] << ", eta=" << jetetas[i] << ", genidx=" << genidx
+                              << ", genPt=" << genPtForSmear << ", rho=" << rho << ", event=" << event
+                              << "): " << e.what() << std::endl;
+                    throw;
+                }
             }
             return corrfactors;
         };
@@ -218,6 +242,12 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
             std::cerr << "[ERROR] setupJetMETCorrection: Jet vector size mismatch in calcType1MET!" << std::endl;
             throw std::runtime_error("setupJetMETCorrection: Jet vector size mismatch");
         }
+        if (corrT1_rawPt.size() != corrT1_eta.size() || corrT1_rawPt.size() != corrT1_phi.size() ||
+            corrT1_rawPt.size() != corrT1_area.size() || corrT1_rawPt.size() != corrT1_muonf.size() ||
+            corrT1_rawPt.size() != corrT1_muondphi.size() || corrT1_rawPt.size() != corrT1_EmEF.size()) {
+            std::cerr << "[ERROR] setupJetMETCorrection: CorrT1METJet vector size mismatch in calcType1MET!" << std::endl;
+            throw std::runtime_error("setupJetMETCorrection: CorrT1METJet vector size mismatch");
+        }
 
         const bool isRaw = (raw_flag > 0.5f);
         double metx = static_cast<double>(rawmet_pt) * std::cos(static_cast<double>(rawmet_phi));
@@ -229,7 +259,15 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
             float rawFact = (1.0f - jetrawf[i]);
             float rawjetpt = jetpts_uncorr[i] * rawFact;
             float rawjetpt_musub = rawjetpt * (1.0f - jetmuonf[i]);
-            float L1corr = _L1FastJet->evaluate({jetareas[i], jetetas[i], rawjetpt_musub, rho});
+            float L1corr = 1.0f;
+            try {
+                L1corr = _L1FastJet->evaluate({jetareas[i], jetetas[i], rawjetpt_musub, rho});
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] setupJetMETCorrection (calcType1MET AK4): evaluate failed (jet " << i
+                          << ", rawPtMusub=" << rawjetpt_musub << ", eta=" << jetetas[i]
+                          << ", area=" << jetareas[i] << ", rho=" << rho << "): " << e.what() << std::endl;
+                throw;
+            }
             float pT_L1 = rawjetpt_musub * L1corr;
             float pT_full = jetpts_full[i];
 
@@ -248,21 +286,32 @@ void NanoAODAnalyzerrdframe::setupJetMETCorrection(string jecFile, string jecYea
         for (size_t j = 0; j < corrT1_rawPt.size(); j++) {
             float rawPt = corrT1_rawPt[j];
             float rawPt_musub = rawPt * (1.0f - corrT1_muonf[j]);
-            float L1corr = _L1FastJet->evaluate({corrT1_area[j], corrT1_eta[j], rawPt_musub, rho});
-            float pT_L1 = rawPt_musub * L1corr;
+            float pT_L1 = 0.0f;
+            float pT_full = 0.0f;
+            try {
+                float L1corr = _L1FastJet->evaluate({corrT1_area[j], corrT1_eta[j], rawPt_musub, rho});
+                pT_L1 = rawPt_musub * L1corr;
 
-            float L2corr = 1.0f;
-            if (_isRun24 || _isRun23BPix)
-                L2corr = _L2Relative->evaluate({corrT1_eta[j], corrT1_phi[j], pT_L1});
-            else
-                L2corr = _L2Relative->evaluate({corrT1_eta[j], pT_L1});
-            float pT_L2 = pT_L1 * L2corr;
+                float L2corr = 1.0f;
+                if (_isRun24 || _isRun23BPix)
+                    L2corr = _L2Relative->evaluate({corrT1_eta[j], corrT1_phi[j], pT_L1});
+                else
+                    L2corr = _L2Relative->evaluate({corrT1_eta[j], pT_L1});
+                float pT_L2 = pT_L1 * L2corr;
 
-            float L2L3corr = 1.0f;
-            if (dataMc) {
-                L2L3corr = _L2L3Residual->evaluate({float(run), corrT1_eta[j], pT_L2});
+                float L2L3corr = 1.0f;
+                if (dataMc) {
+                    L2L3corr = _L2L3Residual->evaluate({float(run), corrT1_eta[j], pT_L2});
+                }
+                pT_full = pT_L2 * L2L3corr;
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] setupJetMETCorrection (calcType1MET CorrT1METJet): evaluate failed (jet " << j
+                          << ", run=" << run << ", dataMc=" << dataMc << ", rawPt=" << rawPt
+                          << ", rawPtMusub=" << rawPt_musub << ", eta=" << corrT1_eta[j]
+                          << ", phi=" << corrT1_phi[j] << ", area=" << corrT1_area[j]
+                          << ", rho=" << rho << "): " << e.what() << std::endl;
+                throw;
             }
-            float pT_full = pT_L2 * L2L3corr;
 
             float emFraction = corrT1_EmEF[j];
             if (pT_full > 15.0f && std::abs(corrT1_eta[j]) < 5.2f && emFraction < 0.9f) {
@@ -387,7 +436,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
         }
 
         // NanoAODv15: Jet_chMultiplicity and Jet_neMultiplicity are UChar_t
-        auto getJetId1 = [this, _jetid](floats &etas, floats &chHEF, floats &neHEF, floats &chEmEF, floats &neEmEF, floats &muEF, uchars &Nch, uchars &Nne) -> floats {
+        auto getJetId1 = [this, _jetid](const floats &etas, const floats &chHEF, const floats &neHEF, const floats &chEmEF, const floats &neEmEF, const floats &muEF, const uchars &Nch, const uchars &Nne) -> floats {
             floats jetIds;
             jetIds.reserve(etas.size());
             for (size_t i = 0; i < etas.size(); i++) {
@@ -418,7 +467,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
         }
 
         // NanoAODv12: Jet_jetId is UChar_t (bit-field stored as unsigned char)
-        auto getJetId2 = [this](floats &etas, uchars &jetIds, floats &muEF, floats &chEmEF, floats &neHEF, floats &neEmEF) -> floats {
+        auto getJetId2 = [this](const floats &etas, const uchars &jetIds, const floats &muEF, const floats &chEmEF, const floats &neHEF, const floats &neEmEF) -> floats {
             floats idVec;
             idVec.reserve(etas.size());
             for (size_t i = 0; i < etas.size(); i++) {
@@ -461,7 +510,7 @@ void NanoAODAnalyzerrdframe::JetVetoMap(string jetFile, string map) {
     }
 
     auto vetomap = [_vetomap](const std::string &key) {
-        return [_vetomap, key](floats &eta, floats &phi) -> floats {
+        return [_vetomap, key](const floats &eta, const floats &phi) -> floats {
             floats xout;
             xout.reserve(eta.size());
             for (size_t i = 0; i < eta.size(); i++) {
@@ -517,9 +566,16 @@ void NanoAODAnalyzerrdframe::applyMETXYCorrection(const std::string &jecFile, co
     // PV_npvsGood is UChar_t (unsigned char) in NanoAOD.
     auto applyXY = [this, _metXY, dtmc, ep](float met_pt, float met_phi, unsigned char npvGood) -> std::pair<float,float> {
         float npv = float(npvGood);
-        float new_pt  = _metXY->evaluate({"pt",  "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
-        float new_phi = _metXY->evaluate({"phi", "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
-        return {new_pt, new_phi};
+        try {
+            float new_pt  = _metXY->evaluate({"pt",  "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
+            float new_phi = _metXY->evaluate({"phi", "PuppiMET", ep, dtmc, "nom", met_pt, met_phi, npv});
+            return {new_pt, new_phi};
+        } catch (const std::exception &e) {
+            std::cerr << "[ERROR] applyMETXYCorrection (PuppiMET): evaluate failed (epoch=" << ep
+                      << ", dtmc=" << dtmc << ", met_pt=" << met_pt << ", met_phi=" << met_phi
+                      << ", npv=" << npv << "): " << e.what() << std::endl;
+            throw;
+        }
     };
 
     auto getCorr_pt = [applyXY](float met_pt, float met_phi, unsigned char npvGood) -> float {
@@ -540,11 +596,25 @@ void NanoAODAnalyzerrdframe::applyMETXYCorrection(const std::string &jecFile, co
     // Also apply to PFMET for completeness.
     auto getCorr_pfpt = [this, _metXY, dtmc, ep](float met_pt, float met_phi, unsigned char npvGood) -> float {
         float npv = float(npvGood);
-        return _metXY->evaluate({"pt",  "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
+        try {
+            return _metXY->evaluate({"pt",  "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
+        } catch (const std::exception &e) {
+            std::cerr << "[ERROR] applyMETXYCorrection (MET pt): evaluate failed (epoch=" << ep
+                      << ", dtmc=" << dtmc << ", met_pt=" << met_pt << ", met_phi=" << met_phi
+                      << ", npv=" << npv << "): " << e.what() << std::endl;
+            throw;
+        }
     };
     auto getCorr_pfphi = [this, _metXY, dtmc, ep](float met_pt, float met_phi, unsigned char npvGood) -> float {
         float npv = float(npvGood);
-        return _metXY->evaluate({"phi", "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
+        try {
+            return _metXY->evaluate({"phi", "MET", ep, dtmc, "nom", met_pt, met_phi, npv});
+        } catch (const std::exception &e) {
+            std::cerr << "[ERROR] applyMETXYCorrection (MET phi): evaluate failed (epoch=" << ep
+                      << ", dtmc=" << dtmc << ", met_pt=" << met_pt << ", met_phi=" << met_phi
+                      << ", npv=" << npv << "): " << e.what() << std::endl;
+            throw;
+        }
     };
     _rlm = _rlm
         .Define("MET_phi_xyCorr", getCorr_pfphi, {"MET_pt", "MET_phi", "PV_npvsGood"})

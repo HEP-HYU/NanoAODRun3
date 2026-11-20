@@ -63,18 +63,24 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
                           << ") and Muon_eta (" << eta.size() << ")!" << std::endl;
                 return {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
             }
-            float sf      = _muonid->evaluate({eta[0], pt[0], "nominal"});
-            float sf_up   = _muonid->evaluate({eta[0], pt[0], "systup"});
-            float sf_down = _muonid->evaluate({eta[0], pt[0], "systdown"});
-            float sf_stat = _muonid->evaluate({eta[0], pt[0], "stat"});
-            float sf_syst = _muonid->evaluate({eta[0], pt[0], "syst"});
-            wVec.emplace_back(sf);
-            wVec.emplace_back(sf_up);
-            wVec.emplace_back(sf_down);
-            wVec.emplace_back(sf + sf_stat);
-            wVec.emplace_back(sf - sf_stat);
-            wVec.emplace_back(sf + sf_syst);
-            wVec.emplace_back(sf - sf_syst);
+            try {
+                float sf      = _muonid->evaluate({eta[0], pt[0], "nominal"});
+                float sf_up   = _muonid->evaluate({eta[0], pt[0], "systup"});
+                float sf_down = _muonid->evaluate({eta[0], pt[0], "systdown"});
+                float sf_stat = _muonid->evaluate({eta[0], pt[0], "stat"});
+                float sf_syst = _muonid->evaluate({eta[0], pt[0], "syst"});
+                wVec.emplace_back(sf);
+                wVec.emplace_back(sf_up);
+                wVec.emplace_back(sf_down);
+                wVec.emplace_back(sf + sf_stat);
+                wVec.emplace_back(sf - sf_stat);
+                wVec.emplace_back(sf + sf_syst);
+                wVec.emplace_back(sf - sf_syst);
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] calculateMuonSF (ID): evaluate failed at eta=" << eta[0]
+                          << ", pt=" << pt[0] << ": " << e.what() << std::endl;
+                throw;
+            }
         } else {
             wVec = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
         }
@@ -92,18 +98,24 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
                           << ") and Muon_eta (" << eta.size() << ")!" << std::endl;
                 return {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
             }
-            float sf      = _muoniso->evaluate({eta[0], pt[0], "nominal"});
-            float sf_up   = _muoniso->evaluate({eta[0], pt[0], "systup"});
-            float sf_down = _muoniso->evaluate({eta[0], pt[0], "systdown"});
-            float sf_stat = _muoniso->evaluate({eta[0], pt[0], "stat"});
-            float sf_syst = _muoniso->evaluate({eta[0], pt[0], "syst"});
-            wVec.emplace_back(sf);
-            wVec.emplace_back(sf_up);
-            wVec.emplace_back(sf_down);
-            wVec.emplace_back(sf + sf_stat);
-            wVec.emplace_back(sf - sf_stat);
-            wVec.emplace_back(sf + sf_syst);
-            wVec.emplace_back(sf - sf_syst);
+            try {
+                float sf      = _muoniso->evaluate({eta[0], pt[0], "nominal"});
+                float sf_up   = _muoniso->evaluate({eta[0], pt[0], "systup"});
+                float sf_down = _muoniso->evaluate({eta[0], pt[0], "systdown"});
+                float sf_stat = _muoniso->evaluate({eta[0], pt[0], "stat"});
+                float sf_syst = _muoniso->evaluate({eta[0], pt[0], "syst"});
+                wVec.emplace_back(sf);
+                wVec.emplace_back(sf_up);
+                wVec.emplace_back(sf_down);
+                wVec.emplace_back(sf + sf_stat);
+                wVec.emplace_back(sf - sf_stat);
+                wVec.emplace_back(sf + sf_syst);
+                wVec.emplace_back(sf - sf_syst);
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] calculateMuonSF (Iso): evaluate failed at eta=" << eta[0]
+                          << ", pt=" << pt[0] << ": " << e.what() << std::endl;
+                throw;
+            }
         } else {
             wVec = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
         }
@@ -120,18 +132,24 @@ void NanoAODAnalyzerrdframe::calculateMuonSF(string muonid, string muoniso, stri
                           << ") and Muon_eta (" << eta.size() << ")!" << std::endl;
                 return {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
             }
-            float sf      = _muontrg->evaluate({eta[0], pt[0], "nominal"});
-            float sf_up   = _muontrg->evaluate({eta[0], pt[0], "systup"});
-            float sf_down = _muontrg->evaluate({eta[0], pt[0], "systdown"});
-            float sf_stat = _muontrg->evaluate({eta[0], pt[0], "stat"});
-            float sf_syst = _muontrg->evaluate({eta[0], pt[0], "syst"});
-            wVec.emplace_back(sf);
-            wVec.emplace_back(sf_up);
-            wVec.emplace_back(sf_down);
-            wVec.emplace_back(sf + sf_stat);
-            wVec.emplace_back(sf - sf_stat);
-            wVec.emplace_back(sf + sf_syst);
-            wVec.emplace_back(sf - sf_syst);
+            try {
+                float sf      = _muontrg->evaluate({eta[0], pt[0], "nominal"});
+                float sf_up   = _muontrg->evaluate({eta[0], pt[0], "systup"});
+                float sf_down = _muontrg->evaluate({eta[0], pt[0], "systdown"});
+                float sf_stat = _muontrg->evaluate({eta[0], pt[0], "stat"});
+                float sf_syst = _muontrg->evaluate({eta[0], pt[0], "syst"});
+                wVec.emplace_back(sf);
+                wVec.emplace_back(sf_up);
+                wVec.emplace_back(sf_down);
+                wVec.emplace_back(sf + sf_stat);
+                wVec.emplace_back(sf - sf_stat);
+                wVec.emplace_back(sf + sf_syst);
+                wVec.emplace_back(sf - sf_syst);
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] calculateMuonSF (Trg): evaluate failed at eta=" << eta[0]
+                          << ", pt=" << pt[0] << ": " << e.what() << std::endl;
+                throw;
+            }
         } else {
             wVec = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
         }
@@ -297,23 +315,31 @@ void NanoAODAnalyzerrdframe::applyMuonScaleSmearing() {
             float nL = nLayers[i];
 
             float pt_final = pt;
-            if (isData) {
-                pt_final = helper->pt_scale(true, pt, eta, phi, charge);
-            } else {
-                double pt_scale_corr = helper->pt_scale(false, pt, eta, phi, charge);
-                double pt_corr = helper->pt_resol(pt_scale_corr, eta, phi, nL, evt, lumi);
-
-                if (systStr.find("muonscaleup") != std::string::npos) {
-                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "up");
-                } else if (systStr.find("muonscaledown") != std::string::npos) {
-                    pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "dn");
-                } else if (systStr.find("muonsmearup") != std::string::npos) {
-                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "up");
-                } else if (systStr.find("muonsmeardown") != std::string::npos) {
-                    pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "dn");
+            try {
+                if (isData) {
+                    pt_final = helper->pt_scale(true, pt, eta, phi, charge);
                 } else {
-                    pt_final = pt_corr;
+                    double pt_scale_corr = helper->pt_scale(false, pt, eta, phi, charge);
+                    double pt_corr = helper->pt_resol(pt_scale_corr, eta, phi, nL, evt, lumi);
+
+                    if (systStr.find("muonscaleup") != std::string::npos) {
+                        pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "up");
+                    } else if (systStr.find("muonscaledown") != std::string::npos) {
+                        pt_final = helper->pt_scale_var(pt_corr, eta, phi, charge, "dn");
+                    } else if (systStr.find("muonsmearup") != std::string::npos) {
+                        pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "up");
+                    } else if (systStr.find("muonsmeardown") != std::string::npos) {
+                        pt_final = helper->pt_resol_var(pt_scale_corr, pt_corr, eta, "dn");
+                    } else {
+                        pt_final = pt_corr;
+                    }
                 }
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] [ScaReKIT] applyMuonScaleSmearing: evaluate failed (muon " << i
+                          << ", pt=" << pt << ", eta=" << eta << ", phi=" << phi
+                          << ", charge=" << charge << ", nL=" << nL << ", evt=" << evt
+                          << ", lumi=" << lumi << ", syst=" << systStr << "): " << e.what() << std::endl;
+                throw;
             }
             out.emplace_back(pt_final);
         }
@@ -440,8 +466,16 @@ void NanoAODAnalyzerrdframe::applyElectronScaleSmearing() {
             float r9 = r9s[i];
             int seedGain = seedGains[i];
 
-            double pt_corr = helper->pt_corr(isData, systStr, pt, eta, phi, deltaSC, r9, run, seedGain, evt, lumi);
-            out.emplace_back(static_cast<float>(pt_corr));
+            try {
+                double pt_corr = helper->pt_corr(isData, systStr, pt, eta, phi, deltaSC, r9, run, seedGain, evt, lumi);
+                out.emplace_back(static_cast<float>(pt_corr));
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] [EGM S&S] applyElectronScaleSmearing: evaluate failed (ele " << i
+                          << ", pt=" << pt << ", eta=" << eta << ", deltaEtaSC=" << deltaSC
+                          << ", r9=" << r9 << ", seedGain=" << seedGain << ", run=" << run
+                          << ", syst=" << systStr << "): " << e.what() << std::endl;
+                throw;
+            }
         }
         return out;
     };
@@ -530,28 +564,35 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
                     else if (pt[0] < 75) wp = "Reco20to75";
                     else wp = "RecoAbove75";
                 }
-                if (elecYear.find("2022")!=std::string::npos || elecYear.find("2024")!=std::string::npos){
-                    sf = _elecid->evaluate({elecYear, "sf", wp, scEta, pt[0]});
-                    sf_up = _elecid->evaluate({elecYear, "sfup", wp, scEta, pt[0]});
-                    sf_down = _elecid->evaluate({elecYear, "sfdown", wp, scEta, pt[0]});
-                    float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, scEta, pt[0]});
-                    float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, scEta, pt[0]});
-                    stat_up = sf + err_stat;
-                    stat_down = sf - err_stat;
-                    syst_up = sf + err_syst;
-                    syst_down = sf - err_syst;
-                } else if (elecYear.find("2023")!=std::string::npos){
-                    sf = _elecid->evaluate({elecYear, "sf", wp, scEta, pt[0], phi[0]});
-                    sf_up = _elecid->evaluate({elecYear, "sfup", wp, scEta, pt[0], phi[0]});
-                    sf_down = _elecid->evaluate({elecYear, "sfdown", wp, scEta, pt[0], phi[0]});
-                    float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, scEta, pt[0], phi[0]});
-                    float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, scEta, pt[0], phi[0]});
-                    stat_up = sf + err_stat;
-                    stat_down = sf - err_stat;
-                    syst_up = sf + err_syst;
-                    syst_down = sf - err_syst;
-                } else {
-                    std::cerr << "[ERROR] calculateElectronSF: Unrecognized elecYear '" << elecYear << "' for Electron-ID-SF!" << std::endl;
+                try {
+                    if (elecYear.find("2022")!=std::string::npos || elecYear.find("2024")!=std::string::npos){
+                        sf = _elecid->evaluate({elecYear, "sf", wp, scEta, pt[0]});
+                        sf_up = _elecid->evaluate({elecYear, "sfup", wp, scEta, pt[0]});
+                        sf_down = _elecid->evaluate({elecYear, "sfdown", wp, scEta, pt[0]});
+                        float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, scEta, pt[0]});
+                        float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, scEta, pt[0]});
+                        stat_up = sf + err_stat;
+                        stat_down = sf - err_stat;
+                        syst_up = sf + err_syst;
+                        syst_down = sf - err_syst;
+                    } else if (elecYear.find("2023")!=std::string::npos){
+                        sf = _elecid->evaluate({elecYear, "sf", wp, scEta, pt[0], phi[0]});
+                        sf_up = _elecid->evaluate({elecYear, "sfup", wp, scEta, pt[0], phi[0]});
+                        sf_down = _elecid->evaluate({elecYear, "sfdown", wp, scEta, pt[0], phi[0]});
+                        float err_stat = _elecid->evaluate({elecYear, "err_stat", wp, scEta, pt[0], phi[0]});
+                        float err_syst = _elecid->evaluate({elecYear, "err_syst", wp, scEta, pt[0], phi[0]});
+                        stat_up = sf + err_stat;
+                        stat_down = sf - err_stat;
+                        syst_up = sf + err_syst;
+                        syst_down = sf - err_syst;
+                    } else {
+                        std::cerr << "[ERROR] calculateElectronSF: Unrecognized elecYear '" << elecYear << "' for Electron-ID-SF!" << std::endl;
+                    }
+                } catch (const std::exception &e) {
+                    std::cerr << "[ERROR] calculateElectronSF (ID/Reco): evaluate failed (year=" << elecYear
+                              << ", wp=" << wp << ", scEta=" << scEta << ", pt=" << pt[0]
+                              << ", phi=" << phi[0] << "): " << e.what() << std::endl;
+                    throw;
                 }
                 wVec.emplace_back(sf);
                 wVec.emplace_back(sf_up);
@@ -583,12 +624,19 @@ void NanoAODAnalyzerrdframe::calculateElectronSF(string elecFile, string elecYea
         wVec.reserve(3); // cent, up, down
         string hltpath = "HLT_SF_Ele30_MVAiso90ID";
         if (pt.size() == 1){
-            float sf = _elechlt->evaluate({elecYear, "sf", hltpath, eta[0], pt[0]});
-            float sf_up = _elechlt->evaluate({elecYear, "sfup", hltpath, eta[0], pt[0]});
-            float sf_down = _elechlt->evaluate({elecYear, "sfdown", hltpath, eta[0], pt[0]});
-            wVec.emplace_back(sf);
-            wVec.emplace_back(sf_up);
-            wVec.emplace_back(sf_down);
+            try {
+                float sf = _elechlt->evaluate({elecYear, "sf", hltpath, eta[0], pt[0]});
+                float sf_up = _elechlt->evaluate({elecYear, "sfup", hltpath, eta[0], pt[0]});
+                float sf_down = _elechlt->evaluate({elecYear, "sfdown", hltpath, eta[0], pt[0]});
+                wVec.emplace_back(sf);
+                wVec.emplace_back(sf_up);
+                wVec.emplace_back(sf_down);
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] calculateElectronSF (Trg): evaluate failed (year=" << elecYear
+                          << ", hlt=" << hltpath << ", eta=" << eta[0] << ", pt=" << pt[0]
+                          << "): " << e.what() << std::endl;
+                throw;
+            }
         } else {
             wVec = {1.0f, 1.0f, 1.0f};
         }
