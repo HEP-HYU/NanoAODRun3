@@ -521,8 +521,8 @@ void TopLFVAnalyzer::defineKinematicVars() {
     //defineVar("dR_lep_bjet", ::calculate_deltaR, {"lepvec", "bjetvec"});
     //defineVar("dR_tau_bjet", ::calculate_deltaR, {"tauvec", "bjetvec"});
 
-    // Invariant mass m(lep+τ+b) — peaks near m_top (173 GeV) for LFV signal;
-    // broad or off-peak for SM tt̄ combinatorial background.
+    // Three-body invariant mass m(lep+τ+b1): non-resonant pairing in TT LFV and SM tt̄
+    // (b-jet originates from the partner SM top), while ST LFV develops a hard high-ŝ recoil tail.
     defineVar("leptaubjet1_mass", ::invMass3, {"lepvec", "tauvec", "bjetvec"});
 
     // S_T^MET: in EXO-19-016, defined by pt1+pt2+ptj1+met where pt1,2 come from taus
@@ -1124,7 +1124,7 @@ void TopLFVAnalyzer::bookHists() {
         // b-jet topology variables (available from S5, after b-tagging)
         add1DHist({"h_lepbjet_dR",  ";#DeltaR(lep, b-jet);Events",    20, 0, 5.0}, "lepbjet_dR",  "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_taubjet_dR",  ";#DeltaR(#tau_{h}, b-jet);Events",20, 0, 5.0}, "taubjet_dR",  "eventWeight", weightstr, minstep_S5, maxstep);
-        add1DHist({"h_lfv_top_mass", ";m(lep+#tau_{h}+b) (GeV);Events", 30, 0, 600}, "leptaubjet1_mass", "eventWeight", weightstr, minstep_S5, maxstep);
+        add1DHist({"h_leptaubjet1_mass", ";m(lep+#tau_{h}+b) (GeV);Events", 30, 0, 600}, "leptaubjet1_mass", "eventWeight", weightstr, minstep_S5, maxstep);
         add1DHist({"h_bjet1_btag",   ";b-tag score of b-jet;Events",    20, 0, 1.0}, "bJet1_btagScore","eventWeight",weightstr, minstep_S5, maxstep);
 
         // Histogram of Top mass reconstruction

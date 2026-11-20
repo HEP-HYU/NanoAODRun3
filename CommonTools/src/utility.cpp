@@ -414,9 +414,8 @@ float dPhi_MET(FourVector &lep, float metphi) {
     return std::abs(dphi);
 }
 
-/// Invariant mass of three four-vectors (e.g. lep + τ + b-jet).
-/// In the LFV signal: m(lep+τ+b) ≈ m_top (173 GeV).
-/// In SM tt̄ the combination is off-shell, providing discrimination.
+/// Invariant mass of three four-vectors (e.g. lep + τ + leading b-jet).
+/// Separates the hard high-ŝ recoil tail of ST LFV from non-resonant TT LFV / SM tt̄ pairings.
 float invMass3(FourVector &p1, FourVector &p2, FourVector &p3) {
     return (p1 + p2 + p3).M();
 }
