@@ -449,10 +449,29 @@ def main():
 
     results = []
     failed_jobs = []
+    failed_ttbar_keys = set()
 
     for stage_idx, stage_jobs in [(1, stage1_jobs), (2, stage2_jobs)]:
         if not stage_jobs:
             continue
+        if stage_idx == 2 and failed_ttbar_keys:
+            runnable_stage2 = []
+            for j in stage_jobs:
+                key = (j["channel"], j["era"])
+                if key in failed_ttbar_keys:
+                    tag = f"[{j['channel']} | {j['era']} | {j['process']}]"
+                    print(
+                        f"[ERROR] {tag} aborted: Stage 1 reference 'ttbar' failed for {j['channel']}/{j['era']}; "
+                        f"refusing to run Stage 2 against a missing or stale btag_eff_ttbar.root.",
+                        file=sys.stderr,
+                    )
+                    results.append((False, j))
+                    failed_jobs.append(j)
+                else:
+                    runnable_stage2.append(j)
+            stage_jobs = runnable_stage2
+            if not stage_jobs:
+                continue
         n_workers = min(args.jobs, len(stage_jobs))
         print(f"\nStarting Stage {stage_idx} execution ({len(stage_jobs)} jobs, {n_workers} concurrent workers)...\n")
         with ProcessPoolExecutor(max_workers=n_workers) as executor:
@@ -465,6 +484,8 @@ def main():
                 results.append((success, job))
                 if not success:
                     failed_jobs.append(job)
+                    if stage_idx == 1 and job["process"] == "ttbar":
+                        failed_ttbar_keys.add((job["channel"], job["era"]))
     print("EXECUTION SUMMARY")
     print(f"Total jobs scheduled : {len(all_jobs)}")
     print(f"Successfully finished: {len(all_jobs) - len(failed_jobs)}")

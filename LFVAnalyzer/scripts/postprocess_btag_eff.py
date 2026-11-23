@@ -58,7 +58,11 @@ def compute_smoothed_grid(denom_vals, denom_vars, num_vals, num_vars, min_neff, 
     Computes (eff_vals, eff_vars, n_smoothed) over 2D shape (nx, ny).
     Raises RuntimeError with [ERROR] prefix on unrecoverable invalid inputs.
     """
-    nx, ny = denom_vals.shape
+    if hasattr(denom_vals, "shape"):
+        nx, ny = denom_vals.shape
+    else:
+        nx = len(denom_vals)
+        ny = len(denom_vals[0]) if nx > 0 else 0
     eff_vals = [[0.0] * ny for _ in range(nx)]
     eff_vars = [[0.0] * ny for _ in range(nx)]
     valid_mask = [[False] * ny for _ in range(nx)]
@@ -215,7 +219,8 @@ def _process_with_pyroot(ROOT, in_path, out_path, ref_path, min_neff):
                 h_ctrl_cl.Write()
 
     except Exception as exc:
-        print(str(exc), file=sys.stderr)
+        msg = str(exc)
+        print(msg if "[ERROR]" in msg else f"[ERROR] postprocess_btag_eff: {msg}", file=sys.stderr)
         fout.Close()
         if fref:
             fref.Close()
@@ -343,7 +348,8 @@ def _process_with_uproot(in_path, out_path, ref_path, min_neff):
                     fout[k] = obj
 
     except Exception as exc:
-        print(str(exc), file=sys.stderr)
+        msg = str(exc)
+        print(msg if "[ERROR]" in msg else f"[ERROR] postprocess_btag_eff: {msg}", file=sys.stderr)
         if os.path.isfile(tmp_out):
             os.remove(tmp_out)
         return False

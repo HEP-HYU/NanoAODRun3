@@ -480,6 +480,8 @@ def main():
 
         analyzer.setupAnalysis()
         analyzer.run(False, "Events")
+        del analyzer
+        del sample_chain
 
         tf_out = ROOT.TFile.Open(sample_raw_out, "READ")
         if not tf_out or tf_out.IsZombie():
@@ -487,10 +489,11 @@ def main():
             sys.exit(1)
 
         for hname in HIST_NAMES:
-            h = tf_out.Get(hname)
+            src_hname = f"{hname}_S4"
+            h = tf_out.Get(src_hname)
             if not h:
                 tf_out.Close()
-                print(f"[ERROR] Missing histogram '{hname}' in analyzer output '{sample_raw_out}'.", file=sys.stderr)
+                print(f"[ERROR] Missing histogram '{src_hname}' in analyzer output '{sample_raw_out}'.", file=sys.stderr)
                 sys.exit(1)
             if h.GetSumw2N() == 0:
                 h.Sumw2()
