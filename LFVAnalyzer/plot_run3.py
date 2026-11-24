@@ -226,16 +226,24 @@ def resolve_plots_include(args):
 
 def build_config_run3_content(template_yml_path, common_syst, plots_include):
     out_lines = []
+    found_root = False
     found_syst = False
     with open(template_yml_path, 'r') as f:
         for line in f:
-            if 'luminosity:' in line and not line.strip().startswith('#'):
+            stripped = line.strip()
+            if stripped.startswith('root:'):
+                # Override empty root ('') with '#' so plotIt keeps absolute paths in files_Run3.yml intact
+                found_root = True
+                out_lines.append("  root: '#'\n")
+            elif 'luminosity:' in line and not stripped.startswith('#'):
                 out_lines.append(f"  luminosity: {TOTAL_LUMI:.1f}\n")
-            elif line.strip().startswith('systematics:'):
+            elif stripped.startswith('systematics:'):
                 found_syst = True
                 break
             else:
                 out_lines.append(line)
+    if not found_root:
+        fail(f"No 'root:' entry found in '{template_yml_path}'.")
     if not found_syst:
         fail(f"No 'systematics:' section found in '{template_yml_path}'.")
     out_lines.append(common_syst)
