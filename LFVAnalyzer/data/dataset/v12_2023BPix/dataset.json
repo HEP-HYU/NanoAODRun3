@@ -60,126 +60,126 @@
         "name": "TCETau-LFV-Scalar",
         "nevt": 797000,
         "path": "",
-        "xsec": 0.076313
+        "xsec": 0.00488095
     },
     {
         "DataSetName": "/TCETau-LFV-Tensor_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TCETau-LFV-Tensor",
         "nevt": 787000,
         "path": "",
-        "xsec": 1.61537
+        "xsec": 0.125558
     },
     {
         "DataSetName": "/TCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TCETau-LFV-Vector",
         "nevt": 766000,
         "path": "",
-        "xsec": 0.352889
+        "xsec": 0.0253796
     },
     {
         "DataSetName": "/TUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TUETau-LFV-Scalar",
         "nevt": 799000,
         "path": "",
-        "xsec": 0.00488095
+        "xsec": 0.076313
     },
     {
         "DataSetName": "/TUETau-LFV-Tensor_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TUETau-LFV-Tensor",
         "nevt": 799000,
         "path": "",
-        "xsec": 0.125558
+        "xsec": 1.61537
     },
     {
         "DataSetName": "/TUETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TUETau-LFV-Vector",
         "nevt": 799000,
         "path": "",
-        "xsec": 0.0253796
+        "xsec": 0.352889
     },
     {
         "DataSetName": "/TTtoCETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v3/NANOAODSIM",
         "name": "TTtoCETau-LFV-Scalar",
         "nevt": 795000,
         "path": "",
-        "xsec": 0.00134201
+        "xsec": 0.00298052
     },
     {
         "DataSetName": "/TTtoCETau-LFV-Tensor_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TTtoCETau-LFV-Tensor",
         "nevt": 767000,
         "path": "",
-        "xsec": 0.0645612
+        "xsec": 0.142932
     },
     {
         "DataSetName": "/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TTtoCETau-LFV-Vector",
         "nevt": 775000,
         "path": "",
-        "xsec": 0.0107468
+        "xsec": 0.023822
     },
     {
         "DataSetName": "/TTtoUETau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TTtoUETau-LFV-Scalar",
         "nevt": 800000,
         "path": "",
-        "xsec": 0.00134402
+        "xsec": 0.00298052
     },
     {
         "DataSetName": "/TTtoUETau-LFV-Tensor_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TTtoUETau-LFV-Tensor",
         "nevt": 799000,
         "path": "",
-        "xsec": 0.0646215
+        "xsec": 0.142932
     },
     {
         "DataSetName": "/TTtoUETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TTtoUETau-LFV-Vector",
         "nevt": 800000,
         "path": "",
-        "xsec": 0.0106061
+        "xsec": 0.023822
     },
     {
         "DataSetName": "/TCMuTau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TCMuTau-LFV-Scalar",
         "nevt": 798000,
         "path": "",
-        "xsec": 0.076246
+        "xsec": 0.00488296
     },
     {
         "DataSetName": "/TCMuTau-LFV-Tensor_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TCMuTau-LFV-Tensor",
         "nevt": 800000,
         "path": "",
-        "xsec": 1.60867
+        "xsec": 0.123883
     },
     {
         "DataSetName": "/TCMuTau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TCMuTau-LFV-Vector",
         "nevt": 798000,
         "path": "",
-        "xsec": 0.352822
+        "xsec": 0.0251451
     },
     {
         "DataSetName": "/TUMuTau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TUMuTau-LFV-Scalar",
         "nevt": 772000,
         "path": "",
-        "xsec": 0.00488296
+        "xsec": 0.076246
     },
     {
         "DataSetName": "/TUMuTau-LFV-Tensor_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TUMuTau-LFV-Tensor",
         "nevt": 800000,
         "path": "",
-        "xsec": 0.123883
+        "xsec": 1.60867
     },
     {
         "DataSetName": "/TUMuTau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
         "name": "TUMuTau-LFV-Vector",
         "nevt": 798000,
         "path": "",
-        "xsec": 0.0251451
+        "xsec": 0.352822
     },
     {
         "DataSetName": "/TTtoCMuTau-LFV-Scalar_TuneCP5_13p6TeV_madgraph-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v4/NANOAODSIM",
@@ -242,98 +242,98 @@
         "name": "TBbar_s-channel",
         "nevt": 1276000,
         "path": "",
-        "xsec": 2.278
+        "xsec": 2.36
     },
     {
         "DataSetName": "/TbarBtoLminusNuB-s-channel-4FS_TuneCP5_13p6TeV_amcatnlo-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TbarB_s-channel",
         "nevt": 788000,
         "path": "",
-        "xsec": 1.43
+        "xsec": 1.477
     },
     {
         "DataSetName": "/TBbarQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TBbarQ_t-channel",
         "nevt": 2954000,
         "path": "",
-        "xsec": 123.8
+        "xsec": 145.0
     },
     {
         "DataSetName": "/TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TbarBQ_t-channel",
         "nevt": 1488000,
         "path": "",
-        "xsec": 75.47
+        "xsec": 87.2
     },
     {
         "DataSetName": "/TQbarto2Q-t-channel_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TQbarto2Q-t-channel",
         "nevt": 9525000,
         "path": "",
-        "xsec": 87.75
+        "xsec": 97.76
     },
     {
         "DataSetName": "/TQbartoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TQbartoLNu-t-channel",
         "nevt": 9253000,
         "path": "",
-        "xsec": 42.25
+        "xsec": 47.24
     },
     {
         "DataSetName": "/TbarQto2Q-t-channel_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TbarQto2Q-t-channel",
         "nevt": 5556000,
         "path": "",
-        "xsec": 53.028
+        "xsec": 58.79
     },
     {
         "DataSetName": "/TbarQtoLNu-t-channel_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TbarQtoLNu-t-channel",
         "nevt": 5767000,
         "path": "",
-        "xsec": 25.532
+        "xsec": 28.41
     },
     {
         "DataSetName": "/TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
         "name": "TWminusto2L2Nu",
         "nevt": 2479000,
         "path": "",
-        "xsec": 4.0
+        "xsec": 4.665
     },
     {
         "DataSetName": "/TWminusto4Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
         "name": "TWminusto4Q",
         "nevt": 3964000,
         "path": "",
-        "xsec": 16.0
+        "xsec": 19.977
     },
     {
         "DataSetName": "/TWminustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
         "name": "TWminustoLNu2Q",
         "nevt": 4952467,
         "path": "",
-        "xsec": 16.0
+        "xsec": 19.308
     },
     {
         "DataSetName": "/TbarWplusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TbarWplusto2L2Nu",
         "nevt": 2488000,
         "path": "",
-        "xsec": 4.01
+        "xsec": 4.665
     },
     {
         "DataSetName": "/TbarWplusto4Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TbarWplusto4Q",
         "nevt": 3967000,
         "path": "",
-        "xsec": 16.02
+        "xsec": 19.977
     },
     {
         "DataSetName": "/TbarWplustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM",
         "name": "TbarWplustoLNu2Q",
         "nevt": 5177861,
         "path": "",
-        "xsec": 16.02
+        "xsec": 19.308
     },
     {
         "DataSetName": "/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",
@@ -459,14 +459,14 @@
         "name": "TTHto2B",
         "nevt": 5576000,
         "path": "",
-        "xsec": 0.5742
+        "xsec": 0.3344
     },
     {
         "DataSetName": "/TTHtoNon2B_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v2/NANOAODSIM",
         "name": "TTHtoNon2B",
         "nevt": 5823987,
         "path": "",
-        "xsec": 0.5742
+        "xsec": 0.2398
     },
     {
         "DataSetName": "/WtoLNu-2Jets_0J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM",

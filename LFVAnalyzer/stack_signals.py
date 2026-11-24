@@ -16,7 +16,8 @@ input = args.input
 channel = args.channel
 
 lumi_dict = {'2016pre': 19502, '2016post': 16812, '2017': 41480, '2018':59832}#16: 36314, run2:137625
-lumi_dict = {'2022': 7980.4, '2022EE': 26671.7, '2023': 17794.0, '2023BPix': 9451.0, '2024':109000.0}
+# CMS_PdmVRun3Analysis.pdf (normtag_PHYSICS.json, Golden JSON, Era B excluded): 172.13 fb^-1 total
+lumi_dict = {'2022': 7990.0, '2022EE': 26680.0, '2023': 17960.0, '2023BPix': 9680.0, '2024': 109820.0}
 file_names = collections.OrderedDict()
 
 syst = ["","jesAbsoluteup","jesAbsolutedown", "jesAbsolute_ERAup", "jesAbsolute_ERAdown",

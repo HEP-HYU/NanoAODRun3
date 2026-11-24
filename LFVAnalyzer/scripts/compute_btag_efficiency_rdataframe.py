@@ -56,31 +56,31 @@ HIST_NAMES = [
 # and files24.yml (2024), including low-pT QCD samples.
 # ==============================================================================
 XSEC_2022_2023 = {
-    # ttbar
-    "TTtoLNu2Q": 405.75,
-    "TTto2L2Nu": 98.04,
-    "TTto4Q": 419.82,
+    # ttbar (923.6 pb 13.6 TeV NNLO+NNLL * PDG W BR 0.3258/0.6742)
+    "TTtoLNu2Q": 405.75,   # 923.6 * 2 * 0.3258 * 0.6742
+    "TTto2L2Nu": 98.04,    # 923.6 * 0.3258^2
+    "TTto4Q": 419.82,      # 923.6 * 0.6742^2
     # Drell-Yan
     "DYto2L-2Jets_MLL-10to50": 20950.0,
     "DYto2L-2Jets_MLL-50": 6688.0,
-    # Single Top
-    "TBbar_s-channel": 2.278,
-    "TbarB_s-channel": 1.43,
-    "TQbarto2Q-t-channel": 87.75,
-    "TQbartoLNu-t-channel": 42.25,
-    "TbarQto2Q-t-channel": 53.028,
-    "TbarQtoLNu-t-channel": 25.532,
-    "TWminusto2L2Nu": 4.0,
-    "TWminusto4Q": 16.0,
-    "TWminustoLNu2Q": 16.0,
-    "TbarWplusto2L2Nu": 4.01,
-    "TbarWplusto4Q": 16.02,
-    "TbarWplustoLNu2Q": 16.02,
+    # Single Top (LHCPhysics 13.6 TeV NNLO / NLO+NNLL * PDG W BR)
+    "TBbar_s-channel": 2.360,       # 7.244 * 0.3258 (NNLO)
+    "TbarB_s-channel": 1.477,       # 4.534 * 0.3258 (NNLO)
+    "TQbarto2Q-t-channel": 97.76,   # 145.0 * 0.6742 (NNLO)
+    "TQbartoLNu-t-channel": 47.24,  # 145.0 * 0.3258 (NNLO)
+    "TbarQto2Q-t-channel": 58.79,   # 87.2 * 0.6742 (NNLO)
+    "TbarQtoLNu-t-channel": 28.41,  # 87.2 * 0.3258 (NNLO)
+    "TWminusto2L2Nu": 4.665,        # 43.95 * 0.3258^2 (NLO+NNLL)
+    "TWminusto4Q": 19.977,          # 43.95 * 0.6742^2 (NLO+NNLL)
+    "TWminustoLNu2Q": 19.308,       # 43.95 * 2 * 0.3258 * 0.6742 (NLO+NNLL)
+    "TbarWplusto2L2Nu": 4.665,      # 43.95 * 0.3258^2 (NLO+NNLL)
+    "TbarWplusto4Q": 19.977,        # 43.95 * 0.6742^2 (NLO+NNLL)
+    "TbarWplustoLNu2Q": 19.308,     # 43.95 * 2 * 0.3258 * 0.6742 (NLO+NNLL)
     # tt+X
     "TTWtoQQ": 0.4678,
     "TTZtoQQ": 0.6603,
-    "TTHto2B": 0.5742,
-    "TTHtoNon2B": 0.5742,
+    "TTHto2B": 0.3344,     # 0.5742 * 0.5824 (BR H->bb)
+    "TTHtoNon2B": 0.2398,  # 0.5742 * 0.4176 (BR H->non-bb)
     # W+Jets
     "WtoLNu-2Jets_0J": 55760.0,
     "WtoLNu-2Jets_1J": 9529.0,
@@ -113,10 +113,10 @@ XSEC_2022_2023 = {
 }
 
 XSEC_2024 = {
-    # ttbar
-    "TTtoLNu2Q": 407.4,
-    "TTto2L2Nu": 98.88,
-    "TTto4Q": 419.82,
+    # ttbar (923.6 pb 13.6 TeV NNLO+NNLL * PDG W BR 0.3258/0.6742)
+    "TTtoLNu2Q": 405.75,   # 923.6 * 2 * 0.3258 * 0.6742
+    "TTto2L2Nu": 98.04,    # 923.6 * 0.3258^2
+    "TTto4Q": 419.82,      # 923.6 * 0.6742^2
     # Drell-Yan (flavor-split in 2024)
     "DYto2E-2Jets_MLL-10-50": 7046.7,
     "DYto2E-2Jets_MLL-50": 2124.08,
@@ -124,26 +124,26 @@ XSEC_2024 = {
     "DYto2Mu-2Jets_MLL-50": 2124.08,
     "DYto2Tau-2Jets_MLL-10-50": 7053.3,
     "DYto2Tau-2Jets_MLL-50": 2124.08,
-    # Single Top
-    "TBbarto2Q_s-channel": 4.065,
-    "TBbartoLNu_s-channel": 2.033,
-    "TbarBto2Q_s-channel": 2.55,
-    "TbarBtoLNu_s-channel": 1.275,
-    "TBbarQto2Q_t-channel": 77.26,
-    "TBbarQtoLNu_t-channel": 38.6,
-    "TbarBQto2Q_t-channel": 46.73,
-    "TbarBQtoLNu_t-channel": 23.34,
-    "TWminusto2L2Nu": 4.0,
-    "TWminusto4Q": 16.0,
-    "TWminustoLNu2Q": 16.0,
-    "TbarWplusto2L2Nu": 4.01,
-    "TbarWplusto4Q": 16.02,
-    "TbarWplustoLNu2Q": 16.02,
+    # Single Top (LHCPhysics 13.6 TeV NNLO / NLO+NNLL * PDG W BR)
+    "TBbarto2Q_s-channel": 4.884,    # 7.244 * 0.6742 (NNLO)
+    "TBbartoLNu_s-channel": 2.360,   # 7.244 * 0.3258 (NNLO)
+    "TbarBto2Q_s-channel": 3.057,    # 4.534 * 0.6742 (NNLO)
+    "TbarBtoLNu_s-channel": 1.477,   # 4.534 * 0.3258 (NNLO)
+    "TBbarQto2Q_t-channel": 97.76,   # 145.0 * 0.6742 (NNLO)
+    "TBbarQtoLNu_t-channel": 47.24,  # 145.0 * 0.3258 (NNLO)
+    "TbarBQto2Q_t-channel": 58.79,   # 87.2 * 0.6742 (NNLO)
+    "TbarBQtoLNu_t-channel": 28.41,  # 87.2 * 0.3258 (NNLO)
+    "TWminusto2L2Nu": 4.665,         # 43.95 * 0.3258^2 (NLO+NNLL)
+    "TWminusto4Q": 19.977,           # 43.95 * 0.6742^2 (NLO+NNLL)
+    "TWminustoLNu2Q": 19.308,        # 43.95 * 2 * 0.3258 * 0.6742 (NLO+NNLL)
+    "TbarWplusto2L2Nu": 4.665,       # 43.95 * 0.3258^2 (NLO+NNLL)
+    "TbarWplusto4Q": 19.977,         # 43.95 * 0.6742^2 (NLO+NNLL)
+    "TbarWplustoLNu2Q": 19.308,      # 43.95 * 2 * 0.3258 * 0.6742 (NLO+NNLL)
     # tt+X
     "TTWtoQQ": 0.4678,
     "TTZtoQQ": 0.6337,
-    "TTHto2B": 0.5742,
-    "TTHtoNon2B": 0.5742,
+    "TTHto2B": 0.3344,     # 0.5742 * 0.5824 (BR H->bb)
+    "TTHtoNon2B": 0.2398,  # 0.5742 * 0.4176 (BR H->non-bb)
     # W+Jets (flavor-split in 2024)
     "WtoENu-4Jets": 21132.0,
     "WtoMuNu-4Jets": 21132.0,
@@ -157,7 +157,7 @@ XSEC_2024 = {
     "QCD_Pt20To30_MuEnriched": 2701000.0,
     "QCD_Pt30To50_MuEnriched": 1461000.0,
     "QCD_Pt50To80_MuEnriched": 407600.0,
-    "QCD_Pt80To120_MuEnriched": 26070.0,
+    "QCD_Pt80To120_MuEnriched": 96070.0,
     "QCD_Pt120To170_MuEnriched": 23140.0,
     "QCD_Pt170To300_MuEnriched": 7754.0,
     "QCD_Pt300To470_MuEnriched": 699.6,

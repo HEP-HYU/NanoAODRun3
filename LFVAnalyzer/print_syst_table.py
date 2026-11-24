@@ -76,7 +76,6 @@ unc_cat = OrderedDict([
          #'tauidjetHighptsyst', 'tauidjetHighptextrap',
          #'tauidel', 'tauidmu', 'tes', 'tauFFstat', 'tauFFsyst',
          'tauFFstat', 'tauFFsyst',
-         'btagcorr', 'btaguncorr',
          'btagSFbc_correlated', 'btagSFbc_' + btag_year,
          'btagSFlight_correlated', 'btagSFlight_' + btag_year,
          'jesAbsolute', 'jesAbsolute_'+jes_year, 'jesBBEC1', 'jesBBEC1_'+jes_year,
@@ -187,13 +186,11 @@ unc_cat.update(OrderedDict([
 ('hdamp', ['hdamp']),
 ('pdfalphas', ['pdfalphas']),
 ('tune', ['tune']),
-('btagcorr', ['btagcorr']),
-('btaguncorr', ['btaguncorr']),
 ('btagSFbc_correlated', ['btagSFbc_correlated']),
 ('btagSFbc_' + btag_year, ['btagSFbc_' + btag_year]),
 ('btagSFlight_correlated', ['btagSFlight_correlated']),
 ('btagSFlight_' + btag_year, ['btagSFlight_' + btag_year]),
-('bAll', ['btagcorr', 'btaguncorr', 'btagSFbc_correlated', 'btagSFbc_' + btag_year, 'btagSFlight_correlated', 'btagSFlight_' + btag_year]),
+('bAll', ['btagSFbc_correlated', 'btagSFbc_' + btag_year, 'btagSFlight_correlated', 'btagSFlight_' + btag_year]),
 ]))
 
 if year == "2018":
