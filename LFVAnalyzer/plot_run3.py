@@ -8,6 +8,7 @@ across all 5 eras and run plotIt.
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 
@@ -19,6 +20,7 @@ PLOTIT_BIN = os.path.join(PLOTIT_ROOT, 'plotIt')
 # [JME-03] Restored all JME systematics (11 reduced JES sources, 4 FlavorPure sources, jer, metUnclust) and tes.
 # Retain only deprecated legacy aliases that do not exist in Run 3 histograms.
 SYST_AVOID = ['muonhighscale']
+SIGNAL_TYPE_RE = re.compile(r'^\s+type\s*:\s*[\'"]?signal[\'"]?(?:\s*(?:#.*)?)?$')
 
 # CMS_PdmVRun3Analysis.pdf (normtag_PHYSICS.json, Golden JSON, Era B excluded):
 # 2022: 5.02+2.97=7.99, 2022EE: 5.81+17.78+3.09=26.68, 2023: 17.96, 2023BPix: 9.68, 2024: 109.82 fb^-1
@@ -163,45 +165,53 @@ def resolve_era_dirs(dest_path, channel, postfix):
     return resolved_eras
 
 
-def build_files_entries(files_yml_path, dest_path, era_rel_path, lumi, total_lumi, has_merged_run3):
-    out_lines = []
-    in_skipped_block = False
+def build_files_entries(files_yml_path, dest_path, era_rel_path, lumi, total_lumi, has_merged_run3, exclude_signals=False):
+    blocks = []
+    current_header = None
+    current_props = []
+
     with open(files_yml_path, 'r') as f:
-        for raw_line in f:
+        for lineno, raw_line in enumerate(f, 1):
             clean_line = raw_line.strip()
-
-            # Commented-out dataset header (column 0 or indented block comment)
-            if clean_line.startswith('#') and "'" in clean_line and "':" in clean_line:
-                in_skipped_block = True
+            if not clean_line or clean_line.startswith('#'):
                 continue
 
-            # Inline comment line inside a block: skip without altering active block state
-            if clean_line.startswith('#'):
-                continue
+            if not raw_line[0].isspace():
+                if not (clean_line.startswith("'") and "':" in clean_line):
+                    fail(f"Unexpected top-level YAML line in '{files_yml_path}' line {lineno}: {raw_line.rstrip()}")
+                if current_header is not None:
+                    blocks.append((current_header, current_props))
+                current_header = raw_line
+                current_props = []
+            else:
+                if current_header is None:
+                    fail(f"Unexpected indented YAML line before any file entry in '{files_yml_path}' line {lineno}: {raw_line.rstrip()}")
+                current_props.append(raw_line)
 
-            # Active top-level file key
-            if not raw_line[:1].isspace() and clean_line.startswith("'") and "':" in clean_line:
-                if 'LFV' in clean_line and has_merged_run3:
-                    in_skipped_block = True
-                    continue
-                in_skipped_block = False
-                fname = clean_line[1:clean_line.find("':")]
-                basename = os.path.basename(fname)
-                file_entry_path = os.path.normpath(os.path.join(dest_path, era_rel_path, basename))
-                out_lines.append(f"'{file_entry_path}':\n")
-                if not any(tag in basename for tag in DATA_OR_SIGNAL_BASENAME_TAGS):
-                    out_lines.append(f"  scale: {float(lumi) / total_lumi}\n")
-                continue
+    if current_header is not None:
+        blocks.append((current_header, current_props))
 
-            if not clean_line:
-                if not in_skipped_block:
-                    out_lines.append(raw_line)
-                continue
+    out_blocks = []
+    for header_line, prop_lines in blocks:
+        clean_header = header_line.strip()
+        is_signal = ('LFV' in clean_header) or any(SIGNAL_TYPE_RE.match(line) for line in prop_lines)
+        if (has_merged_run3 or exclude_signals) and is_signal:
+            continue
 
-            if not in_skipped_block:
-                out_lines.append(raw_line)
+        fname = clean_header[1:clean_header.find("':")]
+        basename = os.path.basename(fname)
+        file_entry_path = os.path.normpath(os.path.join(dest_path, era_rel_path, basename))
+        block_lines = [f"'{file_entry_path}':\n"]
+        if not any(tag in basename for tag in DATA_OR_SIGNAL_BASENAME_TAGS):
+            block_lines.append(f"  scale: {float(lumi) / total_lumi}\n")
+        for prop in prop_lines:
+            block_lines.append(prop if prop.endswith('\n') else prop + '\n')
+        out_blocks.append(''.join(block_lines))
 
-    return ''.join(out_lines)
+    if not out_blocks:
+        fail(f"No file entries remained after processing '{files_yml_path}'.")
+
+    return '\n'.join(out_blocks) + '\n'
 
 
 def resolve_plots_include(args):
@@ -240,7 +250,7 @@ def parse_args():
     parser.add_argument('-C', '-ch', '--channel', dest='channel', type=str, default='', choices=['', 'electron', 'muon'], help="Channel: electron or muon (auto-detected from input if empty)")
     parser.add_argument('-D', dest='DNN', action='store_true', default=False, help="Run for DNN histograms")
     parser.add_argument('-F', '--ff', dest='tauFF', action='store_true', default=False, help="Run for tauFF histograms")
-    parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for calculate tauFF histograms")
+    parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for calculate tauFF histograms (excluding signals)")
     parser.add_argument('-y', dest='yield_only', action='store_true', default=False, help="Run for yield histograms")
     parser.add_argument('-q', dest='qcd', action='store_true', default=False, help="Include QCD")
     parser.add_argument('--postfix', dest='postfix', type=str, default='', help="Add postfix to output here, to have rebinning for histograms")
@@ -294,6 +304,7 @@ def main():
             lumi=era_info['lumi'],
             total_lumi=TOTAL_LUMI,
             has_merged_run3=has_merged_run3,
+            exclude_signals=args.calcTauFF,
         )
 
     files_run3_content = ''
@@ -319,9 +330,16 @@ def main():
     cmd = [PLOTIT_BIN, '-o', out_fig_dir, config_run3_yml] + plotit_flags
 
     if args.dry_run:
+        if args.calcTauFF:
+            sig_mode = "excluded (-f)"
+        elif has_merged_run3:
+            sig_mode = f"merged Run3 ({run3_dir_path})"
+        else:
+            sig_mode = "per-era"
         print(f"[DRY-RUN] Channel      : {channel}")
         print(f"[DRY-RUN] Total lumi   : {TOTAL_LUMI:.1f} pb^-1")
         print(f"[DRY-RUN] Merged Run3  : {has_merged_run3} ({run3_dir_path})")
+        print(f"[DRY-RUN] Signals      : {sig_mode}")
         print(f"[DRY-RUN] plots        : {plots_include}")
         print(f"[DRY-RUN] files_Run3   : {len(files_run3_content.splitlines())} lines (not written in --dry-run)")
         print(f"[DRY-RUN] config_Run3  : {len(config_run3_content.splitlines())} lines (not written in --dry-run)")
