@@ -7,10 +7,10 @@
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/3dd4d57b-f308-4664-adf1-53cb3cfa85ad.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/d8bc1311-932e-4f0f-a39e-9f182e098159.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/9aa38f39-f9f8-40d1-9a1a-8fe96c6a61bb.root
+/store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/f78fc4a6-5936-4d4b-af0c-1b2a358ed532.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/c6d7b727-b612-45e5-93c0-d3522be97340.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/3cd602ec-0d3c-4660-9db0-e3790c785724.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/6f8f24ef-9634-4690-8b8a-cda3db226b3a.root
-/store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/f78fc4a6-5936-4d4b-af0c-1b2a358ed532.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/931c79a1-51fe-4c6f-b0ea-1b7515279a1b.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/75974d77-ff1b-4cf2-ab69-73dfd5d35f4e.root
 /store/mc/Run3Summer22EENanoAODv12/TTtoCETau-LFV-Vector_TuneCP5_13p6TeV_madgraph-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/120000/88f30f31-78b7-4733-81e4-5d3b89947633.root

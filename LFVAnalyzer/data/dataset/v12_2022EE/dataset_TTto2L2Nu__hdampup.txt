@@ -31,6 +31,7 @@
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/0464f657-5f58-43d1-be7a-e5279c1b11c1.root
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/fa8e1dbb-8cf0-4350-95d9-7cecc407c469.root
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/b575a4a3-1fa2-4124-b066-19fcd92bb845.root
+/store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/51f2cb96-8e1d-4c4f-b400-1a831e977796.root
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/cef32ae2-48c5-42e5-9b38-1faae67c9811.root
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/8d781d3d-184e-4dab-bbb4-745d9b8f0774.root
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/3ba02829-f2d8-4571-bba4-6e6fc3fe400d.root
@@ -66,4 +67,3 @@
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/c48a2c33-45d8-4230-a3da-85c60f3f2d68.root
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/83adbe9c-24b8-4353-917a-d93b805f2aa7.root
 /store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/271b0c86-2543-4390-a063-7eb39c5ed475.root
-/store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v1/2550000/51f2cb96-8e1d-4c4f-b400-1a831e977796.root
