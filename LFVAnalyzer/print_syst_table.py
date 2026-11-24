@@ -39,7 +39,7 @@ elif year.endswith("2024")    : btag_year = "2024"
 else                          : btag_year = year
 
 # [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024)
-jes_year = year
+jes_year = btag_year
 
 if os.path.exists(config_path + tmp_file_name):
     os.remove(config_path + tmp_file_name)

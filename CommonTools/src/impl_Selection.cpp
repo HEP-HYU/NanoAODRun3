@@ -1299,7 +1299,7 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
         for (const char* vtag : {"_v12_", "_v15_"}) {
             size_t vpos = srcName.find(vtag);
             if (vpos != std::string::npos) {
-                srcName.erase(vpos, std::string(vtag).size());
+                srcName.replace(vpos, std::string(vtag).size(), "_");
             }
         }
         if (srcName.empty()) {
@@ -1316,6 +1316,11 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
             else if (srcName == "FlavorPureQuark")  flavMode = 2;
             else if (srcName == "FlavorPureCharm")  flavMode = 3;
             else if (srcName == "FlavorPureBottom") flavMode = 4;
+            else {
+                std::string msg = "[ERROR] JES unknown FlavorPure systematic '" + _syst + "' (srcName='" + srcName + "')";
+                std::cerr << msg << std::endl;
+                throw std::runtime_error(msg);
+            }
         } else {
             size_t yearPos = srcName.find("_20");
             if (yearPos != std::string::npos) {
@@ -1463,6 +1468,10 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
 
             _rlm = _rlm.Redefine("Jet_pt",   "Jet_pt_jes_shifted")
                        .Redefine("Jet_mass", "Jet_mass_jes_shifted");
+        } else {
+            std::string msg = "[ERROR] JES systematic '" + _syst + "' could not be applied (jecFile='" + jecFile + "', jesDir=" + std::to_string(jesDir) + ", year='" + _year + "')";
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
         }
     }
 
@@ -1501,18 +1510,30 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
 
         if (!jecFile.empty() && jerDir != 0.0f) {
             std::string jercPath = "data/JME/" + jecFile + "/jet_jerc.json.gz";
+            const std::string jerSmearPath = "data/JME/jer_smear.json.gz";
             std::cout << "[JER] Applying " << _syst << " -> prefix=" << jerPrefix
                       << " from " << jercPath << " (dir=" << (jerDir > 0.0f ? "+1" : "-1") << ")" << std::endl;
             auto jercReader = loadCorrectionSet(jercPath);
-            auto _jerReso   = jercReader->at(jerPrefix + "_MC_PtResolution_AK4PFPuppi");
-            auto _jerSF     = jercReader->at(jerPrefix + "_MC_ScaleFactor_AK4PFPuppi");
-            auto _jerUnc    = jercReader->at(jerPrefix + "_MC_SFUncertainty_AK4PFPuppi");
-            auto jerReader  = loadCorrectionSet("data/JME/jer_smear.json.gz");
-            auto _jerSmear  = jerReader->at("JERSmear");
+            auto jerReader  = loadCorrectionSet(jerSmearPath);
+            auto loadJerCorr = [](const std::shared_ptr<correction::CorrectionSet>& reader,
+                                  const std::string& key, const std::string& path) -> correction::Correction::Ref {
+                try {
+                    return reader->at(key);
+                } catch (const std::exception &e) {
+                    std::string msg = "[ERROR] JER correction key '" + key + "' not found in " + path + ": " + e.what();
+                    std::cerr << msg << std::endl;
+                    throw std::runtime_error(msg);
+                }
+            };
+            correction::Correction::Ref _jerReso  = loadJerCorr(jercReader, jerPrefix + "_MC_PtResolution_AK4PFPuppi", jercPath);
+            correction::Correction::Ref _jerSF    = loadJerCorr(jercReader, jerPrefix + "_MC_ScaleFactor_AK4PFPuppi", jercPath);
+            correction::Correction::Ref _jerUnc   = loadJerCorr(jercReader, jerPrefix + "_MC_SFUncertainty_AK4PFPuppi", jercPath);
+            correction::Correction::Ref _jerSmear = loadJerCorr(jerReader, "JERSmear", jerSmearPath);
 
             _rlm = _rlm.Define("Jet_genJetIdx_jer_i", "Jet_genJetIdx * 1");
 
-            auto calcJerScale = [_jerReso, _jerSF, _jerUnc, _jerSmear, jerDir](
+            const std::string systName = _syst;
+            auto calcJerScale = [_jerReso, _jerSF, _jerUnc, _jerSmear, jerDir, systName](
                                     const floats &pts, const floats &etas, const floats &phis,
                                     const ints &genidxs, const floats &genpts,
                                     const floats &genetas, const floats &genphis,
@@ -1520,24 +1541,33 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
                 floats scales;
                 scales.reserve(pts.size());
                 for (size_t i = 0; i < pts.size(); i++) {
-                    float reso   = _jerReso->evaluate({etas[i], pts[i], rho});
-                    float sf_nom = _jerSF->evaluate({etas[i], pts[i]});
-                    float sf_unc = _jerUnc->evaluate({etas[i], pts[i]});
-                    float sf_var = std::max(0.0f, sf_nom + jerDir * sf_unc);
+                    float smear_nom = 1.0f;
+                    float smear_var = 1.0f;
+                    try {
+                        float reso   = _jerReso->evaluate({etas[i], pts[i], rho});
+                        float sf_nom = _jerSF->evaluate({etas[i], pts[i]});
+                        float sf_unc = _jerUnc->evaluate({etas[i], pts[i]});
+                        float sf_var = std::max(0.0f, sf_nom + jerDir * sf_unc);
 
-                    float genPtForSmear = -1.0f;
-                    int genidx = (i < genidxs.size()) ? genidxs[i] : -1;
-                    if (genidx >= 0 && static_cast<size_t>(genidx) < genpts.size()) {
-                        float dPhi = std::abs(genphis[genidx] - phis[i]);
-                        float dEta = std::abs(genetas[genidx] - etas[i]);
-                        float dR2  = dPhi * dPhi + dEta * dEta;
-                        if (dR2 < 0.04f && std::abs(pts[i] - genpts[genidx]) < (3.0f * reso * pts[i])) {
-                            genPtForSmear = genpts[genidx];
+                        float genPtForSmear = -1.0f;
+                        int genidx = (i < genidxs.size()) ? genidxs[i] : -1;
+                        if (genidx >= 0 && static_cast<size_t>(genidx) < genpts.size()) {
+                            float dPhi = std::abs(genphis[genidx] - phis[i]);
+                            float dEta = std::abs(genetas[genidx] - etas[i]);
+                            float dR2  = dPhi * dPhi + dEta * dEta;
+                            if (dR2 < 0.04f && std::abs(pts[i] - genpts[genidx]) < (3.0f * reso * pts[i])) {
+                                genPtForSmear = genpts[genidx];
+                            }
                         }
-                    }
 
-                    float smear_nom = _jerSmear->evaluate({pts[i], etas[i], genPtForSmear, rho, int(event), reso, sf_nom});
-                    float smear_var = _jerSmear->evaluate({pts[i], etas[i], genPtForSmear, rho, int(event), reso, sf_var});
+                        smear_nom = _jerSmear->evaluate({pts[i], etas[i], genPtForSmear, rho, int(event), reso, sf_nom});
+                        smear_var = _jerSmear->evaluate({pts[i], etas[i], genPtForSmear, rho, int(event), reso, sf_var});
+                    } catch (const std::exception &e) {
+                        std::cerr << "[ERROR] JER evaluate failed (syst=" << systName
+                                  << ", eta=" << etas[i] << ", pt=" << pts[i]
+                                  << ", rho=" << rho << "): " << e.what() << std::endl;
+                        throw;
+                    }
                     float c_nom = (std::isfinite(smear_nom) && smear_nom > 0.0f) ? smear_nom : 1.0f;
                     float c_var = (std::isfinite(smear_var) && smear_var > 0.0f) ? smear_var : 1.0f;
                     float scale = (c_nom > 0.0f) ? (c_var / c_nom) : 1.0f;
@@ -1593,6 +1623,10 @@ void NanoAODAnalyzerrdframe::selectJets(std::string cut) {
 
             _rlm = _rlm.Redefine("Jet_pt",   "Jet_pt_jer_shifted")
                        .Redefine("Jet_mass", "Jet_mass_jer_shifted");
+        } else {
+            std::string msg = "[ERROR] JER systematic '" + _syst + "' could not be applied (jecFile='" + jecFile + "', jerDir=" + std::to_string(jerDir) + ", year='" + _year + "')";
+            std::cerr << msg << std::endl;
+            throw std::runtime_error(msg);
         }
     }
 

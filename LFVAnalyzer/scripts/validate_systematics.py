@@ -208,7 +208,7 @@ ELECTRON_SHAPE_SYSTS = {
 def get_shape_systs(year, ch):
     """Return dictionary of expected shape systematics for the given year and channel."""
     # [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024)
-    jes_year = str(year)
+    jes_year = _resolve_btag_era(str(year))
 
     systs = dict(BASE_SHAPE_SYSTS)
 
@@ -248,7 +248,7 @@ def get_shape_systs(year, ch):
 def get_shape_syst_pairs(year, ch):
     """Return list of base systematic names for up/down directionality checks."""
     # [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024)
-    jes_year = str(year)
+    jes_year = _resolve_btag_era(str(year))
 
     pairs = [
         "jesAbsolute", f"jesAbsolute_{jes_year}",

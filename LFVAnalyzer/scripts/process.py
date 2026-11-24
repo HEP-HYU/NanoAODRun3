@@ -41,8 +41,8 @@ mc_list = [os.path.join(mcdir, s) for s in os.listdir(mcdir)]
 dataset_list = data_list + mc_list
 
 # [JME-03 Option 2] Sub-era specific JES naming (2022, 2022EE, 2023, 2023BPix, 2024) per CMS_jmeUncertainty.pdf Table 2
-# Preserves distinct eraTag for uncorrelated sources across all 5 Run 3 eras.
-jes_year = year
+# Preserves distinct eraTag for uncorrelated sources across all 5 Run 3 eras (strip v12_/v15_ prefix).
+jes_year = re.sub(r'^v\d+_', '', year)
 
 # [JME-02/03] 11 Regrouped JES sources per CMS_jmeUncertainty.pdf Table 2 & prepareShapesAndCards.py:
 # Correlated: Absolute, BBEC1, EC2, HF, RelativeBal, FlavorPure (4 sources)
