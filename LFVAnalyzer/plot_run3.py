@@ -21,6 +21,13 @@ PLOTIT_BIN = os.path.join(PLOTIT_ROOT, 'plotIt')
 # Retain only deprecated legacy aliases that do not exist in Run 3 histograms.
 SYST_AVOID = ['muonhighscale']
 SIGNAL_TYPE_RE = re.compile(r'^\s+type\s*:\s*[\'"]?signal[\'"]?(?:\s*(?:#.*)?)?$')
+LOW_PT_QCD_FILES = {
+    'hist_QCD_Pt10To30_EMEnriched.root',
+    'hist_QCD_Pt15To20_EMEnriched.root',
+    'hist_QCD_Pt20To30_EMEnriched.root',
+    'hist_QCD_Pt15To20_MuEnriched.root',
+    'hist_QCD_Pt20To30_MuEnriched.root',
+}
 
 # CMS_PdmVRun3Analysis.pdf (normtag_PHYSICS.json, Golden JSON, Era B excluded):
 # 2022: 5.02+2.97=7.99, 2022EE: 5.81+17.78+3.09=26.68, 2023: 17.96, 2023BPix: 9.68, 2024: 109.82 fb^-1
@@ -165,7 +172,7 @@ def resolve_era_dirs(dest_path, channel, postfix):
     return resolved_eras
 
 
-def build_files_entries(files_yml_path, dest_path, era_rel_path, lumi, total_lumi, has_merged_run3, exclude_signals=False):
+def build_files_entries(files_yml_path, dest_path, era_rel_path, lumi, total_lumi, has_merged_run3, exclude_signals=False, skip_missing_low_pt_qcd=False):
     blocks = []
     current_header = None
     current_props = []
@@ -201,6 +208,9 @@ def build_files_entries(files_yml_path, dest_path, era_rel_path, lumi, total_lum
         fname = clean_header[1:clean_header.find("':")]
         basename = os.path.basename(fname)
         file_entry_path = os.path.normpath(os.path.join(dest_path, era_rel_path, basename))
+        if skip_missing_low_pt_qcd and basename in LOW_PT_QCD_FILES and not os.path.isfile(file_entry_path):
+            print(f"[WARNING] Missing low-pT QCD file (skipping): {file_entry_path}")
+            continue
         block_lines = [f"'{file_entry_path}':\n"]
         if not any(tag in basename for tag in DATA_OR_SIGNAL_BASENAME_TAGS):
             block_lines.append(f"  scale: {float(lumi) / total_lumi}\n")
@@ -313,6 +323,7 @@ def main():
             total_lumi=TOTAL_LUMI,
             has_merged_run3=has_merged_run3,
             exclude_signals=args.calcTauFF,
+            skip_missing_low_pt_qcd=args.qcd,
         )
 
     files_run3_content = ''

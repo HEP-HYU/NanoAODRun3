@@ -60,6 +60,13 @@ FAKE_REGIONS = ['lss', 'los', 'tss', 'tos']
 FAKE_REGION_PATH_RE = re.compile(r'(?:^|/)[^/]+_fake_(lss|los|tss|tos)(?:/|$)')
 ERA_TOKEN_RE = re.compile(r'(2023_?BPix|2022_?EE|2024|2023|2022)', re.IGNORECASE)
 SIGNAL_TYPE_RE = re.compile(r'^\s+type\s*:\s*[\'"]?signal[\'"]?(?:\s*(?:#.*)?)?$')
+LOW_PT_QCD_FILES = {
+    'hist_QCD_Pt10To30_EMEnriched.root',
+    'hist_QCD_Pt15To20_EMEnriched.root',
+    'hist_QCD_Pt20To30_EMEnriched.root',
+    'hist_QCD_Pt15To20_MuEnriched.root',
+    'hist_QCD_Pt20To30_MuEnriched.root',
+}
 
 
 def fail(msg, code=1):
@@ -225,8 +232,8 @@ def extract_files_include(base_cfg_path):
     return included_files
 
 
-def strip_signal_blocks(files_yml_path):
-    """Remove all active top-level entries with 'type: signal' from a files*.yml file."""
+def filter_files_yml(files_yml_path, exclude_signals=False, dir_entries=None):
+    """Filter active top-level entries in files*.yml, optionally dropping signals and missing low-pT QCD files."""
     with open(files_yml_path, 'r') as f:
         lines = f.readlines()
 
@@ -251,17 +258,31 @@ def strip_signal_blocks(files_yml_path):
 
     kept_blocks = []
     removed_count = 0
+    skipped_low_pt_qcd = []
     for block in blocks:
-        if any(SIGNAL_TYPE_RE.match(line) for line in block[1:]):
+        clean_header = block[0].strip()
+        m_hdr = re.match(r'^([\'"])(.+?)\1\s*:', clean_header)
+        entry_name = m_hdr.group(2) if m_hdr else clean_header.split(':', 1)[0].strip()
+        basename = os.path.basename(entry_name)
+
+        if exclude_signals and any(SIGNAL_TYPE_RE.match(line) for line in block[1:]):
             removed_count += 1
+        elif dir_entries is not None and basename in LOW_PT_QCD_FILES and basename not in dir_entries:
+            skipped_low_pt_qcd.append(basename)
         else:
             block_text = ''.join(block)
             kept_blocks.append(block_text if block_text.endswith('\n') else block_text + '\n')
 
     if not kept_blocks:
-        fail(f"No non-signal file entries remain after stripping signals in '{files_yml_path}'.")
+        fail(f"No file entries remain after filtering '{files_yml_path}'.")
 
-    return '\n'.join(kept_blocks), removed_count
+    return '\n'.join(kept_blocks), removed_count, skipped_low_pt_qcd
+
+
+def strip_signal_blocks(files_yml_path):
+    """Remove all active top-level entries with 'type: signal' from a files*.yml file."""
+    text, removed_count, _ = filter_files_yml(files_yml_path, exclude_signals=True)
+    return text, removed_count
 
 
 def _format_include_block(section_name, includes):
@@ -395,23 +416,33 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
 
     ensure_merged_data(input_dir, channel, args.dry_run)
 
+    check_qcd = (not args.no_qcd)
     orig_files = []
     filtered_files_content = ''
     removed_signals = 0
-    if exclude_signals:
+    skipped_low_pt_qcd = []
+    if exclude_signals or check_qcd:
+        dir_entries = set(os.listdir(input_dir)) if check_qcd else None
         orig_files = extract_files_include(base_cfg_path)
         chunks = []
         for fname in orig_files:
             fpath = os.path.join(config_path, fname)
             if not os.path.isfile(fpath):
                 fail(f"Included files YAML '{fname}' (from '{base_cfg_path}') not found in '{config_path}'")
-            chunk, n_removed = strip_signal_blocks(fpath)
+            chunk, n_removed, skipped_qcd = filter_files_yml(
+                fpath, exclude_signals=exclude_signals, dir_entries=dir_entries
+            )
             chunks.append(chunk)
             removed_signals += n_removed
+            skipped_low_pt_qcd.extend(skipped_qcd)
         filtered_files_content = '\n'.join(chunks)
+        if skipped_low_pt_qcd:
+            print(f"[WARNING] Missing low-pT QCD file(s) in '{input_dir}' (skipping): {', '.join(skipped_low_pt_qcd)}")
+
+    use_temp_files = exclude_signals or bool(skipped_low_pt_qcd)
 
     if args.dry_run:
-        dry_files_include = [f'.tmp_plot_era_files_{era}.yml'] if exclude_signals else None
+        dry_files_include = [f'.tmp_plot_era_files_{era}.yml'] if use_temp_files else None
         cfg_content = build_temp_config(
             base_cfg_path, plots_include, files_include=dry_files_include, strip_systematics=strip_systematics
         )
@@ -421,13 +452,15 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
         print(f"[DRY-RUN] Output (-o) : {output_dir}")
         if exclude_signals:
             print(f"[DRY-RUN] files       : signal-excluded ({removed_signals} removed from {orig_files})")
+        if skipped_low_pt_qcd:
+            print(f"[DRY-RUN] qcd-skip    : low-pT QCD skipped ({len(skipped_low_pt_qcd)} missing: {', '.join(skipped_low_pt_qcd)})")
         if strip_systematics:
             print("[DRY-RUN] systematics : cleared (luminosity-error preserved)")
         print(f"[DRY-RUN] plots: include: {plots_include}")
         print(f"[DRY-RUN] Command     : {' '.join(shlex.quote(c) for c in cmd)}")
         if args.keep_tmp:
             kept_files_include = None
-            if exclude_signals:
+            if use_temp_files:
                 with tempfile.NamedTemporaryFile(
                     mode='w',
                     prefix=f'.tmp_plot_era_files_{era}_{os.getpid()}_',
@@ -457,7 +490,7 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
     tmp_cfg_path = None
     try:
         files_include = None
-        if exclude_signals:
+        if use_temp_files:
             with tempfile.NamedTemporaryFile(
                 mode='w',
                 prefix=f'.tmp_plot_era_files_{era}_{os.getpid()}_',
