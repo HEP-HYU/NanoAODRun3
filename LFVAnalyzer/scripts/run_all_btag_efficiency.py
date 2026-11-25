@@ -28,7 +28,7 @@ import argparse
 import subprocess
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-DEFAULT_BASE_DIR_TEMPLATE = "/data2/common/skimmed_NanoAOD/skim_0812_LFV/{channel}/mc/"
+DEFAULT_BASE_DIR_TEMPLATE = "/data2/common/skimmed_NanoAOD/skim_1111_LFV/{channel}/mc/"
 
 # Classification of process groups based on sample folder naming conventions
 # Aligned with files.yml / files24.yml and CommonTools/src/impl_Selection.cpp
@@ -323,7 +323,7 @@ def main():
                         choices=["muon", "electron", "both", "all"],
                         help="Analysis channel: 'muon', 'electron', or 'both'/'all' [default: both]")
     parser.add_argument("-B", "--base-dir", dest="base_dir", type=str, default="",
-                        help="Override base directory for MC skims (supports '{channel}' placeholder). Default: /data2/common/skimmed_NanoAOD/skim_0812_LFV/{channel}/mc/")
+                        help="Override base directory for MC skims (supports '{channel}' placeholder). Default: /data2/common/skimmed_NanoAOD/skim_1111_LFV/{channel}/mc/")
     parser.add_argument("-E", "--engine", dest="engine", type=str, default="rdataframe",
                         choices=["rdataframe", "python"],
                         help="Calculation engine: 'rdataframe' (C++ BTagEfficiencyAnalyzer, recommended) or 'python' [default: rdataframe]")
