@@ -258,7 +258,7 @@ def parse_args():
     parser.add_argument('-C', '-ch', '--channel', dest='channel', type=str, default='', choices=['', 'electron', 'muon'], help="Channel: electron or muon (auto-detected from input if empty)")
     parser.add_argument('-D', dest='DNN', action='store_true', default=False, help="Run for DNN histograms")
     parser.add_argument('-F', '--ff', dest='tauFF', action='store_true', default=False, help="Run for tauFF histograms")
-    parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for calculate tauFF histograms (excluding signals)")
+    parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for calculate tauFF histograms (excluding signals & systematics)")
     parser.add_argument('-y', dest='yield_only', action='store_true', default=False, help="Run for yield histograms")
     parser.add_argument('-q', dest='qcd', action='store_true', default=False, help="Include QCD")
     parser.add_argument('--postfix', dest='postfix', type=str, default='', help="Add postfix to output here, to have rebinning for histograms")
@@ -291,7 +291,7 @@ def main():
             fail(f"Histogram YAML file '{hist_yml}' not found in '{config_path}'")
 
     postfix = args.postfix
-    common_syst = collect_common_systs(config_path)
+    common_syst = "systematics: []\n" if args.calcTauFF else collect_common_systs(config_path)
     resolved_eras = resolve_era_dirs(dest_path, channel, postfix)
 
     run3_chan_dir = os.path.join(dest_path, channel, 'Run3' + postfix)
@@ -348,6 +348,7 @@ def main():
         print(f"[DRY-RUN] Total lumi   : {TOTAL_LUMI:.1f} pb^-1")
         print(f"[DRY-RUN] Merged Run3  : {has_merged_run3} ({run3_dir_path})")
         print(f"[DRY-RUN] Signals      : {sig_mode}")
+        print(f"[DRY-RUN] Systematics  : {'cleared (-f, luminosity-error preserved)' if args.calcTauFF else 'combined (5 eras)'}")
         print(f"[DRY-RUN] plots        : {plots_include}")
         print(f"[DRY-RUN] files_Run3   : {len(files_run3_content.splitlines())} lines (not written in --dry-run)")
         print(f"[DRY-RUN] config_Run3  : {len(config_run3_content.splitlines())} lines (not written in --dry-run)")

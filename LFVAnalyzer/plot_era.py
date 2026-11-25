@@ -264,12 +264,15 @@ def strip_signal_blocks(files_yml_path):
     return '\n'.join(kept_blocks), removed_count
 
 
-def _replace_top_level_include_section(lines, section_name, includes, base_cfg_path):
+def _format_include_block(section_name, includes):
+    include_literal = ', '.join(f"'{p}'" for p in includes)
+    return f"{section_name}:\n  include: [{include_literal}]\n\n"
+
+
+def _replace_top_level_section(lines, section_name, replacement_block, base_cfg_path):
     new_lines = []
     in_section = False
     replaced = False
-    include_literal = ', '.join(f"'{p}'" for p in includes)
-    replacement_block = f"{section_name}:\n  include: [{include_literal}]\n\n"
     section_re = re.compile(rf'^{re.escape(section_name)}\s*:')
 
     for line in lines:
@@ -294,13 +297,15 @@ def _replace_top_level_include_section(lines, section_name, includes, base_cfg_p
     return new_lines
 
 
-def build_temp_config(base_cfg_path, plots_include, files_include=None):
+def build_temp_config(base_cfg_path, plots_include, files_include=None, strip_systematics=False):
     with open(base_cfg_path, 'r') as f:
         lines = f.readlines()
 
-    lines = _replace_top_level_include_section(lines, 'plots', plots_include, base_cfg_path)
+    lines = _replace_top_level_section(lines, 'plots', _format_include_block('plots', plots_include), base_cfg_path)
     if files_include is not None:
-        lines = _replace_top_level_include_section(lines, 'files', files_include, base_cfg_path)
+        lines = _replace_top_level_section(lines, 'files', _format_include_block('files', files_include), base_cfg_path)
+    if strip_systematics:
+        lines = _replace_top_level_section(lines, 'systematics', "systematics: []\n\n", base_cfg_path)
     return ''.join(lines)
 
 
@@ -384,7 +389,7 @@ def build_plotit_flags(args):
     return flags
 
 
-def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, plots_include, plotit_flags, args, exclude_signals=False):
+def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, plots_include, plotit_flags, args, exclude_signals=False, strip_systematics=False):
     if not os.path.isdir(input_dir):
         fail(f"Input directory does not exist: '{input_dir}'")
 
@@ -407,13 +412,17 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
 
     if args.dry_run:
         dry_files_include = [f'.tmp_plot_era_files_{era}.yml'] if exclude_signals else None
-        cfg_content = build_temp_config(base_cfg_path, plots_include, files_include=dry_files_include)
+        cfg_content = build_temp_config(
+            base_cfg_path, plots_include, files_include=dry_files_include, strip_systematics=strip_systematics
+        )
         cmd = [PLOTIT_BIN, '-i', input_dir, '-o', output_dir, os.path.join(config_path, f'.tmp_plot_era_{era}.yml')] + plotit_flags
         print(f"[DRY-RUN] Config base : {base_cfg_path}")
         print(f"[DRY-RUN] Input (-i)  : {input_dir}")
         print(f"[DRY-RUN] Output (-o) : {output_dir}")
         if exclude_signals:
             print(f"[DRY-RUN] files       : signal-excluded ({removed_signals} removed from {orig_files})")
+        if strip_systematics:
+            print("[DRY-RUN] systematics : cleared (luminosity-error preserved)")
         print(f"[DRY-RUN] plots: include: {plots_include}")
         print(f"[DRY-RUN] Command     : {' '.join(shlex.quote(c) for c in cmd)}")
         if args.keep_tmp:
@@ -429,7 +438,9 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
                     tmp_files_f.write(filtered_files_content)
                 kept_files_include = [os.path.basename(tmp_files_f.name)]
                 print(f"[DRY-RUN] Kept temp files : {tmp_files_f.name}")
-            cfg_content = build_temp_config(base_cfg_path, plots_include, files_include=kept_files_include)
+            cfg_content = build_temp_config(
+                base_cfg_path, plots_include, files_include=kept_files_include, strip_systematics=strip_systematics
+            )
             with tempfile.NamedTemporaryFile(
                 mode='w',
                 prefix=f'.tmp_plot_era_{era}_{os.getpid()}_',
@@ -458,7 +469,9 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
                 tmp_files_path = tmp_files_f.name
             files_include = [os.path.basename(tmp_files_path)]
 
-        cfg_content = build_temp_config(base_cfg_path, plots_include, files_include=files_include)
+        cfg_content = build_temp_config(
+            base_cfg_path, plots_include, files_include=files_include, strip_systematics=strip_systematics
+        )
         with tempfile.NamedTemporaryFile(
             mode='w',
             prefix=f'.tmp_plot_era_{era}_{os.getpid()}_',
@@ -489,7 +502,7 @@ def parse_args():
     parser.add_argument('-C', '-ch', '--channel', dest='channel', type=str, default='', choices=['', 'electron', 'muon'], help="Channel: electron or muon (required with -f; auto-detected from input otherwise)")
     parser.add_argument('-D', '--dnn', dest='DNN', action='store_true', default=False, help="Run for DNN histograms (histos_dnn.yml)")
     parser.add_argument('-F', '--ff', dest='tauFF', action='store_true', default=False, help="Run for TauFF applied histograms (histos_FFapply.yml, histos_yield_S5.yml)")
-    parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for TauFF calculation histograms (histos_FFcalc.yml, excluding signals)")
+    parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for TauFF calculation histograms (histos_FFcalc.yml, excluding signals & systematics)")
     parser.add_argument('--regions', dest='regions', nargs='+', choices=FAKE_REGIONS, default=None, help="Subset of fake regions in -f version mode (default: lss los tss tos)")
     parser.add_argument('-y', '--yield-only', dest='yield_only', action='store_true', default=False, help="Use yield-only histogram list (histos_yield.yml or histos_yield_S5.yml with -F)")
     parser.add_argument('--plots', dest='plots', type=str, default='', help="Comma-separated histogram YAML files overriding mode selection")
@@ -553,7 +566,7 @@ def main():
             base_cfgs = _validate_plotit_env(config_path, [era], plots_include, args.dry_run)
             default_out = os.path.join(os.path.dirname(abs_input), f'figure_{era}{args.postfix}')
             abs_output = os.path.abspath(args.output) if args.output else default_out
-            run_single(abs_input, abs_output, config_path, base_cfgs[era], channel, era, plots_include, plotit_flags, args, exclude_signals=True)
+            run_single(abs_input, abs_output, config_path, base_cfgs[era], channel, era, plots_include, plotit_flags, args, exclude_signals=True, strip_systematics=True)
             return
 
         if args.output:
@@ -565,7 +578,7 @@ def main():
 
         for region, era, era_dir, out_dir in targets:
             print(f"[INFO] [calcFF | {channel} | {era} | fake_{region}]")
-            run_single(era_dir, out_dir, config_path, base_cfgs[era], channel, era, plots_include, plotit_flags, args, exclude_signals=True)
+            run_single(era_dir, out_dir, config_path, base_cfgs[era], channel, era, plots_include, plotit_flags, args, exclude_signals=True, strip_systematics=True)
         return
 
     if not os.path.isdir(abs_input):
