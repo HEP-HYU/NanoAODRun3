@@ -67,6 +67,7 @@ LOW_PT_QCD_FILES = {
     'hist_QCD_Pt15To20_MuEnriched.root',
     'hist_QCD_Pt20To30_MuEnriched.root',
 }
+FF_S5_SOURCE_YMLS = ('histos.yml', 'histos_reco.yml')
 
 
 def fail(msg, code=1):
@@ -183,7 +184,7 @@ def resolve_plots_include(args):
         return plots
 
     if args.tauFF:
-        return ['histos_yield_S5.yml'] if args.yield_only else ['histos_FFapply.yml', 'histos_yield_S5.yml']
+        return ['histos_yield_S5.yml']
     if args.calcTauFF:
         if args.yield_only:
             fail("-y (--yield-only) cannot be combined with -f (--calcff); histos_FFcalc.yml has no separate yield-only YAML.")
@@ -193,6 +194,50 @@ def resolve_plots_include(args):
             fail("-y (--yield-only) cannot be combined with -D (--dnn); histos_dnn.yml has no separate yield-only YAML.")
         return ['histos_dnn.yml']
     return ['histos_yield.yml'] if args.yield_only else ['histos_yield.yml', 'histos.yml', 'histos_reco.yml']
+
+
+def extract_s5_histos_yml(config_path, source_ymls=FF_S5_SOURCE_YMLS):
+    """Extract active top-level '_S5' histogram blocks from normal histogram YAML files."""
+    kept_blocks = []
+    seen_keys = set()
+
+    for fname in source_ymls:
+        fpath = os.path.join(config_path, fname)
+        if not os.path.isfile(fpath):
+            fail(f"Source histogram YAML '{fname}' not found in '{config_path}'")
+        with open(fpath, 'r') as f:
+            lines = f.readlines()
+
+        blocks = []
+        current_block = None
+        for lineno, raw_line in enumerate(lines, 1):
+            stripped = raw_line.strip()
+            if not stripped or stripped.startswith('#'):
+                continue
+            if not raw_line[0].isspace():
+                if current_block is not None:
+                    blocks.append(current_block)
+                current_block = [raw_line]
+            else:
+                if current_block is None:
+                    fail(f"Unexpected indented YAML line before any top-level entry in '{fpath}' line {lineno}: {raw_line.rstrip()}")
+                current_block.append(raw_line)
+        if current_block is not None:
+            blocks.append(current_block)
+
+        for block in blocks:
+            clean_header = block[0].strip()
+            m_hdr = re.match(r'^([\'"])(.+?)\1\s*:', clean_header)
+            entry_key = m_hdr.group(2) if m_hdr else clean_header.split(':', 1)[0].strip()
+            if entry_key.endswith('_S5') and entry_key not in seen_keys:
+                seen_keys.add(entry_key)
+                block_text = ''.join(block)
+                kept_blocks.append(block_text if block_text.endswith('\n') else block_text + '\n')
+
+    if not kept_blocks:
+        fail(f"No '_S5' histogram entries found in {list(source_ymls)} under '{config_path}'.")
+
+    return '\n'.join(kept_blocks), len(kept_blocks)
 
 
 def extract_files_include(base_cfg_path):
@@ -410,11 +455,16 @@ def build_plotit_flags(args):
     return flags
 
 
-def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, plots_include, plotit_flags, args, exclude_signals=False, strip_systematics=False):
+def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, plots_include, plotit_flags, args, exclude_signals=False, strip_systematics=False, auto_ff_s5=False):
     if not os.path.isdir(input_dir):
         fail(f"Input directory does not exist: '{input_dir}'")
 
     ensure_merged_data(input_dir, channel, args.dry_run)
+
+    ff_s5_content = ''
+    ff_s5_count = 0
+    if auto_ff_s5:
+        ff_s5_content, ff_s5_count = extract_s5_histos_yml(config_path)
 
     check_qcd = (not args.no_qcd)
     orig_files = []
@@ -443,8 +493,9 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
 
     if args.dry_run:
         dry_files_include = [f'.tmp_plot_era_files_{era}.yml'] if use_temp_files else None
+        dry_plots_include = ([f'.tmp_plot_era_ff_s5_{era}.yml'] + plots_include) if auto_ff_s5 else plots_include
         cfg_content = build_temp_config(
-            base_cfg_path, plots_include, files_include=dry_files_include, strip_systematics=strip_systematics
+            base_cfg_path, dry_plots_include, files_include=dry_files_include, strip_systematics=strip_systematics
         )
         cmd = [PLOTIT_BIN, '-i', input_dir, '-o', output_dir, os.path.join(config_path, f'.tmp_plot_era_{era}.yml')] + plotit_flags
         print(f"[DRY-RUN] Config base : {base_cfg_path}")
@@ -456,7 +507,9 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
             print(f"[DRY-RUN] qcd-skip    : low-pT QCD skipped ({len(skipped_low_pt_qcd)} missing: {', '.join(skipped_low_pt_qcd)})")
         if strip_systematics:
             print("[DRY-RUN] systematics : cleared (luminosity-error preserved)")
-        print(f"[DRY-RUN] plots: include: {plots_include}")
+        if auto_ff_s5:
+            print(f"[DRY-RUN] ff-s5-plots : auto-extracted {ff_s5_count} '_S5' histograms from {list(FF_S5_SOURCE_YMLS)}")
+        print(f"[DRY-RUN] plots: include: {dry_plots_include}")
         print(f"[DRY-RUN] Command     : {' '.join(shlex.quote(c) for c in cmd)}")
         if args.keep_tmp:
             kept_files_include = None
@@ -471,8 +524,20 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
                     tmp_files_f.write(filtered_files_content)
                 kept_files_include = [os.path.basename(tmp_files_f.name)]
                 print(f"[DRY-RUN] Kept temp files : {tmp_files_f.name}")
+            kept_plots_include = plots_include
+            if auto_ff_s5:
+                with tempfile.NamedTemporaryFile(
+                    mode='w',
+                    prefix=f'.tmp_plot_era_ff_s5_{era}_{os.getpid()}_',
+                    suffix='.yml',
+                    dir=config_path,
+                    delete=False,
+                ) as tmp_s5_f:
+                    tmp_s5_f.write(ff_s5_content)
+                kept_plots_include = [os.path.basename(tmp_s5_f.name)] + plots_include
+                print(f"[DRY-RUN] Kept temp S5    : {tmp_s5_f.name}")
             cfg_content = build_temp_config(
-                base_cfg_path, plots_include, files_include=kept_files_include, strip_systematics=strip_systematics
+                base_cfg_path, kept_plots_include, files_include=kept_files_include, strip_systematics=strip_systematics
             )
             with tempfile.NamedTemporaryFile(
                 mode='w',
@@ -487,6 +552,7 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
 
     os.makedirs(output_dir, exist_ok=True)
     tmp_files_path = None
+    tmp_s5_path = None
     tmp_cfg_path = None
     try:
         files_include = None
@@ -502,8 +568,21 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
                 tmp_files_path = tmp_files_f.name
             files_include = [os.path.basename(tmp_files_path)]
 
+        effective_plots_include = plots_include
+        if auto_ff_s5:
+            with tempfile.NamedTemporaryFile(
+                mode='w',
+                prefix=f'.tmp_plot_era_ff_s5_{era}_{os.getpid()}_',
+                suffix='.yml',
+                dir=config_path,
+                delete=False,
+            ) as tmp_s5_f:
+                tmp_s5_f.write(ff_s5_content)
+                tmp_s5_path = tmp_s5_f.name
+            effective_plots_include = [os.path.basename(tmp_s5_path)] + plots_include
+
         cfg_content = build_temp_config(
-            base_cfg_path, plots_include, files_include=files_include, strip_systematics=strip_systematics
+            base_cfg_path, effective_plots_include, files_include=files_include, strip_systematics=strip_systematics
         )
         with tempfile.NamedTemporaryFile(
             mode='w',
@@ -522,7 +601,7 @@ def run_single(input_dir, output_dir, config_path, base_cfg_path, channel, era, 
             fail(f"plotIt failed (exit code {proc.returncode}) for era='{era}', input='{input_dir}'.", code=proc.returncode)
     finally:
         if not args.keep_tmp:
-            for tmp_p in (tmp_cfg_path, tmp_files_path):
+            for tmp_p in (tmp_cfg_path, tmp_files_path, tmp_s5_path):
                 if tmp_p and os.path.exists(tmp_p):
                     os.remove(tmp_p)
 
@@ -534,7 +613,7 @@ def parse_args():
     parser.add_argument('-Y', '--year', '--era', dest='year', type=str, default='', help="Single era: 2022, 2022EE, 2023, 2023BPix, or 2024 (auto-detected from input, or all 5 eras when omitted in -f version mode)")
     parser.add_argument('-C', '-ch', '--channel', dest='channel', type=str, default='', choices=['', 'electron', 'muon'], help="Channel: electron or muon (required with -f; auto-detected from input otherwise)")
     parser.add_argument('-D', '--dnn', dest='DNN', action='store_true', default=False, help="Run for DNN histograms (histos_dnn.yml)")
-    parser.add_argument('-F', '--ff', dest='tauFF', action='store_true', default=False, help="Run for TauFF applied histograms (histos_FFapply.yml, histos_yield_S5.yml)")
+    parser.add_argument('-F', '--ff', dest='tauFF', action='store_true', default=False, help="Run for TauFF applied histograms (auto-extracted _S5 from histos.yml + histos_reco.yml, plus histos_yield_S5.yml)")
     parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for TauFF calculation histograms (histos_FFcalc.yml, excluding signals & systematics)")
     parser.add_argument('--regions', dest='regions', nargs='+', choices=FAKE_REGIONS, default=None, help="Subset of fake regions in -f version mode (default: lss los tss tos)")
     parser.add_argument('-y', '--yield-only', dest='yield_only', action='store_true', default=False, help="Use yield-only histogram list (histos_yield.yml or histos_yield_S5.yml with -F)")
@@ -549,7 +628,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def _validate_plotit_env(config_path, eras, plots_include, dry_run):
+def _validate_plotit_env(config_path, eras, plots_include, dry_run, auto_ff_s5=False):
     if not os.path.isdir(config_path):
         fail(f"plotIt config directory does not exist: '{config_path}'")
 
@@ -564,6 +643,12 @@ def _validate_plotit_env(config_path, eras, plots_include, dry_run):
         hist_yml_path = os.path.join(config_path, hist_yml)
         if not os.path.isfile(hist_yml_path):
             fail(f"Histogram YAML file '{hist_yml}' not found in '{config_path}'")
+
+    if auto_ff_s5:
+        for src_yml in FF_S5_SOURCE_YMLS:
+            src_path = os.path.join(config_path, src_yml)
+            if not os.path.isfile(src_path):
+                fail(f"Source histogram YAML '{src_yml}' not found in '{config_path}'")
 
     if not dry_run and not os.path.isfile(PLOTIT_BIN):
         fail(f"plotIt binary not found at '{PLOTIT_BIN}'")
@@ -581,6 +666,7 @@ def main():
         fail("--regions requires -f (--calcff).")
 
     plots_include = resolve_plots_include(args)
+    auto_ff_s5 = bool(args.tauFF and not args.yield_only and not args.plots)
     plotit_flags = build_plotit_flags(args)
     abs_input = os.path.abspath(args.input.rstrip('/') or '.')
 
@@ -620,11 +706,11 @@ def main():
     channel = resolve_channel(args.channel, abs_input)
     era = resolve_era(args.year, abs_input)
     config_path = os.path.join(PLOTIT_ROOT, 'configs', f'Run3_{channel}')
-    base_cfgs = _validate_plotit_env(config_path, [era], plots_include, args.dry_run)
+    base_cfgs = _validate_plotit_env(config_path, [era], plots_include, args.dry_run, auto_ff_s5=auto_ff_s5)
 
     default_out = os.path.join(os.path.dirname(abs_input), f'figure_{os.path.basename(abs_input)}{args.postfix}')
     abs_output = os.path.abspath(args.output) if args.output else default_out
-    run_single(abs_input, abs_output, config_path, base_cfgs[era], channel, era, plots_include, plotit_flags, args, exclude_signals=False)
+    run_single(abs_input, abs_output, config_path, base_cfgs[era], channel, era, plots_include, plotit_flags, args, exclude_signals=False, auto_ff_s5=auto_ff_s5)
 
 
 if __name__ == '__main__':

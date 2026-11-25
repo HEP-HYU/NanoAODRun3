@@ -38,21 +38,28 @@ if __name__=='__main__':
     default_json_dir = os.path.join(os.path.dirname(script_dir), "data/GoldenJSON")
     json_base = os.path.join(workdir, "data/GoldenJSON") if os.path.isdir(os.path.join(workdir, "data/GoldenJSON")) else default_json_dir
 
+    golden_json_map = (
+        ("2022", "Cert_Collisions2022_355100_362760_Golden.json"),
+        ("2023", "Cert_Collisions2023_366442_370790_Golden.json"),
+        ("2024", "Cert_Collisions2024_378981_386951_Golden.json"),
+        ("2016", "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
+        ("2017", "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"),
+        ("2018", "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
+    )
+
     json = ""
     if syst == "data":
-        if "2022" in year or "2022" in indir:
-            json = os.path.join(json_base, "Cert_Collisions2022_355100_362760_Golden.json")
-        elif "2023" in year or "2023" in indir:
-            json = os.path.join(json_base, "Cert_Collisions2023_366442_370790_Golden.json")
-        elif "2024" in year or "2024" in indir:
-            json = os.path.join(json_base, "Cert_Collisions2024_378981_386951_Golden.json")
-        elif "2016" in year or "2016" in indir:
-            json = os.path.join(json_base, "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt")
-        elif "2017" in year or "2017" in indir:
-            json = os.path.join(json_base, "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt")
-        elif "2018" in year or "2018" in indir:
-            json = os.path.join(json_base, "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt")
-        else:
+        # Check explicit --year before falling back to indir substring match
+        for tag, fname in golden_json_map:
+            if tag in year:
+                json = os.path.join(json_base, fname)
+                break
+        if not json:
+            for tag, fname in golden_json_map:
+                if tag in indir:
+                    json = os.path.join(json_base, fname)
+                    break
+        if not json:
             print(f"[ERROR] syst is data but cannot determine Golden JSON for year '{year}' and indir '{indir}'!")
             sys.exit(1)
 

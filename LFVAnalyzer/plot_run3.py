@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
@@ -28,6 +29,7 @@ LOW_PT_QCD_FILES = {
     'hist_QCD_Pt15To20_MuEnriched.root',
     'hist_QCD_Pt20To30_MuEnriched.root',
 }
+FF_S5_SOURCE_YMLS = ('histos.yml', 'histos_reco.yml')
 
 # CMS_PdmVRun3Analysis.pdf (normtag_PHYSICS.json, Golden JSON, Era B excluded):
 # 2022: 5.02+2.97=7.99, 2022EE: 5.81+17.78+3.09=26.68, 2023: 17.96, 2023BPix: 9.68, 2024: 109.82 fb^-1
@@ -226,12 +228,56 @@ def build_files_entries(files_yml_path, dest_path, era_rel_path, lumi, total_lum
 
 def resolve_plots_include(args):
     if args.tauFF:
-        return ['histos_yield_S5.yml'] if args.yield_only else ['histos_FFapply.yml', 'histos_yield_S5.yml']
+        return ['histos_yield_S5.yml']
     if args.calcTauFF:
         return ['histos_FFcalc.yml']
     if args.DNN:
         return ['histos_dnn.yml']
     return ['histos_yield.yml'] if args.yield_only else ['histos_yield.yml', 'histos.yml', 'histos_reco.yml']
+
+
+def extract_s5_histos_yml(config_path, source_ymls=FF_S5_SOURCE_YMLS):
+    """Extract active top-level '_S5' histogram blocks from normal histogram YAML files."""
+    kept_blocks = []
+    seen_keys = set()
+
+    for fname in source_ymls:
+        fpath = os.path.join(config_path, fname)
+        if not os.path.isfile(fpath):
+            fail(f"Source histogram YAML '{fname}' not found in '{config_path}'")
+        with open(fpath, 'r') as f:
+            lines = f.readlines()
+
+        blocks = []
+        current_block = None
+        for lineno, raw_line in enumerate(lines, 1):
+            stripped = raw_line.strip()
+            if not stripped or stripped.startswith('#'):
+                continue
+            if not raw_line[0].isspace():
+                if current_block is not None:
+                    blocks.append(current_block)
+                current_block = [raw_line]
+            else:
+                if current_block is None:
+                    fail(f"Unexpected indented YAML line before any top-level entry in '{fpath}' line {lineno}: {raw_line.rstrip()}")
+                current_block.append(raw_line)
+        if current_block is not None:
+            blocks.append(current_block)
+
+        for block in blocks:
+            clean_header = block[0].strip()
+            m_hdr = re.match(r'^([\'"])(.+?)\1\s*:', clean_header)
+            entry_key = m_hdr.group(2) if m_hdr else clean_header.split(':', 1)[0].strip()
+            if entry_key.endswith('_S5') and entry_key not in seen_keys:
+                seen_keys.add(entry_key)
+                block_text = ''.join(block)
+                kept_blocks.append(block_text if block_text.endswith('\n') else block_text + '\n')
+
+    if not kept_blocks:
+        fail(f"No '_S5' histogram entries found in {list(source_ymls)} under '{config_path}'.")
+
+    return '\n'.join(kept_blocks), len(kept_blocks)
 
 
 def build_config_run3_content(template_yml_path, common_syst, plots_include):
@@ -267,7 +313,7 @@ def parse_args():
     parser.add_argument('-I', '--input', dest='input', type=str, default='process_0715_v4/electron', help="Input directory path")
     parser.add_argument('-C', '-ch', '--channel', dest='channel', type=str, default='', choices=['', 'electron', 'muon'], help="Channel: electron or muon (auto-detected from input if empty)")
     parser.add_argument('-D', dest='DNN', action='store_true', default=False, help="Run for DNN histograms")
-    parser.add_argument('-F', '--ff', dest='tauFF', action='store_true', default=False, help="Run for tauFF histograms")
+    parser.add_argument('-F', '--ff', dest='tauFF', action='store_true', default=False, help="Run for tauFF histograms (auto-extracted _S5 from histos.yml + histos_reco.yml)")
     parser.add_argument('-f', '--calcff', dest='calcTauFF', action='store_true', default=False, help="Run for calculate tauFF histograms (excluding signals & systematics)")
     parser.add_argument('-y', dest='yield_only', action='store_true', default=False, help="Run for yield histograms")
     parser.add_argument('-q', dest='qcd', action='store_true', default=False, help="Include QCD")
@@ -300,6 +346,12 @@ def main():
         if not os.path.isfile(os.path.join(config_path, hist_yml)):
             fail(f"Histogram YAML file '{hist_yml}' not found in '{config_path}'")
 
+    auto_ff_s5 = bool(args.tauFF and not args.yield_only)
+    ff_s5_content = ''
+    ff_s5_count = 0
+    if auto_ff_s5:
+        ff_s5_content, ff_s5_count = extract_s5_histos_yml(config_path)
+
     postfix = args.postfix
     common_syst = "systematics: []\n" if args.calcTauFF else collect_common_systs(config_path)
     resolved_eras = resolve_era_dirs(dest_path, channel, postfix)
@@ -331,8 +383,6 @@ def main():
         files_run3_content += format_signal_blocks(channel, run3_dir_path, args.yield_only)
     files_run3_content += string_for_files
 
-    config_run3_content = build_config_run3_content(template_yml_path, common_syst, plots_include)
-
     out_fig_dir = os.path.join(dest_path, ('figure_run3_qcd' if args.qcd else 'figure_run3') + postfix)
     config_run3_yml = os.path.join(config_path, 'config_Run3.yml')
     files_run3_yml = os.path.join(config_path, 'files_Run3.yml')
@@ -349,6 +399,11 @@ def main():
     cmd = [PLOTIT_BIN, '-o', out_fig_dir, config_run3_yml] + plotit_flags
 
     if args.dry_run:
+        dry_plots = (
+            [f"<auto-extracted {ff_s5_count} _S5 plots from {', '.join(FF_S5_SOURCE_YMLS)}>"] + plots_include
+            if auto_ff_s5 else plots_include
+        )
+        config_run3_content = build_config_run3_content(template_yml_path, common_syst, dry_plots)
         if args.calcTauFF:
             sig_mode = "excluded (-f)"
         elif has_merged_run3:
@@ -360,7 +415,7 @@ def main():
         print(f"[DRY-RUN] Merged Run3  : {has_merged_run3} ({run3_dir_path})")
         print(f"[DRY-RUN] Signals      : {sig_mode}")
         print(f"[DRY-RUN] Systematics  : {'cleared (-f, luminosity-error preserved)' if args.calcTauFF else 'combined (5 eras)'}")
-        print(f"[DRY-RUN] plots        : {plots_include}")
+        print(f"[DRY-RUN] plots        : {dry_plots}")
         print(f"[DRY-RUN] files_Run3   : {len(files_run3_content.splitlines())} lines (not written in --dry-run)")
         print(f"[DRY-RUN] config_Run3  : {len(config_run3_content.splitlines())} lines (not written in --dry-run)")
         print(f"[DRY-RUN] Command      : {' '.join(cmd)}")
@@ -370,15 +425,34 @@ def main():
         fail(f"plotIt binary not found at '{PLOTIT_BIN}'")
 
     os.makedirs(out_fig_dir, exist_ok=True)
-    with open(files_run3_yml, 'w') as fnew:
-        fnew.write(files_run3_content)
-    with open(config_run3_yml, 'w') as f1:
-        f1.write(config_run3_content)
+    tmp_s5_path = None
+    try:
+        effective_plots_include = list(plots_include)
+        if auto_ff_s5:
+            with tempfile.NamedTemporaryFile(
+                mode='w',
+                prefix=f'.tmp_plot_run3_ff_s5_{os.getpid()}_',
+                suffix='.yml',
+                dir=config_path,
+                delete=False,
+            ) as tmp_s5_f:
+                tmp_s5_f.write(ff_s5_content)
+                tmp_s5_path = tmp_s5_f.name
+            effective_plots_include = [os.path.basename(tmp_s5_path)] + effective_plots_include
 
-    print(f"[INFO] Running: {' '.join(cmd)}")
-    proc = subprocess.run(cmd, check=False)
-    if proc.returncode != 0:
-        fail(f"plotIt failed (exit code {proc.returncode}) for Run 3 '{channel}'.", code=proc.returncode)
+        config_run3_content = build_config_run3_content(template_yml_path, common_syst, effective_plots_include)
+        with open(files_run3_yml, 'w') as fnew:
+            fnew.write(files_run3_content)
+        with open(config_run3_yml, 'w') as f1:
+            f1.write(config_run3_content)
+
+        print(f"[INFO] Running: {' '.join(cmd)}")
+        proc = subprocess.run(cmd, check=False)
+        if proc.returncode != 0:
+            fail(f"plotIt failed (exit code {proc.returncode}) for Run 3 '{channel}'.", code=proc.returncode)
+    finally:
+        if tmp_s5_path and os.path.exists(tmp_s5_path):
+            os.remove(tmp_s5_path)
 
 
 if __name__ == '__main__':

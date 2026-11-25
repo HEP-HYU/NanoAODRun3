@@ -26,3 +26,15 @@ This repository contains the end-to-end CMS Run 3 (`2022`, `2022EE`, `2023`, `20
   - Unsplit `muid/muiso/mutrg/elecid/elecreco` and the inclusive `tauidjet` weight variations are no longer booked (only stat/syst and decomposed sources).
 - Open points (no code changed): [`../recommendations/Object_Review_TODO.md`](../recommendations/Object_Review_TODO.md) §8.3 and [`../recommendations/Systematics_Review_Status.md`](../recommendations/Systematics_Review_Status.md) §6.3 — notably the `process.py -Y` naming vs JES syst names and the Golden-JSON era-detection order.
 - Build status: the 2026-11-11 compile/JIT fixes (`correction::Correction::Ref`, removal of `ROOT::VecOps::Cast` from JIT strings) are not yet confirmed by a successful cluster run.
+
+### Recent Updates & Remaining Work (as of 2026-11-25)
+- **Completed milestones (`2026-11-23` ~ `11-25`)**:
+  - Cluster C++ build/JIT verified; Run 3 skimming completed; b-tag efficiency maps regenerated and uploaded (`02f87ad`); `process.py`/`print_syst_table.py`/`inject_ext_syst.py` JES `-Y` sub-era naming fixed (`e4293ae`); lumi & xsec configs synced (`7431eac`, `f1abfdc`); muon full Run 3 TauFF updated (`4b6f688`) and 2024 `postprocess`/`tauFF` verified.
+  - `LFVAnalyzer/plot_era.py` & `plot_run3.py`: `-f` auto-excludes signals and clears `systematics: []` (preserving `luminosity-error`), skips missing low-$p_T$ QCD ($\le 30\text{ GeV}$) with `[WARNING]`, `plot_era.py -f` supports version-prefix auto-expansion + merged data auto-`hadd`, `plot_run3.py` fixes `root: '#'` path handling, and `-F` dynamically extracts all 52 `_S5` plots from `histos.yml` + `histos_reco.yml`.
+  - `plotIt/configs/Run3_{muon,electron}/{histos.yml,histos_FFapply.yml}`: Added `show-onlyoverflow: true` on `h_leptau_mass_blind_*` so `-1.0` blinded data in underflow bin 0 is not folded into bin 1.
+  - `LFVAnalyzer/print_syst_table.py`: Forces 2-decimal precision (`yields-table-numerical-precision-yields: 2`) in `total_syst.tex`.
+  - **TOP-23-008 lepton phase-space extrapolation**: Added `muExtra` (0.5%) and `elExtra` (1.0%) across all 12 Run 3 `plotIt` configs, `print_syst_table.py`, and `Run3LFVLimits/prepareShapesAndCards.py` (`lnN`, correlated across eras).
+- **Remaining tasks**:
+  - Re-run `plot_era.py -F`, `plot_run3.py -F`, and `print_syst_table.py` (no re-process needed) to pick up the 52 S5 plots, blind-mass bin-1 fix, 2-decimal table, and `muExtra`/`elExtra`.
+  - Finalize electron-channel TauFF (if pending), finish all 5 eras × 2 channels through `postprocess`/`plotIt`/`print_syst_table.py`, then run `DNN/eval_multi.py` → `Run3LFVLimits/prepareShapesAndCards.py` → Combine limits/impacts/GoF/postfit.
+  - Decide/resolve open analysis items: `Luminosity` row in `total_syst_template.tex`, 100-eigenvector `isPDFenv` in `postprocess.py`, Run 3 TauFF ABCD independence plot (`misid_prob_os_vs_ss` / 2D correlation) & optional $|\eta|$-split / $|\tau_\eta|<2.3$ checks, Golden JSON era-detection order (`processonedataset.py`/`processonefile.py`), `EGM-07`/`MUO-06`/`JME-06` review forms, and syncing/committing the 3 separate repos (`NanoAODRun3`, `plotIt`, `Run3LFVLimits`).

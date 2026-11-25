@@ -461,19 +461,37 @@ Output goes to `{indir}/{year}_postprocess/`.
 
 ### Plotting with plotIt
 
+Wrapper scripts [`plot_era.py`](plot_era.py) (per-era) and [`plot_run3.py`](plot_run3.py) (combined 5-era Run 3) manage `plotIt` execution without manually editing tracked `config_*.yml` files:
+
 ```bash
-cd process_v1/muon/v12_2023BPix
-mkdir ../v2023BPix
-hadd hist_Muon.root hist_Muon*.root
-../../../../plotIt/plotIt -o ../figure_v2023BPix/ \
-    ../../../../plotIt/configs/Run3_muon/config_2023BPix.yml -y -s
+# Single era (normal / -F tauFF / -D DNN)
+python plot_era.py -I process_v1/muon/v15_2024
+python plot_era.py -I process_v1_FF/muon/v15_2024 -F
+python plot_era.py -I DNN_eval/muon/v15_2024_postprocess -D
+
+# Fake-factor region plots (-f auto-excludes signals & clears systematics, auto-hadds data if missing)
+python plot_era.py -f -I process_v1 -C muon            # expands lss/los/tss/tos across available eras
+python plot_era.py -f -I process_v1 -C muon -Y v15_2024
+python plot_run3.py -I process_v1_fake_lss/muon -f     # combined Run 3 fake region
+
+# Combined Run 3 (-F auto-extracts all 52 _S5 plots from histos.yml + histos_reco.yml; -q includes QCD)
+python plot_run3.py -I process_v1/muon
+python plot_run3.py -I process_v1_FF/muon -F
 ```
+
+Notes:
+- `-F` (`--ff`) dynamically extracts all active `_S5` blocks from `histos.yml` and `histos_reco.yml` (plus `histos_yield_S5.yml`) into a temporary YAML so all S5 kinematic plots match standard processing.
+- Missing low-$p_T$ QCD samples ($p_T \le 30\text{ GeV}$) emit a `[WARNING]` and are skipped (in `plot_run3.py` when `-q` is set, and in `plot_era.py` unless `--no-qcd` is set).
+- `h_leptau_mass_blind_*` plots use `show-onlyoverflow: true` so `-1.0` blinded data in underflow bin 0 is not folded into bin 1.
 
 ### Print systematic uncertainty table
 
 ```bash
-python print_syst_table.py -I process_v1/muon -Y v12_2023BPix -C muon
+python print_syst_table.py -I process_v1/muon -Y v12_2023BPix -C muon [-D] [-F]
 ```
+
+- Outputs `<input>/figure_<year><postfix>/total_syst.tex` formatted to **2 decimal places** (`yields-table-numerical-precision-yields: 2` in temporary systematic configs; `yields.tex` stays at 1 decimal place).
+- Includes channel-specific TOP-23-008 lepton phase-space extrapolation uncertainties (`muExtra` 0.5% for muon, `elExtra` 1.0% for electron).
 
 ### Tau fake factor workflow
 
@@ -664,6 +682,8 @@ The b-tag efficiency step **must come after the skim** because `run_all_btag_eff
 | 7 | Combine inputs | `python ../Run3LFVLimits/prepareShapesAndCards.py -p <ROOT_DIR> -C muon -o <CARD_DIR> -xsecfile <files*.yml> -dataYear <PLAIN_ERA>` | single-dash `-xsecfile`/`-dataYear`; `<ROOT_DIR>` is `<EVAL_DIR>/<ch>/<SKIM_ERA>_postprocess*/`; `2023BPix` gets `lumi_1`/`lumi_2`; unknown `dataYear` → `[ERROR]` |
 | 7b | Validation | `python scripts/validate_systematics.py --indir <PROC_OUT>/<ch>/<SKIM_ERA>/ --sample <DS> --year <PLAIN_ERA> --ch muon --nevents 10000` | see Section X (note: `--year` sets `jes*_<year>`) |
 
-### Open points to confirm before a full production
-- `-Y` naming conflict across `process.py` / `print_syst_table.py` (`jes_year = year`) vs required `<SKIM_ERA>`, and Golden-JSON era detection order — tracked in `recommendations/Object_Review_TODO.md` §8.3 (items 1 and 12).
-- The 2026-11-11 build/JIT fixes have not yet been confirmed by a successful `make` + `skimonefile.py` run (§8.1).
+### Open points & remaining work (updated 2026-11-25)
+- **Resolved since 2026-11-12**: C++ build/JIT verified on cluster; Run 3 skimming, b-tag efficiency maps (`02f87ad`), and muon Run 3 TauFF (`4b6f688`) generated; `-Y` JES sub-era conflict & `inject_ext_syst.py` `--systs` fixed (`e4293ae`); `plot_era.py`/`plot_run3.py` (`-f`, `-F` auto-S5 extraction, low-$p_T$ QCD warning skip), `show-onlyoverflow` blind-mass fix, 2-decimal `total_syst.tex`, and TOP-23-008 `muExtra` (0.5%) / `elExtra` (1.0%) implemented.
+- **Immediate re-runs (no re-process needed)**: Re-run `plot_era.py -F`, `plot_run3.py -F`, and `print_syst_table.py` to refresh S5 plots (52 plots + fixed `h_leptau_mass_blind_S5` bin 1) and 2-decimal `total_syst.tex` with `muExtra`/`elExtra`.
+- **Remaining production**: Electron-channel TauFF (if pending), full 5-era × 2-channel `process` → `postprocess` → `plotIt`/`print_syst_table` → `DNN/eval_multi.py` → `Run3LFVLimits/prepareShapesAndCards.py` → Combine.
+- **Still open (`recommendations/Object_Review_TODO.md` §8.3 & §9.3)**: Golden-JSON era-detection order in `processonedataset.py`/`processonefile.py`; whether to add `Luminosity` row to `total_syst_template.tex` & enable `isPDFenv` (100 PDF eigenvectors) in `postprocess.py`; Run 3 TauFF ABCD independence proof plot (`misid_prob_os_vs_ss` / 2D correlation) & optional $|\eta|$-binning / `|Tau_eta| < 2.3` check; `EGM-07`/`MUO-06`/`JME-06` and CERN Object Review form submission; and pre-JER `Jet_pt` preservation if re-skimming.

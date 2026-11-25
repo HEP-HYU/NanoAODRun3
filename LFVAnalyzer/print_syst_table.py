@@ -46,12 +46,12 @@ if os.path.exists(config_path + tmp_file_name):
 #shutil.copy2(config_path + 'config_' + year + '.yml', config_path + tmp_file_name)
 
 if channel == "muon":
-    lep_systs = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear']
+    lep_systs = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear', 'muExtra']
 elif channel == "electron":
-    lep_systs = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
+    lep_systs = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear', 'elExtra']
 else:
-    lep_systs = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear',
-                 'elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
+    lep_systs = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear', 'muExtra',
+                 'elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear', 'elExtra']
 
 # [TAU-01/02] DeepTau2018v2p5VSjet: orthogonal decomposed sub-sources only
 # (inclusive 'tauidjet', legacy aliases 'tauidjetUncert0/1', 'tauidjetSystdm*' and 0% 'tauidjetHighpt*' removed).
@@ -86,12 +86,14 @@ unc_cat = OrderedDict([
          'mescale', 'renscale', 'facscale', 'isr', 'fsr', 'pdfalphas',
          'tune', 'hdamp',]),
 ('pu', ['pu']),
+('lumi', []),
 ('toppt', ['toppt']),
 ('xsec', ['xsec']),
 ])
 
 if channel == "muon":
-    unc_cat['muon'] = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear']
+    unc_cat['muon'] = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear', 'muExtra']
+    unc_cat['muExtra'] = ['muExtra']
     unc_cat['muid'] = ['muid_stat', 'muid_syst']
     unc_cat['muid_stat'] = ['muid_stat']
     unc_cat['muid_syst'] = ['muid_syst']
@@ -106,7 +108,8 @@ if channel == "muon":
     unc_cat['muonscale'] = ['muonscale']
     unc_cat['muonsmear'] = ['muonsmear']
 elif channel == "electron":
-    unc_cat['electron'] = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
+    unc_cat['electron'] = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear', 'elExtra']
+    unc_cat['elExtra'] = ['elExtra']
     unc_cat['elecreco'] = ['elecreco_stat', 'elecreco_syst']
     unc_cat['elecreco_stat'] = ['elecreco_stat']
     unc_cat['elecreco_syst'] = ['elecreco_syst']
@@ -117,8 +120,8 @@ elif channel == "electron":
     unc_cat['elescale'] = ['elescale']
     unc_cat['elesmear'] = ['elesmear']
 else:
-    unc_cat['muon'] = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear']
-    unc_cat['electron'] = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear']
+    unc_cat['muon'] = ['muid_stat', 'muid_syst', 'muiso_stat', 'muiso_syst', 'mutrg_stat', 'mutrg_syst', 'muonscale', 'muonsmear', 'muExtra']
+    unc_cat['electron'] = ['elecreco_stat', 'elecreco_syst', 'elecid_stat', 'elecid_syst', 'electrg', 'elescale', 'elesmear', 'elExtra']
 
 unc_cat.update(OrderedDict([
 #('tauid', ['tauidjet', 'tauidel', 'tauidmu']),
@@ -219,11 +222,20 @@ for key, value in unc_cat.items():
         with open(config_path + tmp_file_name, 'w') as f1:
             syst_delete = False
             plot_delete = False
+            precision_set = False
+            lumi_err_found = False
             for line in f:
                 if 'luminosity-error:' in line:
-                    line = line[:line.find(':')+2]
-                    line += "0.0\n"
+                    lumi_err_found = True
+                    if key not in ('all', 'lumi'):
+                        line = line[:line.find(':')+2] + "0.0\n"
+                    elif not line.endswith('\n'):
+                        line += "\n"
                     line += "  syst-only: true\n"
+                if 'yields-table-numerical-precision-yields:' in line:
+                    line = line[:line.find(':')+2]
+                    line += "2\n"
+                    precision_set = True
                 if 'root:' in line:
                     line = line[:line.find(':')+2]
                     line += "'" + os.path.join(dest_path, year + "_postprocess" + options.postfix) + "'\n"
@@ -235,19 +247,30 @@ for key, value in unc_cat.items():
                 if syst_delete == True: continue
                 if plot_delete == True: continue
                 f1.write(line)
+            if not precision_set:
+                print(f"[ERROR] 'yields-table-numerical-precision-yields:' not found in {config_path}config_{year[4:]}.yml")
+                sys.exit(1)
+            if key in ('all', 'lumi') and not lumi_err_found:
+                print(f"[ERROR] 'luminosity-error:' not found in {config_path}config_{year[4:]}.yml")
+                sys.exit(1)
 
-    with open(config_path + "syst_all_" + year + ".yml") as f:
-        lines = f.readlines()
-        matched_lines = []
-        for line in lines:
-            if any(x in line for x in value):
-                matched_lines.append(str(line))
-        if not matched_lines:
-            print("  Skipping source: " + key + " (not present in config)")
-            continue
+    if key == 'lumi':
         with open(config_path + tmp_file_name, "a") as f1:
             f1.writelines(plot_to_add)
-            f1.writelines(string_to_add + "".join(matched_lines))
+            f1.write("systematics: []\n")
+    else:
+        with open(config_path + "syst_all_" + year + ".yml") as f:
+            lines = f.readlines()
+            matched_lines = []
+            for line in lines:
+                if any(x in line for x in value):
+                    matched_lines.append(str(line))
+            if not matched_lines:
+                print("  Skipping source: " + key + " (not present in config)")
+                continue
+            with open(config_path + tmp_file_name, "a") as f1:
+                f1.writelines(plot_to_add)
+                f1.writelines(string_to_add + "".join(matched_lines))
     syst_postfix = key
     call(['../plotIt/plotIt', '-o ' + os.path.join(dest_path, 'figure_' + year + options.postfix), config_path + tmp_file_name, '-s', '-a'], shell=False)
 
@@ -283,7 +306,7 @@ for key, value in unc_cat.items():
     string_to_add = 'systematics:\n'
 
 unc_summary = OrderedDict([
-('xsec', 'Cross section'), ('pu', 'Pileup'),
+('lumi', 'Luminosity'), ('xsec', 'Cross section'), ('pu', 'Pileup'),
 ('toppt', 'Top pT reweighting'),
 ])
 if channel == "electron":
