@@ -134,7 +134,7 @@ def rescale(inputh, inputf, bsff, sumW, nom_sumW): # rescale up/dn histos
         h.SetBinError(2, sqrt(pow(h.GetBinError(1), 2) + pow(h.GetBinError(2), 2)))
         h.SetBinContent(1, 0.)
         h.SetBinError(1, 0.)
-        if "_st" not in inputh and "_tt" not in inputh and "_bkg" not in inputh:
+        if "_st_" not in inputh and "_tt_" not in inputh and "_bkg_" not in inputh:
             h = h.Rebin(len(rebin_arr)-1, h.GetName(), rebin_arr)
 
     if not any(i in inputh for i in ['event', 'counter', '_nobtag', 'LHEPdfWeightSum', 'PSWeightSum', 'ScaleWeightSum']):
@@ -184,7 +184,7 @@ def write_envelope(inputh, inputf, bsff, syst, nhists, gen_sumW, wgt_sumW, do_re
             dn.SetBinError(2, sqrt(pow(dn.GetBinError(1), 2) + pow(dn.GetBinError(2), 2)))
             dn.SetBinContent(1, 0.)
             dn.SetBinError(1, 0.)
-            if "_st" not in inputh and "_tt" not in inputh and "_bkg" not in inputh:
+            if "_st_" not in inputh and "_tt_" not in inputh and "_bkg_" not in inputh:
                 up = up.Rebin(len(rebin_arr)-1, up.GetName(), rebin_arr)
                 dn = dn.Rebin(len(rebin_arr)-1, dn.GetName(), rebin_arr)
         up.SetDirectory(ROOT.nullptr)
@@ -360,7 +360,7 @@ for fname in file_list:
             h.SetBinError(2, sqrt(pow(h.GetBinError(1), 2) + pow(h.GetBinError(2), 2)))
             h.SetBinContent(1, 0.)
             h.SetBinError(1, 0.)
-            if "_st" not in hname and "_tt" not in hname and "_bkg" not in hname:
+            if "_st_" not in hname and "_tt_" not in hname and "_bkg_" not in hname:
                 h = h.Rebin(len(rebin_arr)-1, h.GetName(), rebin_arr)
         if yield_name in hname:
             h1 = h.Clone('h1')
